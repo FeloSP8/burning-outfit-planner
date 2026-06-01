@@ -22,8 +22,9 @@ export type GarmentInput = {
   slot: string; // TOP | BOTTOM | SHOES | ACCESSORY | COAT
 };
 
-// Fondo fijo: Black Rock Desert / Burning Man (conciso para no desperdiciar tokens de prompt)
-const DESERT_BG = "Background: Black Rock Desert playa, Burning Man festival. Cracked white alkali ground, golden dusty sky, art installations in the distance.";
+// Fondos según turno — concisos para no desperdiciar chars del límite de 1399
+const BG_TARDE = "Background: Black Rock Desert playa at Burning Man. Cracked white alkali ground, warm golden dusty sky, art installations in the distance. Daytime, cinematic light.";
+const BG_NOCHE = "Background: Burning Man at night. Dark desert playa, crowd of festival people, vibrant neon LED lights and glowing art cars everywhere, electric atmosphere, deep blue night sky with stars. The subject is well-lit and clearly visible.";
 
 // Límite de prompt confirmado experimentalmente: 1399 caracteres
 const PROMPT_MAX = 1399;
@@ -144,7 +145,8 @@ async function pollGeneration(generationId: string, maxMs = 180_000): Promise<st
 export async function generateTryOnLeonardo(
   userPhotoUrl: string,
   garments: GarmentInput[],
-  extraPrompt?: string
+  extraPrompt?: string,
+  isNight = false
 ): Promise<string> {
   if (MOCK || garments.length === 0) return userPhotoUrl;
   if (!API_KEY) throw new Error("LEONARDO_API_KEY no configurada");
@@ -247,7 +249,7 @@ export async function generateTryOnLeonardo(
     `Virtual try-on. ${faceRule}`,
     garmentInstructions,
     outputRules,
-    DESERT_BG,
+    isNight ? BG_NOCHE : BG_TARDE,
   ];
   if (extraPrompt?.trim()) parts.push(extraPrompt.trim());
 
