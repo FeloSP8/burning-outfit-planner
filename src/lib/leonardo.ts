@@ -191,12 +191,17 @@ async function buildRefs(garments: GarmentInput[]): Promise<{
   return { userUploadFn: uploadImage, garmentRefs, textOnlyLines };
 }
 
+// Pose de editorial — específica por turno para encajar con el mood del fondo
+const POSE_TARDE = "Editorial fashion pose: confident stance, slight weight shift to one hip, relaxed shoulders, natural arm position. Expression: calm and self-assured. Full body visible. Shot like a fashion magazine editorial.";
+const POSE_NOCHE = "Editorial fashion pose: dynamic and expressive, slight forward lean or hand gesture, body language full of energy and confidence. Expression: intense, festival mood. Full body visible. Shot like a fashion magazine editorial at night.";
+
 function buildPrompt(garmentInstructions: string, isNight: boolean, extraPrompt?: string): string {
   const faceRule = "CRITICAL: face in output = IDENTICAL to ref 1. Do NOT change face, hair, skin.";
   const parts = [
     `Virtual try-on. ${faceRule}`,
     garmentInstructions,
     "Show person wearing ALL garments. Photorealistic. Keep face identical to ref 1.",
+    isNight ? POSE_NOCHE : POSE_TARDE,
     isNight ? BG_NOCHE : BG_TARDE,
   ];
   if (extraPrompt?.trim()) parts.push(extraPrompt.trim());
