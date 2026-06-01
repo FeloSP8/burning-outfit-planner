@@ -152,9 +152,9 @@ export async function generateTryOnLeonardo(
       parameters: {
         prompt,
         quantity: 1,
-        width: 1024,
+        width: 1024,   // mínimo válido probado — 512x512 está por debajo del límite de píxeles
         height: 1024,
-        quality: "HIGH",
+        quality: "LOW", // $0.012 por imagen — subir a MEDIUM/HIGH cuando esté validado
         prompt_enhance: "OFF",
         guidances: {
           image_reference: imageReferences,
