@@ -1,0 +1,80 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id        String    @id @default(cuid())
+  name      String    @default("Yo")
+  photoUrl  String?
+  days      Day[]
+  garments  Garment[]
+  createdAt DateTime  @default(now())
+}
+
+model Day {
+  id     String   @id @default(cuid())
+  date   DateTime
+  label  String?
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  shifts Shift[]
+
+  @@unique([userId, date])
+}
+
+model Shift {
+  id     String  @id @default(cuid())
+  type   String  // "TARDE" | "NOCHE"
+  day    Day     @relation(fields: [dayId], references: [id], onDelete: Cascade)
+  dayId  String
+  outfit Outfit?
+
+  @@unique([dayId, type])
+}
+
+model Outfit {
+  id        String       @id @default(cuid())
+  shift     Shift        @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+  shiftId   String       @unique
+  items     OutfitItem[]
+  tryOn     TryOnResult?
+  updatedAt DateTime     @updatedAt
+}
+
+model OutfitItem {
+  id        String  @id @default(cuid())
+  outfit    Outfit  @relation(fields: [outfitId], references: [id], onDelete: Cascade)
+  outfitId  String
+  garment   Garment @relation(fields: [garmentId], references: [id], onDelete: Cascade)
+  garmentId String
+
+  @@unique([outfitId, garmentId])
+}
+
+model Garment {
+  id          String       @id @default(cuid())
+  name        String
+  slot        String       // "TOP" | "BOTTOM" | "SHOES" | "ACCESSORY" | "COAT"
+  status      String       @default("PENDIENTE") // "COMPRADO" | "RECIBIDO" | "PENDIENTE"
+  photoUrl    String?
+  purchaseUrl String?
+  notes       String?
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  outfitItems OutfitItem[]
+  createdAt   DateTime     @default(now())
+}
+
+model TryOnResult {
+  id        String   @id @default(cuid())
+  outfit    Outfit   @relation(fields: [outfitId], references: [id], onDelete: Cascade)
+  outfitId  String   @unique
+  imageUrl  String
+  userPhoto String
+  createdAt DateTime @default(now())
+}

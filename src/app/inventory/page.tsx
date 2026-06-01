@@ -1,0 +1,83 @@
+import { db } from "@/lib/db";
+import { GarmentCard } from "@/components/inventory/GarmentCard";
+import { GarmentFormModal } from "@/components/inventory/GarmentFormModal";
+import { SuggestButton } from "@/components/ai/SuggestButton";
+import type { Garment } from "@/types";
+
+const DEFAULT_USER_ID = process.env.SEED_USER_ID ?? "user_default";
+
+const SLOTS: { key: string; icon: string; label: string }[] = [
+  { key: "TOP",       icon: "👕", label: "Parte de arriba" },
+  { key: "BOTTOM",    icon: "👖", label: "Parte de abajo" },
+  { key: "SHOES",     icon: "👟", label: "Calzado" },
+  { key: "ACCESSORY", icon: "🕶️", label: "Accesorios" },
+  { key: "COAT",      icon: "🧥", label: "Abrigos" },
+];
+
+export default async function InventoryPage() {
+  const rawGarments = await db.garment.findMany({
+    where: { userId: DEFAULT_USER_ID },
+    orderBy: { createdAt: "asc" },
+  });
+  const garments = rawGarments.map((g) => ({ ...g, createdAt: g.createdAt.toISOString() })) as Garment[];
+  const bySlot = garments.reduce<Record<string, Garment[]>>((acc, g) => {
+    if (!acc[g.slot]) acc[g.slot] = [];
+    acc[g.slot].push(g);
+    return acc;
+  }, {});
+
+  return (
+    <div className="flex flex-col gap-10">
+      <div className="flex items-end justify-between">
+        <div>
+          <p
+            className="text-5xl text-[#7a2e08] leading-tight"
+            style={{ fontFamily: "var(--font-display)", fontStyle: "italic", fontWeight: 900 }}
+          >
+            Inventario
+          </p>
+          <p className="mt-1 text-sm font-medium text-[#7a5030]">
+            {garments.length} {garments.length === 1 ? "prenda" : "prendas"} registradas
+          </p>
+        </div>
+        <GarmentFormModal />
+      </div>
+
+      {/* AI panel */}
+      <section className="rounded-2xl border-2 border-[#4a2890]/30 bg-[#f0eaff] p-5">
+        <p className="mb-4 text-xs font-bold uppercase tracking-[0.15em] text-[#3a1878]">
+          ✨ Sugerencias IA
+        </p>
+        <SuggestButton />
+      </section>
+
+      {/* Garments by slot */}
+      {SLOTS.map(({ key, icon, label }) => {
+        const items = bySlot[key] ?? [];
+        return (
+          <section key={key}>
+            <div className="mb-4 flex items-center gap-2.5">
+              <span className="text-xl">{icon}</span>
+              <span className="text-lg font-black text-[#2a1a08] tracking-tight" style={{ fontFamily: "var(--font-body)" }}>
+                {label}
+              </span>
+              <span className="rounded-full bg-[#8a5a20]/20 px-2 py-0.5 text-xs font-bold text-[#5a3010]">
+                {items.length}
+              </span>
+            </div>
+
+            {items.length === 0 ? (
+              <div className="flex items-center justify-center rounded-xl border-2 border-dashed border-[#8a5a20]/40 bg-[#c49050]/10 py-8">
+                <p className="text-sm font-semibold text-[#6a3a10]">Sin prendas en esta categoría</p>
+              </div>
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {items.map((g) => <GarmentCard key={g.id} garment={g} />)}
+              </div>
+            )}
+          </section>
+        );
+      })}
+    </div>
+  );
+}
