@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { z } from "zod";
 
-// Slots that only allow one garment at a time
-const UNIQUE_SLOTS = ["TOP", "BOTTOM", "SHOES", "COAT"];
+// Todos los slots son únicos por outfit — el select solo puede mostrar una prenda a la vez
+const UNIQUE_SLOTS = ["TOP", "BOTTOM", "SHOES", "COAT", "ACCESSORY"];
 
 const AssignSchema = z.object({ garmentId: z.string().min(1) });
 

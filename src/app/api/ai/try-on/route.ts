@@ -28,8 +28,17 @@ export async function POST(req: NextRequest) {
   if (!outfit)
     return NextResponse.json({ error: "Outfit no encontrado" }, { status: 404 });
 
+  // Deduplicar por slot: si hay varias prendas del mismo slot (estado sucio anterior),
+  // quedarse solo con la más reciente (último en el array = último asignado)
+  const seenSlots = new Set<string>();
+  const dedupedItems = [...outfit.items].reverse().filter((it) => {
+    if (seenSlots.has(it.garment.slot)) return false;
+    seenSlots.add(it.garment.slot);
+    return true;
+  });
+
   // Todas las prendas con foto — pasamos nombre y slot reales para el prompt
-  const garments = outfit.items
+  const garments = dedupedItems
     .map((it) => it.garment)
     .filter((g) => g.photoUrl)
     .map((g) => ({

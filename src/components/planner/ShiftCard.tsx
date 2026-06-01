@@ -50,15 +50,16 @@ export function ShiftCard({ shift, inventory, requireCoat, userPhotoUrl }: {
 
     try {
       if (!garmentId) {
-        // Deselect
-        const item = items.find((i) => i.garment.slot === slot);
-        if (item) {
+        // Deselect: quitar la prenda actual de este slot
+        const current = items.find((i) => i.garment.slot === slot);
+        if (current) {
           const res = await fetch(
-            `/api/outfits/${shift.outfit.id}/items?garmentId=${item.garment.id}`,
+            `/api/outfits/${shift.outfit.id}/items?garmentId=${current.garment.id}`,
             { method: "DELETE" }
           );
           if (!res.ok) throw new Error();
-          setItems((prev) => prev.filter((i) => i.garment.slot !== slot));
+          // Quitar por garmentId exacto, no por slot (evita limpiar prendas huérfanas)
+          setItems((prev) => prev.filter((i) => i.garment.id !== current.garment.id));
         }
       } else {
         const res = await fetch(`/api/outfits/${shift.outfit.id}/items`, {
@@ -68,6 +69,8 @@ export function ShiftCard({ shift, inventory, requireCoat, userPhotoUrl }: {
         });
         if (!res.ok) throw new Error(await res.text());
         const item: OutfitItem = await res.json();
+        // El servidor ya elimina la prenda anterior del mismo slot (UNIQUE_SLOTS incluye ACCESSORY)
+        // Reflejamos lo mismo en el estado local: quitar cualquier prenda del mismo slot antes de añadir
         setItems((prev) => [...prev.filter((i) => i.garment.slot !== slot), item]);
       }
 
