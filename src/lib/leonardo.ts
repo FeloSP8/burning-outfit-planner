@@ -4,130 +4,190 @@ import path from "path";
 
 const MOCK = process.env.AI_MOCK === "true";
 const API_KEY = process.env.LEONARDO_API_KEY ?? "";
-const BASE = "https://cloud.leonardo.ai/api/rest/v1";
 
-// FLUX.1 Kontext — edición controlada, preserva identidad del usuario
-const MODEL_ID = "28aeddf8-bd19-4803-80fc-79602d1a9989";
+// GPT Image 2 usa el endpoint v2
+const BASE_V1 = "https://cloud.leonardo.ai/api/rest/v1";
+const BASE_V2 = "https://cloud.leonardo.ai/api/rest/v2";
 
-type GarmentInput = {
+export type GarmentInput = {
   url: string;
   category: "upper_body" | "lower_body";
 };
 
-function auth() {
-  return { authorization: `Bearer ${API_KEY}`, "content-type": "application/json", accept: "application/json" };
+function headers(contentType = true) {
+  return {
+    authorization: `Bearer ${API_KEY}`,
+    accept: "application/json",
+    ...(contentType ? { "content-type": "application/json" } : {}),
+  };
 }
 
-/** Sube una imagen local o remota a Leonardo y devuelve el imageId */
-async function uploadImage(urlOrPath: string): Promise<string> {
-  // Resolver URL local → buffer
-  let buffer: Buffer;
-  let ext = "jpg";
-
+/** Lee una imagen local o remota y la devuelve como Buffer + extensión */
+async function readImage(urlOrPath: string): Promise<{ buffer: Buffer; ext: string }> {
   if (urlOrPath.startsWith("/")) {
     const absPath = path.join(process.cwd(), "public", urlOrPath);
-    buffer = await fs.readFile(absPath);
-    ext = path.extname(urlOrPath).slice(1).replace("jpeg", "jpg") || "jpg";
-  } else {
-    const res = await fetch(urlOrPath);
-    buffer = Buffer.from(await res.arrayBuffer());
-    const ct = res.headers.get("content-type") ?? "";
-    if (ct.includes("png")) ext = "png";
-    else if (ct.includes("webp")) ext = "webp";
+    const buffer = await fs.readFile(absPath);
+    const ext = path.extname(urlOrPath).slice(1).replace("jpeg", "jpg") || "jpg";
+    return { buffer, ext };
   }
+  const res = await fetch(urlOrPath);
+  const buffer = Buffer.from(await res.arrayBuffer());
+  const ct = res.headers.get("content-type") ?? "";
+  const ext = ct.includes("png") ? "png" : ct.includes("webp") ? "webp" : "jpg";
+  return { buffer, ext };
+}
 
-  // 1. Pedir URL presignada de S3
-  const initRes = await fetch(`${BASE}/init-image`, {
+/**
+ * Sube una imagen a Leonardo vía URL presignada S3.
+ * Devuelve el imageId para usarlo en guidances.image_reference.
+ */
+async function uploadImage(urlOrPath: string): Promise<string> {
+  const { buffer, ext } = await readImage(urlOrPath);
+
+  // 1. Pedir URL presignada
+  const initRes = await fetch(`${BASE_V1}/init-image`, {
     method: "POST",
-    headers: auth(),
+    headers: headers(),
     body: JSON.stringify({ extension: ext }),
   });
+  if (!initRes.ok) {
+    throw new Error(`Error al pedir URL de subida: ${initRes.status} ${await initRes.text()}`);
+  }
   const initData = await initRes.json();
   const { id: imageId, url: s3Url, fields: fieldsRaw } = initData.uploadInitImage;
   const fields = JSON.parse(fieldsRaw) as Record<string, string>;
 
-  // 2. Subir a S3 con multipart/form-data
+  // 2. Subir a S3
   const form = new FormData();
   for (const [k, v] of Object.entries(fields)) form.append(k, v);
   form.append("file", new Blob([new Uint8Array(buffer)], { type: `image/${ext}` }));
 
   const s3Res = await fetch(s3Url, { method: "POST", body: form });
   if (!s3Res.ok && s3Res.status !== 204) {
-    throw new Error(`S3 upload failed: ${s3Res.status}`);
+    throw new Error(`Error al subir a S3: ${s3Res.status}`);
   }
 
   return imageId;
 }
 
-/** Espera a que una generación de Leonardo termine y devuelve las URLs de las imágenes */
-async function pollGeneration(generationId: string, maxMs = 120_000): Promise<string[]> {
+/**
+ * Polling sobre GET /v1/generations/:id hasta COMPLETE o FAILED.
+ * GPT Image 2 suele responder en 20-60s.
+ */
+async function pollGeneration(generationId: string, maxMs = 180_000): Promise<string[]> {
   const start = Date.now();
   while (Date.now() - start < maxMs) {
-    await new Promise((r) => setTimeout(r, 3000));
-    const res = await fetch(`${BASE}/generations/${generationId}`, {
-      headers: { authorization: `Bearer ${API_KEY}`, accept: "application/json" },
+    await new Promise((r) => setTimeout(r, 4000));
+
+    const res = await fetch(`${BASE_V1}/generations/${generationId}`, {
+      headers: headers(false),
     });
+    if (!res.ok) throw new Error(`Error polling generación: ${res.status}`);
+
     const data = await res.json();
     const gen = data.generations_by_pk;
-    if (!gen) throw new Error("Generación no encontrada");
+    if (!gen) throw new Error("Generación no encontrada en Leonardo");
+
     if (gen.status === "COMPLETE") {
-      return (gen.generated_images as { url: string }[]).map((i) => i.url);
+      const images = gen.generated_images as { url: string }[];
+      if (!images?.length) throw new Error("Generación completada pero sin imágenes");
+      return images.map((i) => i.url);
     }
-    if (gen.status === "FAILED") throw new Error("La generación falló en Leonardo");
+    if (gen.status === "FAILED") {
+      throw new Error("La generación falló en Leonardo");
+    }
+    // PENDING / PROCESSING → seguir esperando
   }
-  throw new Error("Timeout esperando la generación de Leonardo");
+  throw new Error("Timeout: Leonardo tardó más de 3 minutos");
 }
 
 /**
- * Try-on con Leonardo FLUX.1 Kontext.
- * Sube la foto del usuario como imagen base (init_image) y describe
- * las prendas en el prompt para que Kontext las aplique de forma controlada.
+ * Virtual Try-On con GPT Image 2 de Leonardo.
+ *
+ * Estrategia:
+ * - Sube la foto del usuario + fotos de las prendas como image_reference
+ * - El prompt describe exactamente qué hacer con cada referencia
+ * - GPT Image 2 no usa init_strength — trabaja por comprensión del prompt
  */
 export async function generateTryOnLeonardo(
   userPhotoUrl: string,
   garments: GarmentInput[]
 ): Promise<string> {
   if (MOCK || garments.length === 0) return userPhotoUrl;
-
   if (!API_KEY) throw new Error("LEONARDO_API_KEY no configurada");
 
-  // Subir foto del usuario como imagen base
-  const userImageId = await uploadImage(userPhotoUrl);
+  // Subir todas las imágenes en paralelo
+  const [userImageId, ...garmentImageIds] = await Promise.all([
+    uploadImage(userPhotoUrl),
+    ...garments.map((g) => uploadImage(g.url)),
+  ]);
 
-  // Construir descripción de prendas para el prompt
-  const garmentDescriptions = garments.map((g) =>
-    g.category === "upper_body" ? "the top garment shown" : "the bottom garment shown"
+  // Construir referencias: usuario primero, luego prendas
+  const imageReferences = [
+    { image: { id: userImageId, type: "UPLOADED" } },
+    ...garmentImageIds.map((id) => ({ image: { id, type: "UPLOADED" } })),
+  ];
+
+  // Prompt: describe la tarea con referencias posicionales
+  const garmentLines = garments.map((g, i) =>
+    `- Reference image ${i + 2}: the ${g.category === "upper_body" ? "top / upper body garment" : "bottom / lower body garment"} to apply`
   );
 
-  const prompt = `Photo of a person wearing a festival outfit at Burning Man desert.
-Apply ${garmentDescriptions.join(" and ")} to the person while preserving their exact face, body shape, skin tone, and pose.
-The result should look like a natural photograph of the person wearing these specific clothes.
-Keep the original background. Festival aesthetic, photorealistic.`;
+  const prompt = [
+    "Virtual try-on: show the person from reference image 1 wearing the clothes from the other reference images.",
+    "Reference image 1: the person — preserve their exact face, hair, skin tone, body shape, and pose.",
+    ...garmentLines,
+    "The result must look like a real photograph of this specific person wearing these exact clothes.",
+    "Maintain the original background. Photorealistic quality. Festival / Burning Man desert aesthetic.",
+  ].join("\n");
 
-  // Lanzar generación con FLUX.1 Kontext en modo image-to-image
-  const genRes = await fetch(`${BASE}/generations`, {
+  // Lanzar generación con GPT Image 2 en endpoint v2
+  // Los parámetros van anidados bajo "parameters" según la doc de Leonardo
+  const genRes = await fetch(`${BASE_V2}/generations`, {
     method: "POST",
-    headers: auth(),
+    headers: headers(),
     body: JSON.stringify({
-      modelId: MODEL_ID,
-      prompt,
-      num_images: 1,
-      width: 768,
-      height: 1024,
-      init_image_id: userImageId,
-      init_strength: 0.35,        // 0.35 = preserva bien la persona, aplica la ropa
-      guidanceScale: 7,
-      photoReal: false,
+      model: "gpt-image-2",
+      public: false,
+      parameters: {
+        prompt,
+        quantity: 1,
+        width: 1024,
+        height: 1024,
+        quality: "HIGH",
+        prompt_enhance: "OFF",
+        guidances: {
+          image_reference: imageReferences,
+        },
+      },
     }),
   });
 
-  const genData = await genRes.json();
-  const generationId = genData.sdGenerationJob?.generationId;
-  if (!generationId) {
-    throw new Error(`Leonardo no devolvió generationId: ${JSON.stringify(genData)}`);
+  if (!genRes.ok) {
+    const errText = await genRes.text();
+    throw new Error(`Leonardo v2 error ${genRes.status}: ${errText}`);
   }
 
-  // Esperar resultado y guardar localmente
+  const genData = await genRes.json();
+
+  // GPT Image 2 puede devolver el resultado directamente (síncrono)
+  // o un generationId para polling (asíncrono)
+  const directImages =
+    genData.images as { url: string }[] | undefined;
+
+  if (directImages?.length) {
+    const remoteUrl = directImages[0].url;
+    return saveRemoteImage(remoteUrl, "tryon");
+  }
+
+  // GPT Image 2 devuelve { generate: { generationId: "..." } }
+  const generationId: string | undefined =
+    genData.generate?.generationId ?? genData.generationId ?? genData.sdGenerationJob?.generationId;
+
+  if (!generationId) {
+    throw new Error(`Leonardo no devolvió generationId ni imágenes: ${JSON.stringify(genData)}`);
+  }
+
   const [imageUrl] = await pollGeneration(generationId);
   return saveRemoteImage(imageUrl, "tryon");
 }
