@@ -264,42 +264,6 @@ async function generatePhoenix(
   return saveRemoteImage(url, "tryon");
 }
 
-async function generateRecraftV4(
-  prompt: string,
-  isNight: boolean
-): Promise<string> {
-  // Recraft V4 no acepta referencias de imagen — solo texto.
-  // El prompt ya incluye el fondo adecuado según el turno.
-  const body = {
-    model: "recraft-v4",
-    public: false,
-    parameters: {
-      prompt,
-      quantity: 1,
-      width: 1024,
-      height: 1024,
-      prompt_enhance: "OFF",
-    },
-  };
-
-  const res = await fetch(`${BASE_V2}/generations`, {
-    method: "POST", headers: authHeaders(), body: JSON.stringify(body),
-  });
-  const raw = await res.text();
-  if (!res.ok) throw new Error(`Leonardo Recraft ${res.status}: ${raw}`);
-
-  const data = JSON.parse(raw);
-  if ((data.images as { url: string }[] | undefined)?.length)
-    return saveRemoteImage(data.images[0].url, "tryon");
-
-  const generationId =
-    data.generate?.generationId ?? data.generationId ?? data.sdGenerationJob?.generationId;
-  if (!generationId) throw new Error(`Recraft sin generationId: ${raw}`);
-
-  const [url] = await pollGeneration(generationId);
-  return saveRemoteImage(url, "tryon");
-}
-
 // ─── Función principal exportada ────────────────────────────────────────────
 
 export async function generateTryOnLeonardo(
@@ -314,16 +278,6 @@ export async function generateTryOnLeonardo(
 
   console.log(`[leonardo] modelo: ${model} | ${garments.length} prendas:`,
     garments.map((g) => `${g.slot}:"${g.name}"`).join(", "));
-
-  // ── Recraft V4: solo texto, sin subir imágenes ──
-  if (model === "recraft-v4") {
-    const garmentLines = garments
-      .map((g) => `- "${g.name}" — ${SLOT_DESC[g.slot] ?? g.slot}`)
-      .join("\n");
-    const garmentInstructions = `Garments to show:\n${garmentLines}`;
-    const prompt = buildPrompt(garmentInstructions, isNight, extraPrompt);
-    return generateRecraftV4(prompt, isNight);
-  }
 
   // ── Modelos con referencias de imagen ──
   const userImageId = await uploadImage(userPhotoUrl);

@@ -237,11 +237,6 @@ export function ShiftCard({ shift, inventory, requireCoat, userPhotoUrl }: {
                 <div className="flex flex-col gap-0.5 min-w-0">
                   <span className={`text-xs font-bold leading-tight ${isNightCard ? "text-[#d8d0f0]" : "text-[#2a1a08]"}`}>
                     {m.label}
-                    {!m.supportsRefs && (
-                      <span className={`ml-1.5 rounded px-1 py-0.5 text-[9px] font-bold uppercase ${isNightCard ? "bg-amber-900/50 text-amber-300" : "bg-amber-100 text-amber-700"}`}>
-                        solo texto
-                      </span>
-                    )}
                   </span>
                   <span className={`text-[10px] leading-snug ${isNightCard ? "text-[#6a6090]" : "text-[#a07040]"}`}>
                     {m.description}
