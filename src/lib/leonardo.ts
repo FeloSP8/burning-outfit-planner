@@ -22,13 +22,11 @@ export type GarmentInput = {
   slot: string; // TOP | BOTTOM | SHOES | ACCESSORY | COAT
 };
 
-// Fondo fijo: Black Rock Desert / Burning Man
-const DESERT_BACKGROUND = [
-  "The background is the Black Rock Desert playa at Burning Man:",
-  "cracked dry white alkali lake bed stretching to the horizon,",
-  "dusty hazy sky with warm golden light, art installations in the far distance,",
-  "festival atmosphere, cinematic lighting.",
-].join(" ");
+// Fondo fijo: Black Rock Desert / Burning Man (conciso para no desperdiciar tokens de prompt)
+const DESERT_BG = "Background: Black Rock Desert playa, Burning Man festival. Cracked white alkali ground, golden dusty sky, art installations in the distance.";
+
+// Límite de prompt confirmado experimentalmente: 1399 caracteres
+const PROMPT_MAX = 1399;
 
 function headers(contentType = true) {
   return {
@@ -241,29 +239,27 @@ export async function generateTryOnLeonardo(
     ...textOnlyGarments.map((g) => `- (no image) "${g.name}" — ${slotDesc[g.slot] ?? g.slot}. Include it based on its name.`),
   ].join("\n");
 
-  const prompt = [
-    "=== VIRTUAL TRY-ON TASK ===",
-    "",
-    "STEP 1 — PERSON (Reference image 1):",
-    "This is the person to dress. You MUST preserve with 100% fidelity:",
-    "- Their EXACT face: bone structure, eyes, nose, mouth, skin tone, expression",
-    "- Their hair: color, length, style",
-    "- Their body shape and proportions",
-    "- Their pose",
-    "⚠ CRITICAL: Do NOT alter the face under any circumstances. The face in the output must be IDENTICAL to reference image 1.",
-    "",
-    "STEP 2 — GARMENTS to apply:",
+  // Prompt compacto — límite duro de 1399 chars confirmado con la API de Leonardo
+  const faceRule = "CRITICAL: face in output = IDENTICAL to ref 1. Do NOT change face, hair, skin.";
+  const outputRules = "Show person wearing ALL garments. Photorealistic. Keep face identical to ref 1.";
+
+  const parts = [
+    `Virtual try-on. ${faceRule}`,
     garmentInstructions,
-    "",
-    "STEP 3 — OUTPUT RULES:",
-    "- Show the person wearing ALL listed garments simultaneously",
-    "- Each garment must match its reference exactly: same colors, patterns, textures",
-    "- The final image must look like a real photograph — photorealistic",
-    "- The person's face and identity must be perfectly preserved from reference image 1",
-    "",
-    DESERT_BACKGROUND,
-    ...(extraPrompt?.trim() ? ["", `Additional instructions: ${extraPrompt.trim()}`] : []),
-  ].join("\n");
+    outputRules,
+    DESERT_BG,
+  ];
+  if (extraPrompt?.trim()) parts.push(extraPrompt.trim());
+
+  let prompt = parts.join("\n");
+
+  // Truncar si supera el límite, preservando el inicio (cara + prendas) y cortando el final
+  if (prompt.length > PROMPT_MAX) {
+    prompt = prompt.slice(0, PROMPT_MAX);
+    console.warn(`[leonardo] Prompt truncado a ${PROMPT_MAX} chars`);
+  }
+
+  console.log(`[leonardo] Prompt (${prompt.length} chars)`);
 
   const requestBody = {
     model: "gpt-image-2",
@@ -279,8 +275,7 @@ export async function generateTryOnLeonardo(
     },
   };
 
-  console.log(`[leonardo] ${imageReferences.length} referencias → IDs:`, imageReferences.map(r => r.image.id).join(", "));
-  console.log(`[leonardo] Body completo:`, JSON.stringify(requestBody));
+  console.log(`[leonardo] ${imageReferences.length} refs → generando...`);
 
   const genRes = await fetch(`${BASE_V2}/generations`, {
     method: "POST",
