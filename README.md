@@ -5,7 +5,7 @@ Aplicación web para planificar el vestuario de un festival en el desierto (Burn
 ![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)
 ![Prisma](https://img.shields.io/badge/Prisma-7-2D3748?logo=prisma)
 ![SQLite](https://img.shields.io/badge/SQLite-local-003B57?logo=sqlite)
-![Replicate](https://img.shields.io/badge/Replicate-IDM--VTON-purple)
+![Leonardo.Ai](https://img.shields.io/badge/Leonardo.Ai-GPT_Image_2-blueviolet)
 ![Anthropic](https://img.shields.io/badge/Anthropic-Claude-orange)
 
 ---
@@ -13,7 +13,7 @@ Aplicación web para planificar el vestuario de un festival en el desierto (Burn
 ## Funcionalidades
 
 ### 🗓️ Planificador de días y turnos
-- Configura el rango de fechas del evento (por defecto: Burning Man 2026, 24 ago – 1 sep)
+- Configura el rango de fechas del evento (por defecto: Burning Man 2026, 30 ago – 7 sep)
 - Cada día tiene dos bloques independientes: **Tarde** y **Noche**
 - Puedes activar/desactivar cada turno por día (ej. el primer día solo llegas de noche)
 - Etiquetas personalizables por día
@@ -27,7 +27,8 @@ Aplicación web para planificar el vestuario de un festival en el desierto (Burn
 
 ### 🤖 Probador Virtual (Virtual Try-On)
 - Sube tu foto de cuerpo completo en el Planificador
-- Al pulsar "Probador Virtual" en un turno, la app encadena llamadas a **IDM-VTON** (Replicate): `foto_base → +TOP → resultado → +BOTTOM → resultado final`
+- Al pulsar "Probador Virtual" se genera una imagen tuya con el outfit puesto usando **Leonardo.Ai GPT Image 2**
+- Campo de **indicaciones extra** para añadir instrucciones al prompt (ej: "con niebla en el fondo", "al atardecer")
 - El resultado se guarda en base de datos y se muestra en la card y en la Vista General
 - Modo mock con `AI_MOCK=true` para desarrollar sin gastar créditos
 
@@ -52,7 +53,7 @@ Aplicación web para planificar el vestuario de un festival en el desierto (Burn
 | Base de datos | **SQLite** (local, `better-sqlite3`) | Cero infraestructura para single-user. La relación N:M Outfit↔Prenda es relacional pura |
 | Estilos | **Tailwind CSS 4** | Utilidades directas sin CSS custom |
 | Fuentes | **Syne** (body) + **Playfair Display** (display) | Personalidad festival, legibilidad sobre fondo arena |
-| Try-On IA | **Replicate — IDM-VTON** | Único modelo público que preserva la prenda real Y la identidad del usuario. FLUX no sirve: genera ropa "inspirada", no la prenda exacta |
+| Try-On IA | **Leonardo.Ai — GPT Image 2** | Modelo multimodal con soporte de hasta 4 imágenes de referencia simultáneas. Estrategia: ref 1 = usuario, ref 2 = TOP, ref 3 = BOTTOM, ref 4 = collage de accesorios/calzado |
 | LLM | **Anthropic Claude** vía Vercel AI SDK | `generateObject` + schema Zod garantiza JSON estructurado sin parseo frágil |
 | Storage | **Filesystem local** `/public/uploads` | MVP single-user. Migrable a S3/R2 cambiando únicamente `src/lib/storage.ts` |
 | Validación | **Zod 4** | En API routes y en respuestas del LLM |
@@ -79,13 +80,13 @@ src/
 │       ├── outfits/[id]/route.ts        # GET outfit completo con items y try-on
 │       ├── outfits/[id]/items/route.ts  # POST asignar prenda  ·  DELETE quitar
 │       ├── upload/route.ts              # POST subir imagen → { url }  (max 5 MB)
-│       ├── ai/try-on/route.ts           # POST try-on encadenado (Replicate IDM-VTON)
+│       ├── ai/try-on/route.ts           # POST try-on con Leonardo.Ai GPT Image 2
 │       └── ai/suggest/route.ts         # POST sugerencias de combinaciones (Claude)
 │
 ├── components/
 │   ├── planner/
 │   │   ├── DayPlanner.tsx              # Tabs de días + grid de turnos (client)
-│   │   ├── ShiftCard.tsx               # Card Tarde/Noche: slots, guardado auto, try-on
+│   │   ├── ShiftCard.tsx               # Card Tarde/Noche: slots, guardado auto, try-on + campo extra
 │   │   ├── RangeSetup.tsx              # Selector de fechas + tabla de toggles Tarde/Noche
 │   │   └── UserPhotoWidget.tsx         # Avatar circular + subida de foto de perfil
 │   ├── inventory/
@@ -97,7 +98,7 @@ src/
 │
 ├── lib/
 │   ├── db.ts                           # Prisma singleton con adapter better-sqlite3
-│   ├── replicate.ts                    # Try-on encadenado IDM-VTON + modo mock
+│   ├── leonardo.ts                     # Try-on con Leonardo.Ai GPT Image 2 + collage + mock
 │   ├── ai.ts                           # Sugerencias Claude (generateObject+Zod) + mock
 │   └── storage.ts                      # Guardar/leer imágenes en /public/uploads
 │
@@ -123,7 +124,7 @@ User (1) ──< Day (1) ──< Shift  (type: TARDE|NOCHE)
                               ▼ N:M (tabla puente OutfitItem)
                            Garment  (slot: TOP|BOTTOM|SHOES|ACCESSORY|COAT)
 
-Outfit (1) ──────────────< TryOnResult  (imageUrl generada por IDM-VTON)
+Outfit (1) ──────────────< TryOnResult  (imageUrl generada por Leonardo.Ai)
 ```
 
 **Reglas de negocio:**
@@ -144,7 +145,7 @@ Outfit (1) ──────────────< TryOnResult  (imageUrl ge
 ### 1. Clonar e instalar dependencias
 
 ```bash
-git clone https://github.com/tu-usuario/burning-outfit-planner.git
+git clone https://github.com/FeloSP8/burning-outfit-planner.git
 cd burning-outfit-planner
 npm install
 ```
@@ -163,7 +164,7 @@ SEED_USER_ID="user_default"
 
 # Con AI_MOCK=true la app funciona sin API keys (modo demo)
 AI_MOCK="true"
-REPLICATE_API_TOKEN=""
+LEONARDO_API_KEY=""
 ANTHROPIC_API_KEY=""
 ```
 
@@ -184,14 +185,54 @@ npm run dev
 
 ## Activar la IA real
 
-| Servicio | Dónde conseguir la key | Variable |
-|----------|------------------------|----------|
-| Virtual Try-On | [replicate.com](https://replicate.com) → API tokens | `REPLICATE_API_TOKEN` |
-| Sugerencias de outfits | [console.anthropic.com](https://console.anthropic.com) | `ANTHROPIC_API_KEY` |
+### 🎨 Probador Virtual — Leonardo.Ai (obligatorio para el try-on)
 
-Cambia `AI_MOCK="false"` en `.env.local` para activarlas.
+> **Leonardo.Ai regala $5 en créditos al registrarse**, más que suficiente para cientos de pruebas a calidad LOW (~$0.012 por imagen).
 
-**Nota sobre el Try-On:** IDM-VTON aplica una prenda por pasada. El outfit completo se genera encadenando llamadas. Calzado y accesorios se excluyen del núcleo porque el modelo los maneja con baja fidelidad — se aplican solo `TOP` y `BOTTOM`.
+1. Crea una cuenta gratis en **[leonardo.ai](https://leonardo.ai)** — no necesitas tarjeta
+2. Ve a **Settings → API** y genera una API key
+3. Añade la key en `.env.local`:
+
+```env
+LEONARDO_API_KEY="tu-key-aqui"
+AI_MOCK="false"
+```
+
+El probador usa el modelo **GPT Image 2** con hasta 4 imágenes de referencia:
+- Referencia 1 → foto tuya (para preservar cara, pelo y cuerpo)
+- Referencia 2 → TOP (parte de arriba)
+- Referencia 3 → BOTTOM (parte de abajo)
+- Referencia 4 → collage de accesorios y calzado (si los hay)
+
+El fondo es siempre el desierto de Black Rock (playa seca de Burning Man). Puedes añadir instrucciones extra antes de generar.
+
+> **Límites conocidos:** el prompt tiene un máximo de 1399 caracteres (límite descubierto experimentalmente, no documentado por Leonardo). El código trunca automáticamente si se supera.
+
+### ✨ Sugerencias de outfits — Anthropic Claude (opcional)
+
+1. Consigue una API key en **[console.anthropic.com](https://console.anthropic.com)**
+2. Añádela en `.env.local`:
+
+```env
+ANTHROPIC_API_KEY="sk-ant-..."
+```
+
+| Servicio | Key | Coste aproximado |
+|----------|-----|-----------------|
+| Leonardo.Ai (try-on) | `LEONARDO_API_KEY` | ~$0.012/imagen (LOW) · $0.05 (MEDIUM) · $0.097 (HIGH) |
+| Anthropic Claude (sugerencias) | `ANTHROPIC_API_KEY` | Muy bajo — Claude Sonnet, pocas llamadas |
+
+---
+
+## Subir la calidad del try-on
+
+Por defecto está en calidad mínima para ahorrar créditos durante las pruebas. Cuando estés satisfecho con los resultados, cambia en `src/lib/leonardo.ts`:
+
+```ts
+quality: "LOW"     // $0.012 — para pruebas
+quality: "MEDIUM"  // $0.050 — calidad intermedia
+quality: "HIGH"    // $0.097 — máxima calidad
+```
 
 ---
 
