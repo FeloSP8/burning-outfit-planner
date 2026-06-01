@@ -9,9 +9,12 @@ const API_KEY = process.env.LEONARDO_API_KEY ?? "";
 const BASE_V1 = "https://cloud.leonardo.ai/api/rest/v1";
 const BASE_V2 = "https://cloud.leonardo.ai/api/rest/v2";
 
-// Límite real confirmado por pruebas: 3 referencias máximo (usuario + 2)
-// Con más prendas se componen en un collage que cuenta como 1 referencia
-const MAX_GARMENT_REFS = 2;
+// Límite real confirmado: usuario + 3 referencias de prenda = 4 total
+// Estrategia de referencias:
+//   Ref 1 → foto del usuario (siempre sola)
+//   Ref 2 → TOP (sola, si existe con foto)
+//   Ref 3 → BOTTOM (sola, si existe con foto)
+//   Ref 4 → COAT solo, o collage de ACCESSORY + SHOES juntos
 
 export type GarmentInput = {
   url: string;
@@ -150,43 +153,6 @@ export async function generateTryOnLeonardo(
 
   console.log(`[leonardo] ${garments.length} prendas:`, garments.map((g) => `${g.slot}:"${g.name}"`).join(", "));
 
-  // --- Subir foto del usuario ---
-  const userImageId = await uploadImage(userPhotoUrl);
-  console.log(`[leonardo] Usuario subido: ${userImageId}`);
-
-  // --- Prendas → referencias (máx MAX_GARMENT_REFS) ---
-  let garmentRefs: { id: string; label: string }[];
-
-  if (garments.length <= MAX_GARMENT_REFS) {
-    // Subir individualmente (≤2 prendas)
-    garmentRefs = [];
-    for (const g of garments) {
-      const id = await uploadImage(g.url);
-      garmentRefs.push({ id, label: `"${g.name}" (${g.slot})` });
-      console.log(`[leonardo] ${g.slot} "${g.name}": ${id}`);
-    }
-  } else {
-    // >2 prendas → collage
-    console.log(`[leonardo] ${garments.length} prendas → collage grid`);
-    const collageBuffer = await buildGarmentCollage(garments);
-    const collageId = await uploadBuffer(collageBuffer, "png");
-    const cols = garments.length <= 4 ? 2 : Math.ceil(Math.sqrt(garments.length));
-    const cellLabels = garments.map((g, i) => {
-      const col = i % cols;
-      const row = Math.floor(i / cols);
-      return `cell [row ${row + 1}, col ${col + 1}] = "${g.name}" (${g.slot})`;
-    });
-    garmentRefs = [{ id: collageId, label: `garment collage (${cellLabels.join(" | ")})` }];
-    console.log(`[leonardo] Collage subido: ${collageId}`);
-  }
-
-  // --- Referencias finales ---
-  const imageReferences = [
-    { image: { id: userImageId, type: "UPLOADED" } },
-    ...garmentRefs.map((r) => ({ image: { id: r.id, type: "UPLOADED" } })),
-  ];
-
-  // --- Prompt ---
   const slotDesc: Record<string, string> = {
     TOP:       "upper body garment (shirt, jacket, kimono, etc.)",
     BOTTOM:    "lower body garment (pants, skirt, shorts, etc.)",
@@ -195,21 +161,85 @@ export async function generateTryOnLeonardo(
     COAT:      "outer coat/cape — worn over the other garments",
   };
 
-  let garmentInstructions: string;
-  if (garments.length <= MAX_GARMENT_REFS) {
-    garmentInstructions = garments.map((g, i) =>
-      `- Reference image ${i + 2}: "${g.name}" — ${slotDesc[g.slot] ?? g.slot}. Apply exactly as shown.`
-    ).join("\n");
-  } else {
-    const cols = garments.length <= 4 ? 2 : Math.ceil(Math.sqrt(garments.length));
-    const garmentList = garments.map((g, i) => {
-      const col = i % cols;
-      const row = Math.floor(i / cols);
-      return `  - Grid cell [row ${row + 1}, col ${col + 1}]: "${g.name}" — ${slotDesc[g.slot] ?? g.slot}`;
-    }).join("\n");
-    garmentInstructions =
-      `- Reference image 2: a grid of ALL garments to apply:\n${garmentList}\n  Apply EVERY garment from the grid to the person.`;
+  // --- Subir foto del usuario ---
+  const userImageId = await uploadImage(userPhotoUrl);
+  console.log(`[leonardo] Usuario: ${userImageId}`);
+
+  // --- Construir referencias por prioridad ---
+  // TOP y BOTTOM siempre van solos. COAT solo. ACCESSORY+SHOES en collage si hay varios.
+  const top       = garments.find((g) => g.slot === "TOP");
+  const bottom    = garments.find((g) => g.slot === "BOTTOM");
+  const coat      = garments.find((g) => g.slot === "COAT");
+  const secondary = garments.filter((g) => g.slot === "ACCESSORY" || g.slot === "SHOES");
+
+  // Slots individuales a subir: TOP → BOTTOM → COAT (en ese orden de prioridad)
+  const soloSlots = [top, bottom, coat].filter(Boolean) as GarmentInput[];
+
+  // Construimos las referencias respetando el límite de 3 garment refs
+  // Orden: TOP, BOTTOM, luego o bien COAT solo o collage de accesorios/calzado
+  type GarmentRef = { id: string; promptLine: string; refIndex: number };
+  const garmentRefs: GarmentRef[] = [];
+  let refIndex = 2; // ref 1 = usuario
+
+  for (const g of soloSlots) {
+    if (refIndex > 4) break; // máx 4 refs totales (1 usuario + 3 prendas)
+    const id = await uploadImage(g.url);
+    garmentRefs.push({
+      id,
+      promptLine: `- Reference image ${refIndex}: "${g.name}" — ${slotDesc[g.slot] ?? g.slot}. Apply exactly as shown.`,
+      refIndex,
+    });
+    console.log(`[leonardo] ${g.slot} "${g.name}": ${id} (ref ${refIndex})`);
+    refIndex++;
   }
+
+  // Si quedan huecos y hay accesorios/calzado, añadirlos
+  if (secondary.length > 0 && refIndex <= 4) {
+    if (secondary.length === 1) {
+      // Solo uno → referencia individual
+      const g = secondary[0];
+      const id = await uploadImage(g.url);
+      garmentRefs.push({
+        id,
+        promptLine: `- Reference image ${refIndex}: "${g.name}" — ${slotDesc[g.slot] ?? g.slot}. Apply exactly as shown.`,
+        refIndex,
+      });
+      console.log(`[leonardo] ${g.slot} "${g.name}": ${id} (ref ${refIndex})`);
+    } else {
+      // Varios → collage
+      console.log(`[leonardo] ${secondary.length} accesorios/calzado → collage`);
+      const collageBuffer = await buildGarmentCollage(secondary);
+      const collageId = await uploadBuffer(collageBuffer, "png");
+      const cols = secondary.length <= 4 ? 2 : Math.ceil(Math.sqrt(secondary.length));
+      const cellList = secondary.map((g, i) => {
+        const col = i % cols;
+        const row = Math.floor(i / cols);
+        return `    [row ${row + 1}, col ${col + 1}] "${g.name}" — ${slotDesc[g.slot] ?? g.slot}`;
+      }).join("\n");
+      garmentRefs.push({
+        id: collageId,
+        promptLine: `- Reference image ${refIndex}: collage of accessories/footwear — apply ALL of them:\n${cellList}`,
+        refIndex,
+      });
+      console.log(`[leonardo] Collage accesorios/calzado: ${collageId} (ref ${refIndex})`);
+    }
+  }
+
+  // Prendas sin foto o que no caben → mencionarlas solo en el prompt
+  const garmentIdsUsed = new Set([top, bottom, coat, ...secondary].filter(Boolean).map((g) => g!.url));
+  const textOnlyGarments = garments.filter((g) => !g.url || !garmentIdsUsed.has(g.url));
+
+  // --- Referencias finales ---
+  const imageReferences = [
+    { image: { id: userImageId, type: "UPLOADED" } },
+    ...garmentRefs.map((r) => ({ image: { id: r.id, type: "UPLOADED" } })),
+  ];
+
+  // --- Instrucciones de prendas para el prompt ---
+  const garmentInstructions = [
+    ...garmentRefs.map((r) => r.promptLine),
+    ...textOnlyGarments.map((g) => `- (no image) "${g.name}" — ${slotDesc[g.slot] ?? g.slot}. Include it based on its name.`),
+  ].join("\n");
 
   const prompt = [
     "=== VIRTUAL TRY-ON TASK ===",
