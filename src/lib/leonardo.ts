@@ -126,11 +126,17 @@ export async function generateTryOnLeonardo(
   if (MOCK || garments.length === 0) return userPhotoUrl;
   if (!API_KEY) throw new Error("LEONARDO_API_KEY no configurada");
 
-  // Subir todas las imágenes en paralelo
-  const [userImageId, ...garmentImageIds] = await Promise.all([
-    uploadImage(userPhotoUrl),
-    ...garments.map((g) => uploadImage(g.url)),
-  ]);
+  // Subir imágenes en secuencia — evita rate limiting de Leonardo en uploads paralelos
+  console.log(`[leonardo] Subiendo ${garments.length + 1} imágenes...`);
+  const userImageId = await uploadImage(userPhotoUrl);
+  console.log(`[leonardo] Usuario: ${userImageId}`);
+
+  const garmentImageIds: string[] = [];
+  for (const g of garments) {
+    const id = await uploadImage(g.url);
+    console.log(`[leonardo] ${g.slot} "${g.name}": ${id}`);
+    garmentImageIds.push(id);
+  }
 
   // Construir referencias: usuario primero, luego prendas
   const imageReferences = [
@@ -174,34 +180,40 @@ export async function generateTryOnLeonardo(
 
   const prompt = promptParts.join("\n");
 
+  const requestBody = {
+    model: "gpt-image-2",
+    public: false,
+    parameters: {
+      prompt,
+      quantity: 1,
+      width: 1024,
+      height: 1024,
+      quality: "LOW",
+      prompt_enhance: "OFF",
+      guidances: {
+        image_reference: imageReferences,
+      },
+    },
+  };
+
+  console.log(`[leonardo] Referencias: ${imageReferences.length} imágenes`);
+  console.log(`[leonardo] Body:`, JSON.stringify(requestBody, null, 2));
+
   // Lanzar generación con GPT Image 2 en endpoint v2
-  // Los parámetros van anidados bajo "parameters" según la doc de Leonardo
   const genRes = await fetch(`${BASE_V2}/generations`, {
     method: "POST",
     headers: headers(),
-    body: JSON.stringify({
-      model: "gpt-image-2",
-      public: false,
-      parameters: {
-        prompt,
-        quantity: 1,
-        width: 1024,   // mínimo válido probado — 512x512 está por debajo del límite de píxeles
-        height: 1024,
-        quality: "LOW", // $0.012 por imagen — subir a MEDIUM/HIGH cuando esté validado
-        prompt_enhance: "OFF",
-        guidances: {
-          image_reference: imageReferences,
-        },
-      },
-    }),
+    body: JSON.stringify(requestBody),
   });
 
+  const genRawText = await genRes.text();
+  console.log(`[leonardo] Respuesta generación (${genRes.status}):`, genRawText);
+
   if (!genRes.ok) {
-    const errText = await genRes.text();
-    throw new Error(`Leonardo v2 error ${genRes.status}: ${errText}`);
+    throw new Error(`Leonardo v2 error ${genRes.status}: ${genRawText}`);
   }
 
-  const genData = await genRes.json();
+  const genData = JSON.parse(genRawText);
 
   // GPT Image 2 puede devolver el resultado directamente (síncrono)
   // o un generationId para polling (asíncrono)
