@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { generateTryOnLeonardo } from "@/lib/leonardo";
+import { LEONARDO_MODELS, type ModelId } from "@/lib/leonardo-models";
 import { z } from "zod";
+
+const VALID_MODELS = LEONARDO_MODELS.map((m) => m.id) as [ModelId, ...ModelId[]];
 
 const Schema = z.object({
   outfitId:    z.string().min(1),
   userPhotoUrl: z.string().min(1),
   extraPrompt: z.string().max(500).optional(),
+  model:       z.enum(VALID_MODELS).optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -15,7 +19,7 @@ export async function POST(req: NextRequest) {
   if (!parsed.success)
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 
-  const { outfitId, userPhotoUrl, extraPrompt } = parsed.data;
+  const { outfitId, userPhotoUrl, extraPrompt, model = "gpt-image-2" } = parsed.data;
 
   const outfit = await db.outfit.findUnique({
     where: { id: outfitId },
@@ -51,7 +55,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const isNight = outfit.shift.type === "NOCHE";
-    const imageUrl = await generateTryOnLeonardo(userPhotoUrl, garments, extraPrompt, isNight);
+    const imageUrl = await generateTryOnLeonardo(userPhotoUrl, garments, extraPrompt, isNight, model);
 
     const result = await db.tryOnResult.upsert({
       where: { outfitId },

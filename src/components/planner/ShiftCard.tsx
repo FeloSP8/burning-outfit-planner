@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import type { Shift, Garment, OutfitItem } from "@/types";
+import { LEONARDO_MODELS, type ModelId } from "@/lib/leonardo-models";
 
 const SLOTS: { key: Garment["slot"]; label: string; icon: string }[] = [
   { key: "TOP",       label: "Parte de arriba", icon: "👕" },
@@ -31,6 +32,7 @@ export function ShiftCard({ shift, inventory, requireCoat, userPhotoUrl }: {
   const [loading, setLoading]     = useState(false);
   const [warning, setWarning]     = useState<string | null>(null);
   const [extraPrompt, setExtra]   = useState("");
+  const [model, setModel]         = useState<ModelId>("gpt-image-2");
   const [slotState, setSlotState] = useState<Partial<Record<Garment["slot"], SlotSaveState>>>({});
 
   const isNight     = shift.type === "NOCHE";
@@ -84,7 +86,7 @@ export function ShiftCard({ shift, inventory, requireCoat, userPhotoUrl }: {
     const res = await fetch("/api/ai/try-on", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ outfitId: shift.outfit.id, userPhotoUrl, extraPrompt: extraPrompt.trim() || undefined }),
+      body: JSON.stringify({ outfitId: shift.outfit.id, userPhotoUrl, extraPrompt: extraPrompt.trim() || undefined, model }),
     });
     const data = await res.json();
     setLoading(false);
@@ -204,6 +206,52 @@ export function ShiftCard({ shift, inventory, requireCoat, userPhotoUrl }: {
 
       {/* CTA */}
       <div className="mt-auto px-5 pb-5 flex flex-col gap-2.5">
+
+        {/* Model selector */}
+        <div className="flex flex-col gap-1">
+          <label className={`text-[10px] font-bold uppercase tracking-widest ${isNightCard ? "text-[#9890c8]" : "text-[#a07040]"}`}>
+            Modelo de generación
+          </label>
+          <div className="flex flex-col gap-1.5">
+            {LEONARDO_MODELS.map((m) => (
+              <label
+                key={m.id}
+                className={`flex cursor-pointer items-start gap-2.5 rounded-xl border-2 px-3 py-2 transition-all ${
+                  model === m.id
+                    ? isNightCard
+                      ? "border-[#6a5ae0] bg-[#6a5ae0]/15"
+                      : "border-[#c84a10] bg-[#c84a10]/10"
+                    : isNightCard
+                    ? "border-[#2a2060] bg-white/3 hover:bg-white/6"
+                    : "border-[#c4906a]/25 bg-[#c4906a]/5 hover:bg-[#c4906a]/12"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name={`model-${shift.id}`}
+                  value={m.id}
+                  checked={model === m.id}
+                  onChange={() => setModel(m.id)}
+                  className="mt-0.5 shrink-0 accent-[#c84a10]"
+                />
+                <div className="flex flex-col gap-0.5 min-w-0">
+                  <span className={`text-xs font-bold leading-tight ${isNightCard ? "text-[#d8d0f0]" : "text-[#2a1a08]"}`}>
+                    {m.label}
+                    {!m.supportsRefs && (
+                      <span className={`ml-1.5 rounded px-1 py-0.5 text-[9px] font-bold uppercase ${isNightCard ? "bg-amber-900/50 text-amber-300" : "bg-amber-100 text-amber-700"}`}>
+                        solo texto
+                      </span>
+                    )}
+                  </span>
+                  <span className={`text-[10px] leading-snug ${isNightCard ? "text-[#6a6090]" : "text-[#a07040]"}`}>
+                    {m.description}
+                  </span>
+                </div>
+              </label>
+            ))}
+          </div>
+        </div>
+
         {/* Extra prompt */}
         <div className="flex flex-col gap-1">
           <label className={`text-[10px] font-bold uppercase tracking-widest ${isNightCard ? "text-[#9890c8]" : "text-[#a07040]"}`}>

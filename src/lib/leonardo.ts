@@ -3,33 +3,33 @@ import fs from "fs/promises";
 import path from "path";
 import sharp from "sharp";
 
-const MOCK = process.env.AI_MOCK === "true";
+import type { ModelId } from "./leonardo-models";
+export type { ModelId };
+export { LEONARDO_MODELS } from "./leonardo-models";
+
+const MOCK    = process.env.AI_MOCK === "true";
 const API_KEY = process.env.LEONARDO_API_KEY ?? "";
 
 const BASE_V1 = "https://cloud.leonardo.ai/api/rest/v1";
 const BASE_V2 = "https://cloud.leonardo.ai/api/rest/v2";
 
-// Límite real confirmado: usuario + 3 referencias de prenda = 4 total
-// Estrategia de referencias:
-//   Ref 1 → foto del usuario (siempre sola)
-//   Ref 2 → TOP (sola, si existe con foto)
-//   Ref 3 → BOTTOM (sola, si existe con foto)
-//   Ref 4 → COAT solo, o collage de ACCESSORY + SHOES juntos
+// ─── Fondos según turno ─────────────────────────────────────────────────────
+
+const BG_TARDE = "Background: Black Rock Desert playa at Burning Man. Cracked white alkali ground, warm golden dusty sky, art installations in the distance. Daytime, cinematic light.";
+const BG_NOCHE = "Background: Burning Man at night. Dark desert playa, crowd of festival people, vibrant neon LED lights and glowing art cars everywhere, electric atmosphere, deep blue night sky with stars. The subject is well-lit and clearly visible.";
+
+// Límite de prompt confirmado experimentalmente: 1399 chars
+const PROMPT_MAX = 1399;
+
+// ─── Helpers internos ───────────────────────────────────────────────────────
 
 export type GarmentInput = {
   url: string;
   name: string;
-  slot: string; // TOP | BOTTOM | SHOES | ACCESSORY | COAT
+  slot: string;
 };
 
-// Fondos según turno — concisos para no desperdiciar chars del límite de 1399
-const BG_TARDE = "Background: Black Rock Desert playa at Burning Man. Cracked white alkali ground, warm golden dusty sky, art installations in the distance. Daytime, cinematic light.";
-const BG_NOCHE = "Background: Burning Man at night. Dark desert playa, crowd of festival people, vibrant neon LED lights and glowing art cars everywhere, electric atmosphere, deep blue night sky with stars. The subject is well-lit and clearly visible.";
-
-// Límite de prompt confirmado experimentalmente: 1399 caracteres
-const PROMPT_MAX = 1399;
-
-function headers(contentType = true) {
+function authHeaders(contentType = true) {
   return {
     authorization: `Bearer ${API_KEY}`,
     accept: "application/json",
@@ -37,7 +37,6 @@ function headers(contentType = true) {
   };
 }
 
-/** Lee una imagen local o remota → Buffer + extensión */
 async function readImage(urlOrPath: string): Promise<{ buffer: Buffer; ext: string }> {
   if (urlOrPath.startsWith("/")) {
     const absPath = path.join(process.cwd(), "public", urlOrPath);
@@ -52,78 +51,53 @@ async function readImage(urlOrPath: string): Promise<{ buffer: Buffer; ext: stri
   return { buffer, ext };
 }
 
-/**
- * Crea un collage grid con todas las prendas.
- * Cada prenda se redimensiona a 512×512 y se coloca en una cuadrícula.
- * Devuelve un Buffer PNG listo para subir.
- */
 async function buildGarmentCollage(garments: GarmentInput[]): Promise<Buffer> {
   const CELL = 512;
   const cols = garments.length <= 2 ? garments.length : Math.ceil(Math.sqrt(garments.length));
   const rows = Math.ceil(garments.length / cols);
-  const W = cols * CELL;
-  const H = rows * CELL;
-
-  // Fondo blanco
   const canvas = sharp({
-    create: { width: W, height: H, channels: 4, background: { r: 255, g: 255, b: 255, alpha: 1 } },
+    create: { width: cols * CELL, height: rows * CELL, channels: 4, background: { r: 255, g: 255, b: 255, alpha: 1 } },
   }).png();
-
   const composites: sharp.OverlayOptions[] = [];
-
   for (let i = 0; i < garments.length; i++) {
     const { buffer } = await readImage(garments[i].url);
     const resized = await sharp(buffer)
       .resize(CELL, CELL, { fit: "contain", background: { r: 255, g: 255, b: 255, alpha: 1 } })
-      .png()
-      .toBuffer();
-
-    const col = i % cols;
-    const row = Math.floor(i / cols);
-    composites.push({ input: resized, left: col * CELL, top: row * CELL });
+      .png().toBuffer();
+    composites.push({ input: resized, left: (i % cols) * CELL, top: Math.floor(i / cols) * CELL });
   }
-
   return canvas.composite(composites).toBuffer();
 }
 
-/** Sube un Buffer PNG a Leonardo vía URL presignada S3 → imageId */
 async function uploadBuffer(buffer: Buffer, ext = "png"): Promise<string> {
   const initRes = await fetch(`${BASE_V1}/init-image`, {
     method: "POST",
-    headers: headers(),
+    headers: authHeaders(),
     body: JSON.stringify({ extension: ext }),
   });
-  if (!initRes.ok) throw new Error(`Error presigned URL: ${initRes.status} ${await initRes.text()}`);
-
-  const initData = await initRes.json();
-  const { id: imageId, url: s3Url, fields: fieldsRaw } = initData.uploadInitImage;
+  if (!initRes.ok) throw new Error(`Presigned URL error: ${initRes.status}`);
+  const { id, url: s3Url, fields: fieldsRaw } = (await initRes.json()).uploadInitImage;
   const fields = JSON.parse(fieldsRaw) as Record<string, string>;
-
   const form = new FormData();
   for (const [k, v] of Object.entries(fields)) form.append(k, v);
   form.append("file", new Blob([new Uint8Array(buffer)], { type: `image/${ext}` }));
-
-  const s3Res = await fetch(s3Url, { method: "POST", body: form });
-  if (!s3Res.ok && s3Res.status !== 204) throw new Error(`S3 upload error: ${s3Res.status}`);
-
-  return imageId;
+  const s3 = await fetch(s3Url, { method: "POST", body: form });
+  if (!s3.ok && s3.status !== 204) throw new Error(`S3 upload error: ${s3.status}`);
+  return id;
 }
 
-/** Sube una imagen desde path/URL → imageId */
 async function uploadImage(urlOrPath: string): Promise<string> {
   const { buffer, ext } = await readImage(urlOrPath);
   return uploadBuffer(buffer, ext);
 }
 
-/** Polling GET /v1/generations/:id hasta COMPLETE o FAILED */
 async function pollGeneration(generationId: string, maxMs = 180_000): Promise<string[]> {
   const start = Date.now();
   while (Date.now() - start < maxMs) {
     await new Promise((r) => setTimeout(r, 4000));
-    const res = await fetch(`${BASE_V1}/generations/${generationId}`, { headers: headers(false) });
+    const res = await fetch(`${BASE_V1}/generations/${generationId}`, { headers: authHeaders(false) });
     if (!res.ok) throw new Error(`Poll error: ${res.status}`);
-    const data = await res.json();
-    const gen = data.generations_by_pk;
+    const gen = (await res.json()).generations_by_pk;
     if (!gen) throw new Error("Generación no encontrada");
     if (gen.status === "COMPLETE") {
       const imgs = gen.generated_images as { url: string }[];
@@ -135,136 +109,93 @@ async function pollGeneration(generationId: string, maxMs = 180_000): Promise<st
   throw new Error("Timeout: Leonardo tardó más de 3 minutos");
 }
 
-/**
- * Virtual Try-On con GPT Image 2 de Leonardo.
- *
- * Límite real de la API: 3 referencias máximo (usuario + 2 prendas).
- * Con más prendas se componen en un collage 512×N que cuenta como 1 referencia.
- * Siempre: ref 1 = usuario, ref 2 = collage de prendas (o prenda única si solo hay 1).
- */
-export async function generateTryOnLeonardo(
-  userPhotoUrl: string,
-  garments: GarmentInput[],
-  extraPrompt?: string,
-  isNight = false
-): Promise<string> {
-  if (MOCK || garments.length === 0) return userPhotoUrl;
-  if (!API_KEY) throw new Error("LEONARDO_API_KEY no configurada");
+// ─── Builders de prompt y referencias ──────────────────────────────────────
 
-  console.log(`[leonardo] ${garments.length} prendas:`, garments.map((g) => `${g.slot}:"${g.name}"`).join(", "));
+const SLOT_DESC: Record<string, string> = {
+  TOP:       "upper body garment (shirt, jacket, kimono, etc.)",
+  BOTTOM:    "lower body garment (pants, skirt, shorts, etc.)",
+  SHOES:     "footwear — place exactly on the person's feet",
+  ACCESSORY: "accessory (hat → on head, glasses → on face, bag → on shoulder, etc.)",
+  COAT:      "outer coat/cape — worn over the other garments",
+};
 
-  const slotDesc: Record<string, string> = {
-    TOP:       "upper body garment (shirt, jacket, kimono, etc.)",
-    BOTTOM:    "lower body garment (pants, skirt, shorts, etc.)",
-    SHOES:     "footwear — place exactly on the person's feet",
-    ACCESSORY: "accessory (hat → on head, glasses → on face, bag → on shoulder, etc.)",
-    COAT:      "outer coat/cape — worn over the other garments",
-  };
+type GarmentRef = { id: string; promptLine: string };
 
-  // --- Subir foto del usuario ---
-  const userImageId = await uploadImage(userPhotoUrl);
-  console.log(`[leonardo] Usuario: ${userImageId}`);
-
-  // --- Construir referencias por prioridad ---
-  // TOP y BOTTOM siempre van solos. COAT solo. ACCESSORY+SHOES en collage si hay varios.
+async function buildRefs(garments: GarmentInput[]): Promise<{
+  userUploadFn: (url: string) => Promise<string>;
+  garmentRefs: GarmentRef[];
+  textOnlyLines: string[];
+}> {
   const top       = garments.find((g) => g.slot === "TOP");
   const bottom    = garments.find((g) => g.slot === "BOTTOM");
   const coat      = garments.find((g) => g.slot === "COAT");
   const secondary = garments.filter((g) => g.slot === "ACCESSORY" || g.slot === "SHOES");
-
-  // Slots individuales a subir: TOP → BOTTOM → COAT (en ese orden de prioridad)
   const soloSlots = [top, bottom, coat].filter(Boolean) as GarmentInput[];
 
-  // Construimos las referencias respetando el límite de 3 garment refs
-  // Orden: TOP, BOTTOM, luego o bien COAT solo o collage de accesorios/calzado
-  type GarmentRef = { id: string; promptLine: string; refIndex: number };
   const garmentRefs: GarmentRef[] = [];
-  let refIndex = 2; // ref 1 = usuario
+  let refIndex = 2;
 
   for (const g of soloSlots) {
-    if (refIndex > 4) break; // máx 4 refs totales (1 usuario + 3 prendas)
+    if (refIndex > 4) break;
     const id = await uploadImage(g.url);
-    garmentRefs.push({
-      id,
-      promptLine: `- Reference image ${refIndex}: "${g.name}" — ${slotDesc[g.slot] ?? g.slot}. Apply exactly as shown.`,
-      refIndex,
-    });
+    garmentRefs.push({ id, promptLine: `- Ref ${refIndex}: "${g.name}" — ${SLOT_DESC[g.slot] ?? g.slot}. Apply exactly as shown.` });
     console.log(`[leonardo] ${g.slot} "${g.name}": ${id} (ref ${refIndex})`);
     refIndex++;
   }
 
-  // Si quedan huecos y hay accesorios/calzado, añadirlos
   if (secondary.length > 0 && refIndex <= 4) {
     if (secondary.length === 1) {
-      // Solo uno → referencia individual
       const g = secondary[0];
       const id = await uploadImage(g.url);
-      garmentRefs.push({
-        id,
-        promptLine: `- Reference image ${refIndex}: "${g.name}" — ${slotDesc[g.slot] ?? g.slot}. Apply exactly as shown.`,
-        refIndex,
-      });
+      garmentRefs.push({ id, promptLine: `- Ref ${refIndex}: "${g.name}" — ${SLOT_DESC[g.slot] ?? g.slot}. Apply exactly as shown.` });
       console.log(`[leonardo] ${g.slot} "${g.name}": ${id} (ref ${refIndex})`);
     } else {
-      // Varios → collage
       console.log(`[leonardo] ${secondary.length} accesorios/calzado → collage`);
-      const collageBuffer = await buildGarmentCollage(secondary);
-      const collageId = await uploadBuffer(collageBuffer, "png");
       const cols = secondary.length <= 4 ? 2 : Math.ceil(Math.sqrt(secondary.length));
-      const cellList = secondary.map((g, i) => {
-        const col = i % cols;
-        const row = Math.floor(i / cols);
-        return `    [row ${row + 1}, col ${col + 1}] "${g.name}" — ${slotDesc[g.slot] ?? g.slot}`;
-      }).join("\n");
-      garmentRefs.push({
-        id: collageId,
-        promptLine: `- Reference image ${refIndex}: collage of accessories/footwear — apply ALL of them:\n${cellList}`,
-        refIndex,
-      });
-      console.log(`[leonardo] Collage accesorios/calzado: ${collageId} (ref ${refIndex})`);
+      const collageId = await uploadBuffer(await buildGarmentCollage(secondary), "png");
+      const cellList = secondary.map((g, i) =>
+        `    [row ${Math.floor(i / cols) + 1}, col ${i % cols + 1}] "${g.name}" — ${SLOT_DESC[g.slot] ?? g.slot}`
+      ).join("\n");
+      garmentRefs.push({ id: collageId, promptLine: `- Ref ${refIndex}: collage accessories/footwear — apply ALL:\n${cellList}` });
+      console.log(`[leonardo] Collage: ${collageId} (ref ${refIndex})`);
     }
   }
 
-  // Prendas sin foto o que no caben → mencionarlas solo en el prompt
-  const garmentIdsUsed = new Set([top, bottom, coat, ...secondary].filter(Boolean).map((g) => g!.url));
-  const textOnlyGarments = garments.filter((g) => !g.url || !garmentIdsUsed.has(g.url));
+  const usedUrls = new Set([top, bottom, coat, ...secondary].filter(Boolean).map((g) => g!.url));
+  const textOnlyLines = garments
+    .filter((g) => !usedUrls.has(g.url))
+    .map((g) => `- "${g.name}" — ${SLOT_DESC[g.slot] ?? g.slot}. Include based on name.`);
 
-  // --- Referencias finales ---
-  const imageReferences = [
-    { image: { id: userImageId, type: "UPLOADED" } },
-    ...garmentRefs.map((r) => ({ image: { id: r.id, type: "UPLOADED" } })),
-  ];
+  return { userUploadFn: uploadImage, garmentRefs, textOnlyLines };
+}
 
-  // --- Instrucciones de prendas para el prompt ---
-  const garmentInstructions = [
-    ...garmentRefs.map((r) => r.promptLine),
-    ...textOnlyGarments.map((g) => `- (no image) "${g.name}" — ${slotDesc[g.slot] ?? g.slot}. Include it based on its name.`),
-  ].join("\n");
-
-  // Prompt compacto — límite duro de 1399 chars confirmado con la API de Leonardo
+function buildPrompt(garmentInstructions: string, isNight: boolean, extraPrompt?: string): string {
   const faceRule = "CRITICAL: face in output = IDENTICAL to ref 1. Do NOT change face, hair, skin.";
-  const outputRules = "Show person wearing ALL garments. Photorealistic. Keep face identical to ref 1.";
-
   const parts = [
     `Virtual try-on. ${faceRule}`,
     garmentInstructions,
-    outputRules,
+    "Show person wearing ALL garments. Photorealistic. Keep face identical to ref 1.",
     isNight ? BG_NOCHE : BG_TARDE,
   ];
   if (extraPrompt?.trim()) parts.push(extraPrompt.trim());
-
   let prompt = parts.join("\n");
-
-  // Truncar si supera el límite, preservando el inicio (cara + prendas) y cortando el final
   if (prompt.length > PROMPT_MAX) {
     prompt = prompt.slice(0, PROMPT_MAX);
     console.warn(`[leonardo] Prompt truncado a ${PROMPT_MAX} chars`);
   }
-
   console.log(`[leonardo] Prompt (${prompt.length} chars)`);
+  return prompt;
+}
 
-  const requestBody = {
-    model: "gpt-image-2",
+// ─── Generadores por modelo ─────────────────────────────────────────────────
+
+async function generateV2WithRefs(
+  model: "gpt-image-2" | "nano-banana-2",
+  prompt: string,
+  imageReferences: { image: { id: string; type: string } }[]
+): Promise<string> {
+  const body = {
+    model,
     public: false,
     parameters: {
       prompt,
@@ -277,29 +208,147 @@ export async function generateTryOnLeonardo(
     },
   };
 
-  console.log(`[leonardo] ${imageReferences.length} refs → generando...`);
-
-  const genRes = await fetch(`${BASE_V2}/generations`, {
-    method: "POST",
-    headers: headers(),
-    body: JSON.stringify(requestBody),
+  const res = await fetch(`${BASE_V2}/generations`, {
+    method: "POST", headers: authHeaders(), body: JSON.stringify(body),
   });
+  const raw = await res.text();
+  if (!res.ok) throw new Error(`Leonardo v2 ${res.status}: ${raw}`);
 
-  const genRaw = await genRes.text();
-  if (!genRes.ok) throw new Error(`Leonardo v2 ${genRes.status}: ${genRaw}`);
+  const data = JSON.parse(raw);
+  if ((data.images as { url: string }[] | undefined)?.length)
+    return saveRemoteImage(data.images[0].url, "tryon");
 
-  const genData = JSON.parse(genRaw);
+  const generationId =
+    data.generate?.generationId ?? data.generationId ?? data.sdGenerationJob?.generationId;
+  if (!generationId) throw new Error(`Sin generationId: ${raw}`);
 
-  if ((genData.images as { url: string }[] | undefined)?.length) {
-    return saveRemoteImage(genData.images[0].url, "tryon");
+  const [url] = await pollGeneration(generationId);
+  return saveRemoteImage(url, "tryon");
+}
+
+async function generatePhoenix(
+  prompt: string,
+  userImageId: string
+): Promise<string> {
+  // Phoenix usa v1 + controlnets. Character Reference (preprocessorId 397) preserva la persona.
+  const body = {
+    modelId: "de7d3faf-762f-48e0-b3b7-9d0ac3a3fcf3", // Phoenix 1.0
+    prompt,
+    num_images: 1,
+    width: 1024,
+    height: 1024,
+    alchemy: true,
+    contrast: 3.5,
+    controlnets: [
+      {
+        initImageId: userImageId,
+        initImageType: "UPLOADED",
+        preprocessorId: 397, // Character Reference
+        strengthType: "Mid",
+      },
+    ],
+  };
+
+  const res = await fetch(`${BASE_V1}/generations`, {
+    method: "POST", headers: authHeaders(), body: JSON.stringify(body),
+  });
+  const raw = await res.text();
+  if (!res.ok) throw new Error(`Leonardo Phoenix ${res.status}: ${raw}`);
+
+  const data = JSON.parse(raw);
+  const generationId =
+    data.sdGenerationJob?.generationId ?? data.generationId;
+  if (!generationId) throw new Error(`Phoenix sin generationId: ${raw}`);
+
+  const [url] = await pollGeneration(generationId);
+  return saveRemoteImage(url, "tryon");
+}
+
+async function generateRecraftV4(
+  prompt: string,
+  isNight: boolean
+): Promise<string> {
+  // Recraft V4 no acepta referencias de imagen — solo texto.
+  // El prompt ya incluye el fondo adecuado según el turno.
+  const body = {
+    model: "recraft-v4",
+    public: false,
+    parameters: {
+      prompt,
+      quantity: 1,
+      width: 1024,
+      height: 1024,
+      prompt_enhance: "OFF",
+    },
+  };
+
+  const res = await fetch(`${BASE_V2}/generations`, {
+    method: "POST", headers: authHeaders(), body: JSON.stringify(body),
+  });
+  const raw = await res.text();
+  if (!res.ok) throw new Error(`Leonardo Recraft ${res.status}: ${raw}`);
+
+  const data = JSON.parse(raw);
+  if ((data.images as { url: string }[] | undefined)?.length)
+    return saveRemoteImage(data.images[0].url, "tryon");
+
+  const generationId =
+    data.generate?.generationId ?? data.generationId ?? data.sdGenerationJob?.generationId;
+  if (!generationId) throw new Error(`Recraft sin generationId: ${raw}`);
+
+  const [url] = await pollGeneration(generationId);
+  return saveRemoteImage(url, "tryon");
+}
+
+// ─── Función principal exportada ────────────────────────────────────────────
+
+export async function generateTryOnLeonardo(
+  userPhotoUrl: string,
+  garments: GarmentInput[],
+  extraPrompt?: string,
+  isNight = false,
+  model: ModelId = "gpt-image-2"
+): Promise<string> {
+  if (MOCK || garments.length === 0) return userPhotoUrl;
+  if (!API_KEY) throw new Error("LEONARDO_API_KEY no configurada");
+
+  console.log(`[leonardo] modelo: ${model} | ${garments.length} prendas:`,
+    garments.map((g) => `${g.slot}:"${g.name}"`).join(", "));
+
+  // ── Recraft V4: solo texto, sin subir imágenes ──
+  if (model === "recraft-v4") {
+    const garmentLines = garments
+      .map((g) => `- "${g.name}" — ${SLOT_DESC[g.slot] ?? g.slot}`)
+      .join("\n");
+    const garmentInstructions = `Garments to show:\n${garmentLines}`;
+    const prompt = buildPrompt(garmentInstructions, isNight, extraPrompt);
+    return generateRecraftV4(prompt, isNight);
   }
 
-  const generationId: string | undefined =
-    genData.generate?.generationId ?? genData.generationId ?? genData.sdGenerationJob?.generationId;
+  // ── Modelos con referencias de imagen ──
+  const userImageId = await uploadImage(userPhotoUrl);
+  console.log(`[leonardo] Usuario: ${userImageId}`);
 
-  if (!generationId) throw new Error(`Leonardo no devolvió generationId ni imágenes: ${genRaw}`);
+  const { garmentRefs, textOnlyLines } = await buildRefs(garments);
 
-  console.log(`[leonardo] generationId: ${generationId}`);
-  const [imageUrl] = await pollGeneration(generationId);
-  return saveRemoteImage(imageUrl, "tryon");
+  const garmentInstructions = [
+    ...garmentRefs.map((r) => r.promptLine),
+    ...textOnlyLines,
+  ].join("\n");
+
+  const prompt = buildPrompt(garmentInstructions, isNight, extraPrompt);
+
+  // ── Phoenix: controlnet Character Reference ──
+  if (model === "phoenix") {
+    return generatePhoenix(prompt, userImageId);
+  }
+
+  // ── GPT Image 2 y Nano Banana 2: guidances.image_reference ──
+  const imageReferences = [
+    { image: { id: userImageId, type: "UPLOADED" } },
+    ...garmentRefs.map((r) => ({ image: { id: r.id, type: "UPLOADED" } })),
+  ];
+  console.log(`[leonardo] ${imageReferences.length} refs → generando con ${model}...`);
+
+  return generateV2WithRefs(model as "gpt-image-2" | "nano-banana-2", prompt, imageReferences);
 }
