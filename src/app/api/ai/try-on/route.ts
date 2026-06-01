@@ -4,8 +4,9 @@ import { generateTryOnLeonardo } from "@/lib/leonardo";
 import { z } from "zod";
 
 const Schema = z.object({
-  outfitId: z.string().min(1),
+  outfitId:    z.string().min(1),
   userPhotoUrl: z.string().min(1),
+  extraPrompt: z.string().max(500).optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -14,7 +15,7 @@ export async function POST(req: NextRequest) {
   if (!parsed.success)
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 
-  const { outfitId, userPhotoUrl } = parsed.data;
+  const { outfitId, userPhotoUrl, extraPrompt } = parsed.data;
 
   const outfit = await db.outfit.findUnique({
     where: { id: outfitId },
@@ -44,7 +45,7 @@ export async function POST(req: NextRequest) {
       : null;
 
   try {
-    const imageUrl = await generateTryOnLeonardo(userPhotoUrl, garments);
+    const imageUrl = await generateTryOnLeonardo(userPhotoUrl, garments, extraPrompt);
 
     const result = await db.tryOnResult.upsert({
       where: { outfitId },

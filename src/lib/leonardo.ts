@@ -14,6 +14,14 @@ export type GarmentInput = {
   category: "upper_body" | "lower_body";
 };
 
+// Fondo fijo: desierto de Black Rock / Burning Man
+const DESERT_BACKGROUND = [
+  "The background is the Black Rock Desert playa at Burning Man:",
+  "cracked dry white alkali lake bed stretching to the horizon,",
+  "dusty hazy sky with warm golden light, art installations in the far distance,",
+  "festival atmosphere, cinematic lighting.",
+].join(" ");
+
 function headers(contentType = true) {
   return {
     authorization: `Bearer ${API_KEY}`,
@@ -111,7 +119,8 @@ async function pollGeneration(generationId: string, maxMs = 180_000): Promise<st
  */
 export async function generateTryOnLeonardo(
   userPhotoUrl: string,
-  garments: GarmentInput[]
+  garments: GarmentInput[],
+  extraPrompt?: string
 ): Promise<string> {
   if (MOCK || garments.length === 0) return userPhotoUrl;
   if (!API_KEY) throw new Error("LEONARDO_API_KEY no configurada");
@@ -133,13 +142,20 @@ export async function generateTryOnLeonardo(
     `- Reference image ${i + 2}: the ${g.category === "upper_body" ? "top / upper body garment" : "bottom / lower body garment"} to apply`
   );
 
-  const prompt = [
+  const promptParts = [
     "Virtual try-on: show the person from reference image 1 wearing the clothes from the other reference images.",
     "Reference image 1: the person — preserve their exact face, hair, skin tone, body shape, and pose.",
     ...garmentLines,
     "The result must look like a real photograph of this specific person wearing these exact clothes.",
-    "Maintain the original background. Photorealistic quality. Festival / Burning Man desert aesthetic.",
-  ].join("\n");
+    "Photorealistic quality.",
+    DESERT_BACKGROUND,
+  ];
+
+  if (extraPrompt?.trim()) {
+    promptParts.push(`Additional details: ${extraPrompt.trim()}`);
+  }
+
+  const prompt = promptParts.join("\n");
 
   // Lanzar generación con GPT Image 2 en endpoint v2
   // Los parámetros van anidados bajo "parameters" según la doc de Leonardo

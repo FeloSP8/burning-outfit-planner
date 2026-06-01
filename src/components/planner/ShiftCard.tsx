@@ -26,11 +26,11 @@ export function ShiftCard({ shift, inventory, requireCoat, userPhotoUrl }: {
   requireCoat: boolean;
   userPhotoUrl: string | null;
 }) {
-  const [items, setItems]       = useState<OutfitItem[]>(shift.outfit?.items ?? []);
-  const [tryOnUrl, setTryOnUrl] = useState<string | null>(shift.outfit?.tryOn?.imageUrl ?? null);
-  const [loading, setLoading]   = useState(false);
-  const [warning, setWarning]   = useState<string | null>(null);
-  // Per-slot save state for visual feedback
+  const [items, setItems]         = useState<OutfitItem[]>(shift.outfit?.items ?? []);
+  const [tryOnUrl, setTryOnUrl]   = useState<string | null>(shift.outfit?.tryOn?.imageUrl ?? null);
+  const [loading, setLoading]     = useState(false);
+  const [warning, setWarning]     = useState<string | null>(null);
+  const [extraPrompt, setExtra]   = useState("");
   const [slotState, setSlotState] = useState<Partial<Record<Garment["slot"], SlotSaveState>>>({});
 
   const isNight     = shift.type === "NOCHE";
@@ -84,7 +84,7 @@ export function ShiftCard({ shift, inventory, requireCoat, userPhotoUrl }: {
     const res = await fetch("/api/ai/try-on", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ outfitId: shift.outfit.id, userPhotoUrl }),
+      body: JSON.stringify({ outfitId: shift.outfit.id, userPhotoUrl, extraPrompt: extraPrompt.trim() || undefined }),
     });
     const data = await res.json();
     setLoading(false);
@@ -203,7 +203,25 @@ export function ShiftCard({ shift, inventory, requireCoat, userPhotoUrl }: {
       )}
 
       {/* CTA */}
-      <div className="mt-auto px-5 pb-5 flex flex-col gap-1.5">
+      <div className="mt-auto px-5 pb-5 flex flex-col gap-2.5">
+        {/* Extra prompt */}
+        <div className="flex flex-col gap-1">
+          <label className={`text-[10px] font-bold uppercase tracking-widest ${isNightCard ? "text-[#9890c8]" : "text-[#a07040]"}`}>
+            Indicaciones extra (opcional)
+          </label>
+          <textarea
+            value={extraPrompt}
+            onChange={(e) => setExtra(e.target.value)}
+            rows={2}
+            placeholder={isNightCard ? "Ej: con LED lights, niebla en el fondo…" : "Ej: con gafas de sol, polvo en el aire…"}
+            className={`w-full resize-none rounded-xl border-2 px-3 py-2 text-xs font-medium placeholder-opacity-50 focus:outline-none transition-colors ${
+              isNightCard
+                ? "border-[#2a2060] bg-white/5 text-[#d8d0f0] placeholder-[#4a4070] focus:border-[#4a38c0]/60"
+                : "border-[#c4906a]/30 bg-[#c4906a]/10 text-[#2a1a08] placeholder-[#b09060] focus:border-[#c84a10]/50"
+            }`}
+          />
+        </div>
+
         <button
           onClick={runTryOn}
           disabled={loading || !userPhotoUrl}
