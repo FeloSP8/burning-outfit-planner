@@ -1,21 +1,25 @@
 import { saveRemoteImage } from "./storage";
 import fs from "fs/promises";
 import path from "path";
+import sharp from "sharp";
 
 const MOCK = process.env.AI_MOCK === "true";
 const API_KEY = process.env.LEONARDO_API_KEY ?? "";
 
-// GPT Image 2 usa el endpoint v2
 const BASE_V1 = "https://cloud.leonardo.ai/api/rest/v1";
 const BASE_V2 = "https://cloud.leonardo.ai/api/rest/v2";
 
+// Límite real confirmado por pruebas: 3 referencias máximo (usuario + 2)
+// Con más prendas se componen en un collage que cuenta como 1 referencia
+const MAX_GARMENT_REFS = 2;
+
 export type GarmentInput = {
   url: string;
-  name: string;   // nombre real de la prenda para el prompt
-  slot: string;   // TOP | BOTTOM | SHOES | ACCESSORY | COAT
+  name: string;
+  slot: string; // TOP | BOTTOM | SHOES | ACCESSORY | COAT
 };
 
-// Fondo fijo: desierto de Black Rock / Burning Man
+// Fondo fijo: Black Rock Desert / Burning Man
 const DESERT_BACKGROUND = [
   "The background is the Black Rock Desert playa at Burning Man:",
   "cracked dry white alkali lake bed stretching to the horizon,",
@@ -31,7 +35,7 @@ function headers(contentType = true) {
   };
 }
 
-/** Lee una imagen local o remota y la devuelve como Buffer + extensión */
+/** Lee una imagen local o remota → Buffer + extensión */
 async function readImage(urlOrPath: string): Promise<{ buffer: Buffer; ext: string }> {
   if (urlOrPath.startsWith("/")) {
     const absPath = path.join(process.cwd(), "public", urlOrPath);
@@ -47,65 +51,84 @@ async function readImage(urlOrPath: string): Promise<{ buffer: Buffer; ext: stri
 }
 
 /**
- * Sube una imagen a Leonardo vía URL presignada S3.
- * Devuelve el imageId para usarlo en guidances.image_reference.
+ * Crea un collage grid con todas las prendas.
+ * Cada prenda se redimensiona a 512×512 y se coloca en una cuadrícula.
+ * Devuelve un Buffer PNG listo para subir.
  */
-async function uploadImage(urlOrPath: string): Promise<string> {
-  const { buffer, ext } = await readImage(urlOrPath);
+async function buildGarmentCollage(garments: GarmentInput[]): Promise<Buffer> {
+  const CELL = 512;
+  const cols = garments.length <= 2 ? garments.length : Math.ceil(Math.sqrt(garments.length));
+  const rows = Math.ceil(garments.length / cols);
+  const W = cols * CELL;
+  const H = rows * CELL;
 
-  // 1. Pedir URL presignada
+  // Fondo blanco
+  const canvas = sharp({
+    create: { width: W, height: H, channels: 4, background: { r: 255, g: 255, b: 255, alpha: 1 } },
+  }).png();
+
+  const composites: sharp.OverlayOptions[] = [];
+
+  for (let i = 0; i < garments.length; i++) {
+    const { buffer } = await readImage(garments[i].url);
+    const resized = await sharp(buffer)
+      .resize(CELL, CELL, { fit: "contain", background: { r: 255, g: 255, b: 255, alpha: 1 } })
+      .png()
+      .toBuffer();
+
+    const col = i % cols;
+    const row = Math.floor(i / cols);
+    composites.push({ input: resized, left: col * CELL, top: row * CELL });
+  }
+
+  return canvas.composite(composites).toBuffer();
+}
+
+/** Sube un Buffer PNG a Leonardo vía URL presignada S3 → imageId */
+async function uploadBuffer(buffer: Buffer, ext = "png"): Promise<string> {
   const initRes = await fetch(`${BASE_V1}/init-image`, {
     method: "POST",
     headers: headers(),
     body: JSON.stringify({ extension: ext }),
   });
-  if (!initRes.ok) {
-    throw new Error(`Error al pedir URL de subida: ${initRes.status} ${await initRes.text()}`);
-  }
+  if (!initRes.ok) throw new Error(`Error presigned URL: ${initRes.status} ${await initRes.text()}`);
+
   const initData = await initRes.json();
   const { id: imageId, url: s3Url, fields: fieldsRaw } = initData.uploadInitImage;
   const fields = JSON.parse(fieldsRaw) as Record<string, string>;
 
-  // 2. Subir a S3
   const form = new FormData();
   for (const [k, v] of Object.entries(fields)) form.append(k, v);
   form.append("file", new Blob([new Uint8Array(buffer)], { type: `image/${ext}` }));
 
   const s3Res = await fetch(s3Url, { method: "POST", body: form });
-  if (!s3Res.ok && s3Res.status !== 204) {
-    throw new Error(`Error al subir a S3: ${s3Res.status}`);
-  }
+  if (!s3Res.ok && s3Res.status !== 204) throw new Error(`S3 upload error: ${s3Res.status}`);
 
   return imageId;
 }
 
-/**
- * Polling sobre GET /v1/generations/:id hasta COMPLETE o FAILED.
- * GPT Image 2 suele responder en 20-60s.
- */
+/** Sube una imagen desde path/URL → imageId */
+async function uploadImage(urlOrPath: string): Promise<string> {
+  const { buffer, ext } = await readImage(urlOrPath);
+  return uploadBuffer(buffer, ext);
+}
+
+/** Polling GET /v1/generations/:id hasta COMPLETE o FAILED */
 async function pollGeneration(generationId: string, maxMs = 180_000): Promise<string[]> {
   const start = Date.now();
   while (Date.now() - start < maxMs) {
     await new Promise((r) => setTimeout(r, 4000));
-
-    const res = await fetch(`${BASE_V1}/generations/${generationId}`, {
-      headers: headers(false),
-    });
-    if (!res.ok) throw new Error(`Error polling generación: ${res.status}`);
-
+    const res = await fetch(`${BASE_V1}/generations/${generationId}`, { headers: headers(false) });
+    if (!res.ok) throw new Error(`Poll error: ${res.status}`);
     const data = await res.json();
     const gen = data.generations_by_pk;
-    if (!gen) throw new Error("Generación no encontrada en Leonardo");
-
+    if (!gen) throw new Error("Generación no encontrada");
     if (gen.status === "COMPLETE") {
-      const images = gen.generated_images as { url: string }[];
-      if (!images?.length) throw new Error("Generación completada pero sin imágenes");
-      return images.map((i) => i.url);
+      const imgs = gen.generated_images as { url: string }[];
+      if (!imgs?.length) throw new Error("COMPLETE pero sin imágenes");
+      return imgs.map((i) => i.url);
     }
-    if (gen.status === "FAILED") {
-      throw new Error("La generación falló en Leonardo");
-    }
-    // PENDING / PROCESSING → seguir esperando
+    if (gen.status === "FAILED") throw new Error("La generación falló en Leonardo");
   }
   throw new Error("Timeout: Leonardo tardó más de 3 minutos");
 }
@@ -113,10 +136,9 @@ async function pollGeneration(generationId: string, maxMs = 180_000): Promise<st
 /**
  * Virtual Try-On con GPT Image 2 de Leonardo.
  *
- * Estrategia:
- * - Sube la foto del usuario + fotos de las prendas como image_reference
- * - El prompt describe exactamente qué hacer con cada referencia
- * - GPT Image 2 no usa init_strength — trabaja por comprensión del prompt
+ * Límite real de la API: 3 referencias máximo (usuario + 2 prendas).
+ * Con más prendas se componen en un collage 512×N que cuenta como 1 referencia.
+ * Siempre: ref 1 = usuario, ref 2 = collage de prendas (o prenda única si solo hay 1).
  */
 export async function generateTryOnLeonardo(
   userPhotoUrl: string,
@@ -126,59 +148,92 @@ export async function generateTryOnLeonardo(
   if (MOCK || garments.length === 0) return userPhotoUrl;
   if (!API_KEY) throw new Error("LEONARDO_API_KEY no configurada");
 
-  // Subir imágenes en secuencia — evita rate limiting de Leonardo en uploads paralelos
-  console.log(`[leonardo] Subiendo ${garments.length + 1} imágenes...`);
-  const userImageId = await uploadImage(userPhotoUrl);
-  console.log(`[leonardo] Usuario: ${userImageId}`);
+  console.log(`[leonardo] ${garments.length} prendas:`, garments.map((g) => `${g.slot}:"${g.name}"`).join(", "));
 
-  const garmentImageIds: string[] = [];
-  for (const g of garments) {
-    const id = await uploadImage(g.url);
-    console.log(`[leonardo] ${g.slot} "${g.name}": ${id}`);
-    garmentImageIds.push(id);
+  // --- Subir foto del usuario ---
+  const userImageId = await uploadImage(userPhotoUrl);
+  console.log(`[leonardo] Usuario subido: ${userImageId}`);
+
+  // --- Prendas → referencias (máx MAX_GARMENT_REFS) ---
+  let garmentRefs: { id: string; label: string }[];
+
+  if (garments.length <= MAX_GARMENT_REFS) {
+    // Subir individualmente (≤2 prendas)
+    garmentRefs = [];
+    for (const g of garments) {
+      const id = await uploadImage(g.url);
+      garmentRefs.push({ id, label: `"${g.name}" (${g.slot})` });
+      console.log(`[leonardo] ${g.slot} "${g.name}": ${id}`);
+    }
+  } else {
+    // >2 prendas → collage
+    console.log(`[leonardo] ${garments.length} prendas → collage grid`);
+    const collageBuffer = await buildGarmentCollage(garments);
+    const collageId = await uploadBuffer(collageBuffer, "png");
+    const cols = garments.length <= 4 ? 2 : Math.ceil(Math.sqrt(garments.length));
+    const cellLabels = garments.map((g, i) => {
+      const col = i % cols;
+      const row = Math.floor(i / cols);
+      return `cell [row ${row + 1}, col ${col + 1}] = "${g.name}" (${g.slot})`;
+    });
+    garmentRefs = [{ id: collageId, label: `garment collage (${cellLabels.join(" | ")})` }];
+    console.log(`[leonardo] Collage subido: ${collageId}`);
   }
 
-  // Construir referencias: usuario primero, luego prendas
+  // --- Referencias finales ---
   const imageReferences = [
     { image: { id: userImageId, type: "UPLOADED" } },
-    ...garmentImageIds.map((id) => ({ image: { id, type: "UPLOADED" } })),
+    ...garmentRefs.map((r) => ({ image: { id: r.id, type: "UPLOADED" } })),
   ];
 
-  // Descripción de slot en inglés para el prompt
+  // --- Prompt ---
   const slotDesc: Record<string, string> = {
-    TOP:       "upper body garment / top (shirt, jacket, kimono, etc.)",
-    BOTTOM:    "lower body garment / bottoms (pants, skirt, shorts, etc.)",
-    SHOES:     "footwear (shoes, boots, sandals, etc.) — place on the person's feet",
-    ACCESSORY: "accessory (hat, glasses, mask, bag, etc.) — place on the appropriate body part",
-    COAT:      "outer layer / coat / cape — wear over the rest of the outfit",
+    TOP:       "upper body garment (shirt, jacket, kimono, etc.)",
+    BOTTOM:    "lower body garment (pants, skirt, shorts, etc.)",
+    SHOES:     "footwear — place exactly on the person's feet",
+    ACCESSORY: "accessory (hat → on head, glasses → on face, bag → on shoulder, etc.)",
+    COAT:      "outer coat/cape — worn over the other garments",
   };
 
-  const garmentLines = garments.map((g, i) =>
-    `- Reference image ${i + 2}: "${g.name}" — this is a ${slotDesc[g.slot] ?? g.slot}. Apply it to the person exactly as it appears in the reference.`
-  );
-
-  const promptParts = [
-    "Virtual try-on task. The person in reference image 1 must be shown wearing all the garments from the other reference images.",
-    "",
-    "Reference image 1: the PERSON. Preserve their exact face, hair color and style, skin tone, body proportions, and pose. Do NOT change anything about the person.",
-    "",
-    "Garments to apply:",
-    ...garmentLines,
-    "",
-    "Rules:",
-    "- Every single garment listed above MUST appear in the final image.",
-    "- Accessories (hats, glasses, etc.) must be placed on the correct body part.",
-    "- The garments must look exactly like their reference images — same color, pattern, and texture.",
-    "- The result must look like a real photograph. Photorealistic quality.",
-    "",
-    DESERT_BACKGROUND,
-  ];
-
-  if (extraPrompt?.trim()) {
-    promptParts.push("", `Additional instructions: ${extraPrompt.trim()}`);
+  let garmentInstructions: string;
+  if (garments.length <= MAX_GARMENT_REFS) {
+    garmentInstructions = garments.map((g, i) =>
+      `- Reference image ${i + 2}: "${g.name}" — ${slotDesc[g.slot] ?? g.slot}. Apply exactly as shown.`
+    ).join("\n");
+  } else {
+    const cols = garments.length <= 4 ? 2 : Math.ceil(Math.sqrt(garments.length));
+    const garmentList = garments.map((g, i) => {
+      const col = i % cols;
+      const row = Math.floor(i / cols);
+      return `  - Grid cell [row ${row + 1}, col ${col + 1}]: "${g.name}" — ${slotDesc[g.slot] ?? g.slot}`;
+    }).join("\n");
+    garmentInstructions =
+      `- Reference image 2: a grid of ALL garments to apply:\n${garmentList}\n  Apply EVERY garment from the grid to the person.`;
   }
 
-  const prompt = promptParts.join("\n");
+  const prompt = [
+    "=== VIRTUAL TRY-ON TASK ===",
+    "",
+    "STEP 1 — PERSON (Reference image 1):",
+    "This is the person to dress. You MUST preserve with 100% fidelity:",
+    "- Their EXACT face: bone structure, eyes, nose, mouth, skin tone, expression",
+    "- Their hair: color, length, style",
+    "- Their body shape and proportions",
+    "- Their pose",
+    "⚠ CRITICAL: Do NOT alter the face under any circumstances. The face in the output must be IDENTICAL to reference image 1.",
+    "",
+    "STEP 2 — GARMENTS to apply:",
+    garmentInstructions,
+    "",
+    "STEP 3 — OUTPUT RULES:",
+    "- Show the person wearing ALL listed garments simultaneously",
+    "- Each garment must match its reference exactly: same colors, patterns, textures",
+    "- The final image must look like a real photograph — photorealistic",
+    "- The person's face and identity must be perfectly preserved from reference image 1",
+    "",
+    DESERT_BACKGROUND,
+    ...(extraPrompt?.trim() ? ["", `Additional instructions: ${extraPrompt.trim()}`] : []),
+  ].join("\n");
 
   const requestBody = {
     model: "gpt-image-2",
@@ -190,49 +245,33 @@ export async function generateTryOnLeonardo(
       height: 1024,
       quality: "LOW",
       prompt_enhance: "OFF",
-      guidances: {
-        image_reference: imageReferences,
-      },
+      guidances: { image_reference: imageReferences },
     },
   };
 
-  console.log(`[leonardo] Referencias: ${imageReferences.length} imágenes`);
-  console.log(`[leonardo] Body:`, JSON.stringify(requestBody, null, 2));
+  console.log(`[leonardo] ${imageReferences.length} referencias → generando...`);
 
-  // Lanzar generación con GPT Image 2 en endpoint v2
   const genRes = await fetch(`${BASE_V2}/generations`, {
     method: "POST",
     headers: headers(),
     body: JSON.stringify(requestBody),
   });
 
-  const genRawText = await genRes.text();
-  console.log(`[leonardo] Respuesta generación (${genRes.status}):`, genRawText);
+  const genRaw = await genRes.text();
+  if (!genRes.ok) throw new Error(`Leonardo v2 ${genRes.status}: ${genRaw}`);
 
-  if (!genRes.ok) {
-    throw new Error(`Leonardo v2 error ${genRes.status}: ${genRawText}`);
+  const genData = JSON.parse(genRaw);
+
+  if ((genData.images as { url: string }[] | undefined)?.length) {
+    return saveRemoteImage(genData.images[0].url, "tryon");
   }
 
-  const genData = JSON.parse(genRawText);
-
-  // GPT Image 2 puede devolver el resultado directamente (síncrono)
-  // o un generationId para polling (asíncrono)
-  const directImages =
-    genData.images as { url: string }[] | undefined;
-
-  if (directImages?.length) {
-    const remoteUrl = directImages[0].url;
-    return saveRemoteImage(remoteUrl, "tryon");
-  }
-
-  // GPT Image 2 devuelve { generate: { generationId: "..." } }
   const generationId: string | undefined =
     genData.generate?.generationId ?? genData.generationId ?? genData.sdGenerationJob?.generationId;
 
-  if (!generationId) {
-    throw new Error(`Leonardo no devolvió generationId ni imágenes: ${JSON.stringify(genData)}`);
-  }
+  if (!generationId) throw new Error(`Leonardo no devolvió generationId ni imágenes: ${genRaw}`);
 
+  console.log(`[leonardo] generationId: ${generationId}`);
   const [imageUrl] = await pollGeneration(generationId);
   return saveRemoteImage(imageUrl, "tryon");
 }
