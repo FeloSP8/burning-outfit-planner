@@ -104,9 +104,31 @@ async function pollGeneration(generationId: string, maxMs = 180_000): Promise<st
       if (!imgs?.length) throw new Error("COMPLETE pero sin imágenes");
       return imgs.map((i) => i.url);
     }
-    if (gen.status === "FAILED") throw new Error("La generación falló en Leonardo");
+    if (gen.status === "FAILED") throw new Error("FAILED");
   }
   throw new Error("Timeout: Leonardo tardó más de 3 minutos");
+}
+
+/** Lanza una generación y reintenta hasta MAX_RETRIES veces si Leonardo devuelve FAILED */
+async function generateWithRetry(
+  generateFn: () => Promise<string>,
+  maxRetries = 2
+): Promise<string> {
+  let lastError: Error | undefined;
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await generateFn();
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error(String(err));
+      if (lastError.message === "FAILED" && attempt < maxRetries) {
+        console.warn(`[leonardo] Generación fallida (intento ${attempt}/${maxRetries}) — reintentando...`);
+        await new Promise((r) => setTimeout(r, 3000));
+      } else {
+        break;
+      }
+    }
+  }
+  throw lastError ?? new Error("Error desconocido en Leonardo");
 }
 
 // ─── Builders de prompt y referencias ──────────────────────────────────────
@@ -294,7 +316,7 @@ export async function generateTryOnLeonardo(
 
   // ── Phoenix: controlnet Character Reference ──
   if (model === "phoenix") {
-    return generatePhoenix(prompt, userImageId);
+    return generateWithRetry(() => generatePhoenix(prompt, userImageId));
   }
 
   // ── GPT Image 2 y Nano Banana 2: guidances.image_reference ──
@@ -304,5 +326,7 @@ export async function generateTryOnLeonardo(
   ];
   console.log(`[leonardo] ${imageReferences.length} refs → generando con ${model}...`);
 
-  return generateV2WithRefs(model as "gpt-image-2" | "nano-banana-2", prompt, imageReferences);
+  return generateWithRetry(() =>
+    generateV2WithRefs(model as "gpt-image-2" | "nano-banana-2", prompt, imageReferences)
+  );
 }
