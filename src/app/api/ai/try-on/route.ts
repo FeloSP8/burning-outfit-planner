@@ -24,14 +24,19 @@ export async function POST(req: NextRequest) {
   if (!outfit)
     return NextResponse.json({ error: "Outfit no encontrado" }, { status: 404 });
 
-  // Prendas con foto — usamos todas las que tengan imagen, no solo TOP/BOTTOM
+  // Todas las prendas con foto — pasamos nombre y slot reales para el prompt
   const garments = outfit.items
     .map((it) => it.garment)
     .filter((g) => g.photoUrl)
     .map((g) => ({
-      url: g.photoUrl!,
-      category: g.slot === "BOTTOM" ? ("lower_body" as const) : ("upper_body" as const),
+      url:  g.photoUrl!,
+      name: g.name,
+      slot: g.slot,
     }));
+
+  // Log para depuración — confirma qué prendas van al try-on
+  console.log(`[try-on] outfit ${outfitId} — ${garments.length} prendas con foto:`,
+    garments.map((g) => `${g.slot}:"${g.name}"`).join(", "));
 
   if (garments.length === 0)
     return NextResponse.json(

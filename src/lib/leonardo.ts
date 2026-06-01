@@ -11,7 +11,8 @@ const BASE_V2 = "https://cloud.leonardo.ai/api/rest/v2";
 
 export type GarmentInput = {
   url: string;
-  category: "upper_body" | "lower_body";
+  name: string;   // nombre real de la prenda para el prompt
+  slot: string;   // TOP | BOTTOM | SHOES | ACCESSORY | COAT
 };
 
 // Fondo fijo: desierto de Black Rock / Burning Man
@@ -137,22 +138,38 @@ export async function generateTryOnLeonardo(
     ...garmentImageIds.map((id) => ({ image: { id, type: "UPLOADED" } })),
   ];
 
-  // Prompt: describe la tarea con referencias posicionales
+  // Descripción de slot en inglés para el prompt
+  const slotDesc: Record<string, string> = {
+    TOP:       "upper body garment / top (shirt, jacket, kimono, etc.)",
+    BOTTOM:    "lower body garment / bottoms (pants, skirt, shorts, etc.)",
+    SHOES:     "footwear (shoes, boots, sandals, etc.) — place on the person's feet",
+    ACCESSORY: "accessory (hat, glasses, mask, bag, etc.) — place on the appropriate body part",
+    COAT:      "outer layer / coat / cape — wear over the rest of the outfit",
+  };
+
   const garmentLines = garments.map((g, i) =>
-    `- Reference image ${i + 2}: the ${g.category === "upper_body" ? "top / upper body garment" : "bottom / lower body garment"} to apply`
+    `- Reference image ${i + 2}: "${g.name}" — this is a ${slotDesc[g.slot] ?? g.slot}. Apply it to the person exactly as it appears in the reference.`
   );
 
   const promptParts = [
-    "Virtual try-on: show the person from reference image 1 wearing the clothes from the other reference images.",
-    "Reference image 1: the person — preserve their exact face, hair, skin tone, body shape, and pose.",
+    "Virtual try-on task. The person in reference image 1 must be shown wearing all the garments from the other reference images.",
+    "",
+    "Reference image 1: the PERSON. Preserve their exact face, hair color and style, skin tone, body proportions, and pose. Do NOT change anything about the person.",
+    "",
+    "Garments to apply:",
     ...garmentLines,
-    "The result must look like a real photograph of this specific person wearing these exact clothes.",
-    "Photorealistic quality.",
+    "",
+    "Rules:",
+    "- Every single garment listed above MUST appear in the final image.",
+    "- Accessories (hats, glasses, etc.) must be placed on the correct body part.",
+    "- The garments must look exactly like their reference images — same color, pattern, and texture.",
+    "- The result must look like a real photograph. Photorealistic quality.",
+    "",
     DESERT_BACKGROUND,
   ];
 
   if (extraPrompt?.trim()) {
-    promptParts.push(`Additional details: ${extraPrompt.trim()}`);
+    promptParts.push("", `Additional instructions: ${extraPrompt.trim()}`);
   }
 
   const prompt = promptParts.join("\n");
