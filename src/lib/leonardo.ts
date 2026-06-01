@@ -279,7 +279,8 @@ export async function generateTryOnLeonardo(
     },
   };
 
-  console.log(`[leonardo] ${imageReferences.length} referencias → generando...`);
+  console.log(`[leonardo] ${imageReferences.length} referencias → IDs:`, imageReferences.map(r => r.image.id).join(", "));
+  console.log(`[leonardo] Body completo:`, JSON.stringify(requestBody));
 
   const genRes = await fetch(`${BASE_V2}/generations`, {
     method: "POST",
