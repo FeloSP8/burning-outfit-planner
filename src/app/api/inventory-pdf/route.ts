@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const { renderToBuffer } = require("@react-pdf/renderer") as typeof import("@react-pdf/renderer");
 import { createElement } from "react";
 import { db } from "@/lib/db";
 import { InventoryPDF } from "@/lib/inventoryPdf";
 import type { Garment } from "@/types";
+
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 const DEFAULT_USER_ID = process.env.SEED_USER_ID ?? "user_default";
 
@@ -27,6 +28,10 @@ export async function GET() {
     hour: "2-digit",
     minute: "2-digit",
   });
+
+  // Dynamic import para evitar que Next.js trate @react-pdf/renderer como
+  // CJS externo — el paquete es ESM puro y necesita import() en runtime.
+  const { renderToBuffer } = await import("@react-pdf/renderer");
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const buffer: Buffer = await renderToBuffer(
