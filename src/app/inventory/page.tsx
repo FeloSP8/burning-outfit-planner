@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { GarmentCard } from "@/components/inventory/GarmentCard";
 import { GarmentFormModal } from "@/components/inventory/GarmentFormModal";
+import { DownloadReportButton } from "@/components/inventory/DownloadReportButton";
 import { SuggestButton } from "@/components/ai/SuggestButton";
 import type { Garment } from "@/types";
 
@@ -44,7 +45,10 @@ export default async function InventoryPage() {
             {garments.length} {garments.length === 1 ? "prenda" : "prendas"} registradas
           </p>
         </div>
-        <GarmentFormModal />
+        <div className="flex items-center gap-2">
+          <DownloadReportButton />
+          <GarmentFormModal />
+        </div>
       </div>
 
       {/* AI panel */}
