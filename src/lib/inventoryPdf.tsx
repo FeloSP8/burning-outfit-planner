@@ -31,13 +31,13 @@ const C = {
 };
 
 // ── Anchos de columna (puntos, página A4 = 595 - 88 padding = 507 útiles) ────
-// Nombre 32% · Estado 16% · Precio 13% · Notas 22% · Enlace 17%
+// Nombre 30% · Estado 15% · Precio 11% · Notas 20% · Enlace 24%
 const COL = {
-  name:   "32%",
-  status: "16%",
-  price:  "13%",
-  notes:  "22%",
-  link:   "17%",
+  name:   "30%",
+  status: "15%",
+  price:  "11%",
+  notes:  "20%",
+  link:   "24%",
 };
 
 // ── Estilos ───────────────────────────────────────────────────────────────────
@@ -214,7 +214,7 @@ const s = StyleSheet.create({
     lineHeight: 1.4,
   },
   tdLink: {
-    fontSize: 7,
+    fontSize: 6.5,
     color: C.brandLight,
     textDecoration: "underline",
   },
@@ -362,7 +362,7 @@ function CategoryTable({ items }: { items: Garment[] }) {
           <View style={{ width: COL.link }}>
             {g.purchaseUrl ? (
               <Link src={g.purchaseUrl} style={s.tdLink}>
-                {truncate(g.purchaseUrl.replace(/^https?:\/\/(www\.)?/, ""), 32)}
+                {truncate(g.purchaseUrl.replace(/^https?:\/\/(www\.)?/, ""), 40)}
               </Link>
             ) : (
               <Text style={s.tdNoLink}>—</Text>
