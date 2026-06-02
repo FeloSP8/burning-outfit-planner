@@ -1,12 +1,11 @@
 # 🔥 Burn Outfits — Festival Outfit Planner
 
-Aplicación web para planificar el vestuario de un festival en el desierto (Burning Man) día a día, con soporte para dos turnos climáticamente opuestos: **Tarde** (calor extremo, 40°C+) y **Noche** (frío de playa, 5-10°C), probador virtual con IA y sugerencias de outfits.
+Aplicación web para planificar el vestuario de un festival en el desierto (Burning Man) día a día, con soporte para dos turnos climáticamente opuestos: **Tarde** (calor extremo, 40°C+) y **Noche** (frío de desierto, 5-10°C), y probador virtual con IA.
 
 ![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)
 ![Prisma](https://img.shields.io/badge/Prisma-7-2D3748?logo=prisma)
 ![SQLite](https://img.shields.io/badge/SQLite-local-003B57?logo=sqlite)
 ![Leonardo.Ai](https://img.shields.io/badge/Leonardo.Ai-GPT_Image_2-blueviolet)
-![Anthropic](https://img.shields.io/badge/Anthropic-Claude-orange)
 
 ---
 
@@ -20,10 +19,16 @@ Aplicación web para planificar el vestuario de un festival en el desierto (Burn
 - Las asignaciones se guardan automáticamente al seleccionar, con feedback visual por slot (spinner → ✓ / !)
 
 ### 👕 Inventario de prendas
-- Cinco categorías: **Parte de arriba · Parte de abajo · Calzado · Accesorios · Abrigo**
-- Cada prenda tiene: foto (subida por clic o **Ctrl+V desde el portapapeles**), estado (`PENDIENTE / COMPRADO / RECIBIDO`), enlace de compra y notas
+- Seis categorías: **Parte de arriba · Parte de abajo · Calzado · Accesorios · Abrigo · Accesorios bici**
+- Cada prenda tiene: foto (subida por clic o **Ctrl+V desde el portapapeles**), estado (`PENDIENTE / COMPRADO / RECIBIDO`), precio, enlace de compra y notas
+- La categoría **Accesorios bici** aparece en el inventario pero no en los outfits
 - Las prendas son **reutilizables** en diferentes outfits y días
 - Crear, editar (clic en la card) y eliminar prendas
+
+### 📄 Informe PDF del inventario
+- Botón "Informe PDF" en la cabecera del inventario
+- Genera un PDF con: resumen global (total prendas, precio total, contadores por estado), tabla por categoría con badges de estado, precios, notas y **enlaces clickables** a los productos
+- Subtotal de precio por categoría y pie de página con numeración
 
 ### 🤖 Probador Virtual (Virtual Try-On)
 - Sube tu foto de cuerpo completo en el Planificador
@@ -31,10 +36,6 @@ Aplicación web para planificar el vestuario de un festival en el desierto (Burn
 - Campo de **indicaciones extra** para añadir instrucciones al prompt (ej: "con niebla en el fondo", "al atardecer")
 - El resultado se guarda en base de datos y se muestra en la card y en la Vista General
 - Modo mock con `AI_MOCK=true` para desarrollar sin gastar créditos
-
-### ✨ Sugerencias de outfits con IA
-- Botón en el Inventario que analiza todas tus prendas y pide a **Claude** (Anthropic) que proponga 3 combinaciones nuevas respetando la estética y el clima de BM
-- Las sugerencias de turno `NOCHE` siempre incluyen abrigo
 
 ### 🖼️ Vista General
 - Galería de todos los días y turnos del evento
@@ -54,9 +55,9 @@ Aplicación web para planificar el vestuario de un festival en el desierto (Burn
 | Estilos | **Tailwind CSS 4** | Utilidades directas sin CSS custom |
 | Fuentes | **Syne** (body) + **Playfair Display** (display) | Personalidad festival, legibilidad sobre fondo arena |
 | Try-On IA | **Leonardo.Ai — GPT Image 2** | Modelo multimodal con soporte de hasta 4 imágenes de referencia simultáneas. Estrategia: ref 1 = usuario, ref 2 = TOP, ref 3 = BOTTOM, ref 4 = collage de accesorios/calzado |
-| LLM | **Anthropic Claude** vía Vercel AI SDK | `generateObject` + schema Zod garantiza JSON estructurado sin parseo frágil |
+| PDF | **@react-pdf/renderer** | Generación server-side de PDFs con links clickables y diseño rico |
 | Storage | **Filesystem local** `/public/uploads` | MVP single-user. Migrable a S3/R2 cambiando únicamente `src/lib/storage.ts` |
-| Validación | **Zod 4** | En API routes y en respuestas del LLM |
+| Validación | **Zod 4** | En API routes |
 
 ---
 
@@ -80,8 +81,8 @@ src/
 │       ├── outfits/[id]/route.ts        # GET outfit completo con items y try-on
 │       ├── outfits/[id]/items/route.ts  # POST asignar prenda  ·  DELETE quitar
 │       ├── upload/route.ts              # POST subir imagen → { url }  (max 5 MB)
-│       ├── ai/try-on/route.ts           # POST try-on con Leonardo.Ai GPT Image 2
-│       └── ai/suggest/route.ts         # POST sugerencias de combinaciones (Claude)
+│       ├── inventory-pdf/route.ts       # GET generar PDF del inventario completo
+│       └── ai/try-on/route.ts           # POST try-on con Leonardo.Ai GPT Image 2
 │
 ├── components/
 │   ├── planner/
@@ -89,17 +90,16 @@ src/
 │   │   ├── ShiftCard.tsx               # Card Tarde/Noche: slots, guardado auto, try-on + campo extra
 │   │   ├── RangeSetup.tsx              # Selector de fechas + tabla de toggles Tarde/Noche
 │   │   └── UserPhotoWidget.tsx         # Avatar circular + subida de foto de perfil
-│   ├── inventory/
-│   │   ├── GarmentCard.tsx             # Card: hover → botones editar/eliminar
-│   │   ├── GarmentForm.tsx             # Formulario crear/editar (paste Ctrl+V incluido)
-│   │   └── GarmentFormModal.tsx        # Wrapper modal para el formulario
-│   └── ai/
-│       └── SuggestButton.tsx           # Botón + resultados de sugerencias IA
+│   └── inventory/
+│       ├── GarmentCard.tsx             # Card: hover → botones editar/eliminar
+│       ├── GarmentForm.tsx             # Formulario crear/editar (paste Ctrl+V incluido)
+│       ├── GarmentFormModal.tsx        # Wrapper modal para el formulario
+│       └── DownloadReportButton.tsx    # Botón de descarga del informe PDF
 │
 ├── lib/
 │   ├── db.ts                           # Prisma singleton con adapter better-sqlite3
 │   ├── leonardo.ts                     # Try-on con Leonardo.Ai GPT Image 2 + collage + mock
-│   ├── ai.ts                           # Sugerencias Claude (generateObject+Zod) + mock
+│   ├── inventoryPdf.tsx                # Documento PDF del inventario (@react-pdf/renderer)
 │   └── storage.ts                      # Guardar/leer imágenes en /public/uploads
 │
 └── types/
@@ -120,9 +120,9 @@ User (1) ──< Day (1) ──< Shift  (type: TARDE|NOCHE)
                               │
                               ▼ 1:1
                            Outfit
-                              │  
+                              │
                               ▼ N:M (tabla puente OutfitItem)
-                           Garment  (slot: TOP|BOTTOM|SHOES|ACCESSORY|COAT)
+                           Garment  (slot: TOP|BOTTOM|SHOES|ACCESSORY|COAT|BIKE_ACCESSORY)
 
 Outfit (1) ──────────────< TryOnResult  (imageUrl generada por Leonardo.Ai)
 ```
@@ -132,6 +132,7 @@ Outfit (1) ──────────────< TryOnResult  (imageUrl ge
 - `Outfit` existe en relación 1:1 con su `Shift`, se crea automáticamente al crear el turno
 - Slots `TOP`, `BOTTOM`, `SHOES`, `COAT` son únicos por outfit — asignar uno nuevo reemplaza el anterior
 - `ACCESSORY` admite múltiples prendas en el mismo outfit
+- `BIKE_ACCESSORY` solo aparece en el inventario, nunca en la lógica de outfits
 - La card Noche muestra aviso si no tiene `COAT` asignado
 
 ---
@@ -165,7 +166,6 @@ SEED_USER_ID="user_default"
 # Con AI_MOCK=true la app funciona sin API keys (modo demo)
 AI_MOCK="true"
 LEONARDO_API_KEY=""
-ANTHROPIC_API_KEY=""
 ```
 
 ### 3. Crear la base de datos
@@ -183,9 +183,7 @@ npm run dev
 
 ---
 
-## Activar la IA real
-
-### 🎨 Probador Virtual — Leonardo.Ai (obligatorio para el try-on)
+## Activar el Probador Virtual — Leonardo.Ai
 
 > **Leonardo.Ai regala $5 en créditos al registrarse**, más que suficiente para cientos de pruebas a calidad LOW (~$0.012 por imagen).
 
@@ -208,31 +206,13 @@ El fondo es siempre el desierto de Black Rock (playa seca de Burning Man). Puede
 
 > **Límites conocidos:** el prompt tiene un máximo de 1399 caracteres (límite descubierto experimentalmente, no documentado por Leonardo). El código trunca automáticamente si se supera.
 
-### ✨ Sugerencias de outfits — Anthropic Claude (opcional)
+| Calidad | Key config | Coste aprox. |
+|---------|-----------|-------------|
+| LOW | `quality: "LOW"` | ~$0.012/imagen |
+| MEDIUM | `quality: "MEDIUM"` | ~$0.050/imagen |
+| HIGH | `quality: "HIGH"` | ~$0.097/imagen |
 
-1. Consigue una API key en **[console.anthropic.com](https://console.anthropic.com)**
-2. Añádela en `.env.local`:
-
-```env
-ANTHROPIC_API_KEY="sk-ant-..."
-```
-
-| Servicio | Key | Coste aproximado |
-|----------|-----|-----------------|
-| Leonardo.Ai (try-on) | `LEONARDO_API_KEY` | ~$0.012/imagen (LOW) · $0.05 (MEDIUM) · $0.097 (HIGH) |
-| Anthropic Claude (sugerencias) | `ANTHROPIC_API_KEY` | Muy bajo — Claude Sonnet, pocas llamadas |
-
----
-
-## Subir la calidad del try-on
-
-Por defecto está en calidad mínima para ahorrar créditos durante las pruebas. Cuando estés satisfecho con los resultados, cambia en `src/lib/leonardo.ts`:
-
-```ts
-quality: "LOW"     // $0.012 — para pruebas
-quality: "MEDIUM"  // $0.050 — calidad intermedia
-quality: "HIGH"    // $0.097 — máxima calidad
-```
+Por defecto está en calidad LOW para ahorrar créditos. Cámbialo en `src/lib/leonardo.ts` cuando quieras mayor resolución.
 
 ---
 
