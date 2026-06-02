@@ -15,7 +15,7 @@ export function DayPlanner({ days, inventory, userPhotoUrl }: {
   return (
     <div className="flex flex-col gap-6">
       {/* Day tabs */}
-      <div className="flex gap-2 overflow-x-auto pb-1">
+      <div className="flex gap-2.5 overflow-x-auto pb-2.5">
         {days.map((d) => {
           const date = new Date(d.date);
           const isActive = d.id === activeDayId;
@@ -27,17 +27,17 @@ export function DayPlanner({ days, inventory, userPhotoUrl }: {
             <button
               key={d.id}
               onClick={() => setActiveDayId(d.id)}
-              className={`flex shrink-0 flex-col items-center gap-0.5 rounded-xl px-4 py-2.5 transition-all border-2 ${
+              className={`flex shrink-0 min-w-[110px] sm:min-w-[120px] flex-col items-center gap-1 rounded-xl px-4 py-3 transition-all border-2 ${
                 isActive
                   ? "bg-[#c84a10] border-[#c84a10] text-white shadow-lg shadow-[#c84a10]/30"
                   : "bg-[#f5e0b8]/60 border-[#c4906a]/30 text-[#7a4a20] hover:bg-[#f5e0b8] hover:border-[#c4906a]/60"
               }`}
             >
-              <span className="text-[11px] font-black uppercase tracking-wide">{label}</span>
-              <span className={`text-[10px] font-medium ${isActive ? "opacity-75" : "opacity-60"}`}>{sub}</span>
-              <div className="mt-1 flex gap-1">
-                {shifts.includes("TARDE") && <span className={`h-1.5 w-1.5 rounded-full ${isActive ? "bg-white/80" : "bg-amber-500"}`} />}
-                {shifts.includes("NOCHE") && <span className={`h-1.5 w-1.5 rounded-full ${isActive ? "bg-white/80" : "bg-indigo-400"}`} />}
+              <span className="text-xs font-black uppercase tracking-wider">{label}</span>
+              <span className={`text-[11px] font-semibold ${isActive ? "opacity-90" : "opacity-70"}`}>{sub}</span>
+              <div className="mt-1 flex gap-1.5">
+                {shifts.includes("TARDE") && <span className={`h-2 w-2 rounded-full ${isActive ? "bg-white" : "bg-amber-500"}`} />}
+                {shifts.includes("NOCHE") && <span className={`h-2 w-2 rounded-full ${isActive ? "bg-white" : "bg-indigo-400"}`} />}
               </div>
             </button>
           );

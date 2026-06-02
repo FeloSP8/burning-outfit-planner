@@ -2,7 +2,6 @@ import { db } from "@/lib/db";
 import { GarmentCard } from "@/components/inventory/GarmentCard";
 import { GarmentFormModal } from "@/components/inventory/GarmentFormModal";
 import { DownloadReportButton } from "@/components/inventory/DownloadReportButton";
-import { SuggestButton } from "@/components/ai/SuggestButton";
 import type { Garment } from "@/types";
 
 const DEFAULT_USER_ID = process.env.SEED_USER_ID ?? "user_default";
@@ -51,13 +50,6 @@ export default async function InventoryPage() {
         </div>
       </div>
 
-      {/* AI panel */}
-      <section className="rounded-2xl border-2 border-[#4a2890]/30 bg-[#f0eaff] p-5">
-        <p className="mb-4 text-xs font-bold uppercase tracking-[0.15em] text-[#3a1878]">
-          ✨ Sugerencias IA
-        </p>
-        <SuggestButton />
-      </section>
 
       {/* Garments by slot */}
       {SLOTS.map(({ key, icon, label }) => {

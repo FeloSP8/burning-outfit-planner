@@ -48,10 +48,3 @@ export interface Day {
   userId: string;
   shifts: Shift[];
 }
-
-export interface AISuggestion {
-  title: string;
-  rationale: string;
-  garmentIds: string[];
-  shift: ShiftType;
-}

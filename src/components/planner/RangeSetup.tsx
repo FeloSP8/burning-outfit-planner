@@ -23,8 +23,8 @@ function buildDayList(start: string, end: string): DayConfig[] {
 
 export function RangeSetup({ hasDays }: { hasDays: boolean }) {
   const router = useRouter();
-  const [start, setStart]       = useState("2026-08-24");
-  const [end, setEnd]           = useState("2026-09-01");
+  const [start, setStart]       = useState("2026-08-30");
+  const [end, setEnd]           = useState("2026-09-07");
   const [days, setDays]         = useState<DayConfig[]>([]);
   const [expanded, setExpanded] = useState(false);
   const [saving, setSaving]     = useState(false);
@@ -33,15 +33,12 @@ export function RangeSetup({ hasDays }: { hasDays: boolean }) {
   useEffect(() => {
     if (!start || !end || start > end) return;
     setDays(buildDayList(start, end));
-    setExpanded(true);
   }, [start, end]);
 
   function toggleShift(idx: number, shift: "tarde" | "noche") {
     setDays((prev) => prev.map((d, i) => {
       if (i !== idx) return d;
-      const next = { ...d, [shift]: !d[shift] };
-      if (!next.tarde && !next.noche) return d;
-      return next;
+      return { ...d, [shift]: !d[shift] };
     }));
   }
 
@@ -91,20 +88,24 @@ export function RangeSetup({ hasDays }: { hasDays: boolean }) {
             <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-600 text-center">🌙 Noche</span>
           </div>
 
-          {days.map((d, i) => (
-            <div key={d.date} className="grid grid-cols-[1fr_2fr_auto_auto] items-center gap-4 border-b border-[#c4906a]/15 px-4 py-2.5 last:border-0 hover:bg-[#f5e0b8]/60 transition-colors">
-              <span className="text-xs font-semibold text-[#7a5030] whitespace-nowrap tabular-nums">
-                {new Date(d.date + "T12:00:00Z").toLocaleDateString("es-ES", { weekday: "short", day: "numeric", month: "short" })}
-              </span>
-              <input
-                value={d.label}
-                onChange={(e) => updateLabel(i, e.target.value)}
-                className="rounded-lg border-2 border-[#c4906a]/30 bg-[#f5e8cc] px-2.5 py-1.5 text-xs font-semibold text-[#2a1a08] focus:border-[#c84a10]/50 focus:outline-none transition-colors"
-              />
-              <div className="flex justify-center"><Toggle active={d.tarde} onToggle={() => toggleShift(i, "tarde")} color="amber" /></div>
-              <div className="flex justify-center"><Toggle active={d.noche} onToggle={() => toggleShift(i, "noche")} color="indigo" /></div>
-            </div>
-          ))}
+          {days.map((d, i) => {
+            const isActive = d.tarde || d.noche;
+            return (
+              <div key={d.date} className={`grid grid-cols-[1fr_2fr_auto_auto] items-center gap-4 border-b border-[#c4906a]/15 px-4 py-2.5 last:border-0 hover:bg-[#f5e0b8]/60 transition-all duration-200 ${!isActive ? "opacity-40 bg-[#7a4a20]/5" : ""}`}>
+                <span className={`text-xs font-semibold text-[#7a5030] whitespace-nowrap tabular-nums transition-all ${!isActive ? "line-through opacity-50" : ""}`}>
+                  {new Date(d.date + "T12:00:00Z").toLocaleDateString("es-ES", { weekday: "short", day: "numeric", month: "short" })}
+                </span>
+                <input
+                  value={d.label}
+                  onChange={(e) => updateLabel(i, e.target.value)}
+                  disabled={!isActive}
+                  className={`rounded-lg border-2 border-[#c4906a]/30 bg-[#f5e8cc] px-2.5 py-1.5 text-xs font-semibold text-[#2a1a08] focus:border-[#c84a10]/50 focus:outline-none transition-all ${!isActive ? "opacity-40 cursor-not-allowed border-[#c4906a]/10" : ""}`}
+                />
+                <div className="flex justify-center"><Toggle active={d.tarde} onToggle={() => toggleShift(i, "tarde")} color="amber" /></div>
+                <div className="flex justify-center"><Toggle active={d.noche} onToggle={() => toggleShift(i, "noche")} color="indigo" /></div>
+              </div>
+            );
+          })}
 
           <div className="border-t border-[#c4906a]/20 bg-[#f5e0b8]/50 px-4 py-2 text-[10px] font-bold text-[#a07040]">
             {days.length} días · {shiftCount} turnos
