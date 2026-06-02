@@ -14,7 +14,7 @@ const GarmentSchema = z.object({
   photoUrl: z.string().optional().nullable(),
   purchaseUrl: z.string().url().optional().nullable().or(z.literal("")),
   notes: z.string().optional().nullable(),
-  price: z.number().positive().optional().nullable(),
+  price: z.number().min(0).optional().nullable(),
 });
 
 export async function GET(req: NextRequest) {

@@ -44,6 +44,8 @@ export function GarmentForm({ garment: initial, onClose }: Props) {
   const [uploading, setUploading]  = useState(false);
   const [saving, setSaving]        = useState(false);
   const [pasteHint, setPasteHint]  = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
+  const [formError, setFormError]     = useState<string | null>(null);
 
   const uploadFile = useCallback(async (file: File) => {
     if (!file.type.startsWith("image/")) return;
@@ -82,6 +84,8 @@ export function GarmentForm({ garment: initial, onClose }: Props) {
     e.preventDefault();
     if (!name.trim()) return;
     setSaving(true);
+    setFieldErrors({});
+    setFormError(null);
 
     const payload = {
       name,
@@ -93,21 +97,27 @@ export function GarmentForm({ garment: initial, onClose }: Props) {
       price: price !== "" ? parseFloat(price) : null,
     };
 
-    if (isEdit && initial) {
-      await fetch(`/api/garments/${initial.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-    } else {
-      await fetch("/api/garments", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-    }
+    const url    = isEdit && initial ? `/api/garments/${initial.id}` : "/api/garments";
+    const method = isEdit ? "PATCH" : "POST";
+
+    const res = await fetch(url, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
 
     setSaving(false);
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      if (data?.error?.fieldErrors) {
+        setFieldErrors(data.error.fieldErrors);
+      } else {
+        setFormError("No se pudo guardar la prenda. Inténtalo de nuevo.");
+      }
+      return;
+    }
+
     router.refresh();
     onClose?.();
   }
@@ -161,6 +171,13 @@ export function GarmentForm({ garment: initial, onClose }: Props) {
         <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
       </div>
 
+      {/* Error global */}
+      {formError && (
+        <p className="rounded-lg bg-red-50 border border-red-300 px-3 py-2 text-xs font-semibold text-red-700">
+          ⚠️ {formError}
+        </p>
+      )}
+
       {/* Name */}
       <div className="flex flex-col gap-1.5">
         <label className={labelClass}>Nombre *</label>
@@ -195,13 +212,16 @@ export function GarmentForm({ garment: initial, onClose }: Props) {
           <label className={labelClass}>Precio (€)</label>
           <input
             value={price}
-            onChange={(e) => setPrice(e.target.value)}
+            onChange={(e) => { setPrice(e.target.value); setFieldErrors((p) => ({ ...p, price: [] })); }}
             type="number"
             min="0"
             step="0.01"
             placeholder="0.00"
-            className={inputClass}
+            className={`${inputClass} ${fieldErrors.price?.length ? "border-red-400" : ""}`}
           />
+          {fieldErrors.price?.length ? (
+            <p className="text-xs font-semibold text-red-600">{fieldErrors.price[0]}</p>
+          ) : null}
         </div>
       </div>
 
