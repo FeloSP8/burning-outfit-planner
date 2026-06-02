@@ -14,6 +14,10 @@ const SLOTS: { key: string; icon: string; label: string }[] = [
   { key: "COAT",      icon: "🧥", label: "Abrigos" },
 ];
 
+const BIKE_SLOTS: { key: string; icon: string; label: string }[] = [
+  { key: "BIKE_ACCESSORY", icon: "🚲", label: "Accesorios bici" },
+];
+
 export default async function InventoryPage() {
   const rawGarments = await db.garment.findMany({
     where: { userId: DEFAULT_USER_ID },
@@ -78,6 +82,39 @@ export default async function InventoryPage() {
           </section>
         );
       })}
+
+      {/* Bike accessories — separate section, not used in outfits */}
+      <div className="border-t-2 border-dashed border-[#8a5a20]/30 pt-8">
+        <p className="mb-6 text-[10px] font-bold uppercase tracking-[0.15em] text-[#8a5a20]/60">
+          No aparecen en los outfits
+        </p>
+        {BIKE_SLOTS.map(({ key, icon, label }) => {
+          const items = bySlot[key] ?? [];
+          return (
+            <section key={key}>
+              <div className="mb-4 flex items-center gap-2.5">
+                <span className="text-xl">{icon}</span>
+                <span className="text-lg font-black text-[#2a1a08] tracking-tight" style={{ fontFamily: "var(--font-body)" }}>
+                  {label}
+                </span>
+                <span className="rounded-full bg-[#8a5a20]/20 px-2 py-0.5 text-xs font-bold text-[#5a3010]">
+                  {items.length}
+                </span>
+              </div>
+
+              {items.length === 0 ? (
+                <div className="flex items-center justify-center rounded-xl border-2 border-dashed border-[#8a5a20]/40 bg-[#c49050]/10 py-8">
+                  <p className="text-sm font-semibold text-[#6a3a10]">Sin accesorios en esta categoría</p>
+                </div>
+              ) : (
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {items.map((g) => <GarmentCard key={g.id} garment={g} />)}
+                </div>
+              )}
+            </section>
+          );
+        })}
+      </div>
     </div>
   );
 }

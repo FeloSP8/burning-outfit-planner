@@ -13,7 +13,7 @@ const STATUS_STYLE: Record<string, string> = {
 };
 
 const SLOT_ICON: Record<string, string> = {
-  TOP: "👕", BOTTOM: "👖", SHOES: "👟", ACCESSORY: "🕶️", COAT: "🧥",
+  TOP: "👕", BOTTOM: "👖", SHOES: "👟", ACCESSORY: "🕶️", COAT: "🧥", BIKE_ACCESSORY: "🚲",
 };
 
 export function GarmentCard({ garment }: { garment: Garment }) {
@@ -71,6 +71,9 @@ export function GarmentCard({ garment }: { garment: Garment }) {
           <p className="font-black text-[#2a1a08] leading-tight truncate" style={{ fontFamily: "var(--font-body)" }}>
             {garment.name}
           </p>
+          {garment.price != null && (
+            <p className="text-sm font-black text-[#2a7a30]">{garment.price.toFixed(2)} €</p>
+          )}
           {garment.notes && (
             <p className="text-xs font-medium text-[#7a5030] line-clamp-2">{garment.notes}</p>
           )}

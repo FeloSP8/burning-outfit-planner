@@ -59,11 +59,12 @@ model OutfitItem {
 model Garment {
   id          String       @id @default(cuid())
   name        String
-  slot        String       // "TOP" | "BOTTOM" | "SHOES" | "ACCESSORY" | "COAT"
+  slot        String       // "TOP" | "BOTTOM" | "SHOES" | "ACCESSORY" | "COAT" | "BIKE_ACCESSORY"
   status      String       @default("PENDIENTE") // "COMPRADO" | "RECIBIDO" | "PENDIENTE"
   photoUrl    String?
   purchaseUrl String?
   notes       String?
+  price       Float?
   user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId      String
   outfitItems OutfitItem[]

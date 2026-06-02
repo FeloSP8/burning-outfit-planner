@@ -1,5 +1,5 @@
 export type ShiftType = "TARDE" | "NOCHE";
-export type GarmentSlot = "TOP" | "BOTTOM" | "SHOES" | "ACCESSORY" | "COAT";
+export type GarmentSlot = "TOP" | "BOTTOM" | "SHOES" | "ACCESSORY" | "COAT" | "BIKE_ACCESSORY";
 export type GarmentStatus = "COMPRADO" | "RECIBIDO" | "PENDIENTE";
 
 export interface Garment {
@@ -10,6 +10,7 @@ export interface Garment {
   photoUrl?: string | null;
   purchaseUrl?: string | null;
   notes?: string | null;
+  price?: number | null;
   userId: string;
   createdAt: string;
 }

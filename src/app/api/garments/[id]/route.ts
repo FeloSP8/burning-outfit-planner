@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { deleteFile } from "@/lib/storage";
 import { z } from "zod";
 
-const VALID_SLOTS = ["TOP", "BOTTOM", "SHOES", "ACCESSORY", "COAT"] as const;
+const VALID_SLOTS = ["TOP", "BOTTOM", "SHOES", "ACCESSORY", "COAT", "BIKE_ACCESSORY"] as const;
 const VALID_STATUSES = ["COMPRADO", "RECIBIDO", "PENDIENTE"] as const;
 
 const PatchSchema = z.object({
@@ -13,6 +13,7 @@ const PatchSchema = z.object({
   photoUrl: z.string().optional().nullable(),
   purchaseUrl: z.string().optional().nullable(),
   notes: z.string().optional().nullable(),
+  price: z.number().positive().optional().nullable(),
 });
 
 export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {

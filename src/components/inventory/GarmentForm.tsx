@@ -6,11 +6,12 @@ import Image from "next/image";
 import type { Garment, GarmentSlot, GarmentStatus } from "@/types";
 
 const SLOTS: { value: GarmentSlot; label: string }[] = [
-  { value: "TOP",       label: "👕  Parte de arriba" },
-  { value: "BOTTOM",    label: "👖  Parte de abajo" },
-  { value: "SHOES",     label: "👟  Calzado" },
-  { value: "ACCESSORY", label: "🕶️  Accesorios" },
-  { value: "COAT",      label: "🧥  Abrigo" },
+  { value: "TOP",            label: "👕  Parte de arriba" },
+  { value: "BOTTOM",         label: "👖  Parte de abajo" },
+  { value: "SHOES",          label: "👟  Calzado" },
+  { value: "ACCESSORY",      label: "🕶️  Accesorios" },
+  { value: "COAT",           label: "🧥  Abrigo" },
+  { value: "BIKE_ACCESSORY", label: "🚲  Accesorio bici" },
 ];
 
 const STATUSES: { value: GarmentStatus; label: string }[] = [
@@ -39,6 +40,7 @@ export function GarmentForm({ garment: initial, onClose }: Props) {
   const [photoUrl, setPhotoUrl]    = useState<string | null>(initial?.photoUrl ?? null);
   const [purchaseUrl, setPurchase] = useState(initial?.purchaseUrl ?? "");
   const [notes, setNotes]          = useState(initial?.notes ?? "");
+  const [price, setPrice]          = useState<string>(initial?.price != null ? String(initial.price) : "");
   const [uploading, setUploading]  = useState(false);
   const [saving, setSaving]        = useState(false);
   const [pasteHint, setPasteHint]  = useState(false);
@@ -88,6 +90,7 @@ export function GarmentForm({ garment: initial, onClose }: Props) {
       photoUrl,
       purchaseUrl: purchaseUrl || null,
       notes: notes || null,
+      price: price !== "" ? parseFloat(price) : null,
     };
 
     if (isEdit && initial) {
@@ -181,11 +184,25 @@ export function GarmentForm({ garment: initial, onClose }: Props) {
         </div>
       </div>
 
-      {/* Purchase URL */}
-      <div className="flex flex-col gap-1.5">
-        <label className={labelClass}>Enlace de compra</label>
-        <input value={purchaseUrl} onChange={(e) => setPurchase(e.target.value)} type="url"
-          placeholder="https://…" className={inputClass} />
+      {/* Purchase URL + Price */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="flex flex-col gap-1.5">
+          <label className={labelClass}>Enlace de compra</label>
+          <input value={purchaseUrl} onChange={(e) => setPurchase(e.target.value)} type="url"
+            placeholder="https://…" className={inputClass} />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <label className={labelClass}>Precio (€)</label>
+          <input
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+            type="number"
+            min="0"
+            step="0.01"
+            placeholder="0.00"
+            className={inputClass}
+          />
+        </div>
       </div>
 
       {/* Notes */}

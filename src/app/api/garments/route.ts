@@ -4,7 +4,7 @@ import { z } from "zod";
 
 const DEFAULT_USER_ID = process.env.SEED_USER_ID ?? "user_default";
 
-const VALID_SLOTS = ["TOP", "BOTTOM", "SHOES", "ACCESSORY", "COAT"] as const;
+const VALID_SLOTS = ["TOP", "BOTTOM", "SHOES", "ACCESSORY", "COAT", "BIKE_ACCESSORY"] as const;
 const VALID_STATUSES = ["COMPRADO", "RECIBIDO", "PENDIENTE"] as const;
 
 const GarmentSchema = z.object({
@@ -14,6 +14,7 @@ const GarmentSchema = z.object({
   photoUrl: z.string().optional().nullable(),
   purchaseUrl: z.string().url().optional().nullable().or(z.literal("")),
   notes: z.string().optional().nullable(),
+  price: z.number().positive().optional().nullable(),
 });
 
 export async function GET(req: NextRequest) {
