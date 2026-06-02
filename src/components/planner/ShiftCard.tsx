@@ -1,9 +1,154 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import type { Shift, Garment, OutfitItem } from "@/types";
 import { LEONARDO_MODELS, type ModelId } from "@/lib/leonardo-models";
+
+// ── Selector custom con previsualización de foto ──────────────────────────────
+function GarmentSelect({
+  options,
+  value,
+  onChange,
+  disabled,
+  icon,
+  isNight,
+}: {
+  options: Garment[];
+  value: string;
+  onChange: (id: string) => void;
+  disabled: boolean;
+  icon: string;
+  isNight: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const selected = options.find((g) => g.id === value) ?? null;
+
+  // Cerrar al hacer clic fuera
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  function pick(id: string) {
+    onChange(id);
+    setOpen(false);
+  }
+
+  const triggerBase = `w-full flex items-center gap-2 text-sm font-semibold focus:outline-none cursor-pointer ${
+    disabled ? "opacity-60 cursor-wait" : ""
+  } ${isNight ? "text-[#d8d0f0]" : "text-[#2a1a08]"}`;
+
+  return (
+    <div ref={ref} className="relative w-full">
+      {/* Trigger */}
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => !disabled && setOpen((o) => !o)}
+        className={triggerBase}
+      >
+        {selected ? (
+          <>
+            <div className={`relative h-7 w-7 shrink-0 overflow-hidden rounded-md flex items-center justify-center ${
+              isNight ? "bg-white/10" : "bg-[#c4906a]/20"
+            }`}>
+              {selected.photoUrl
+                ? <Image src={selected.photoUrl} alt={selected.name} fill className="object-cover" />
+                : <span className="text-sm">{icon}</span>
+              }
+            </div>
+            <span className="truncate">{selected.name}</span>
+          </>
+        ) : (
+          <span className={isNight ? "text-[#6a6090]" : "text-[#b09070]"}>— sin asignar —</span>
+        )}
+        <span className={`ml-auto shrink-0 text-[10px] transition-transform ${open ? "rotate-180" : ""} ${
+          isNight ? "text-[#6a6090]" : "text-[#b09070]"
+        }`}>▼</span>
+      </button>
+
+      {/* Dropdown */}
+      {open && (
+        <div className={`absolute left-0 top-full z-50 mt-1 w-56 overflow-hidden rounded-xl border shadow-xl ${
+          isNight
+            ? "bg-[#1a1840] border-[#3a3070] shadow-black/60"
+            : "bg-[#fdf4e0] border-[#c4906a]/50 shadow-[#2a1a08]/15"
+        }`}>
+          {/* Opción vacía */}
+          <button
+            type="button"
+            onClick={() => pick("")}
+            className={`w-full flex items-center gap-2.5 px-3 py-2.5 text-sm transition-colors ${
+              !value
+                ? isNight ? "bg-white/10 font-bold" : "bg-[#c4906a]/20 font-bold"
+                : isNight ? "hover:bg-white/8" : "hover:bg-[#c4906a]/10"
+            } ${isNight ? "text-[#9890c8]" : "text-[#7a5030]"}`}
+          >
+            <div className={`h-9 w-9 shrink-0 rounded-lg flex items-center justify-center ${
+              isNight ? "bg-white/5" : "bg-[#c4906a]/15"
+            }`}>
+              <span className="text-lg opacity-40">{icon}</span>
+            </div>
+            <span className="text-xs font-semibold italic">Sin asignar</span>
+          </button>
+
+          {/* Divisor */}
+          {options.length > 0 && (
+            <div className={`mx-3 border-t ${isNight ? "border-[#3a3070]" : "border-[#c4906a]/30"}`} />
+          )}
+
+          {/* Opciones con foto */}
+          {options.map((g) => (
+            <button
+              key={g.id}
+              type="button"
+              onClick={() => pick(g.id)}
+              className={`w-full flex items-center gap-2.5 px-3 py-2 transition-colors ${
+                g.id === value
+                  ? isNight ? "bg-white/10" : "bg-[#c4906a]/20"
+                  : isNight ? "hover:bg-white/8" : "hover:bg-[#c4906a]/10"
+              }`}
+            >
+              {/* Miniatura */}
+              <div className={`relative h-9 w-9 shrink-0 overflow-hidden rounded-lg flex items-center justify-center ${
+                isNight ? "bg-white/10" : "bg-[#c4906a]/20"
+              }`}>
+                {g.photoUrl
+                  ? <Image src={g.photoUrl} alt={g.name} fill className="object-cover" />
+                  : <span className="text-lg">{icon}</span>
+                }
+              </div>
+
+              {/* Info */}
+              <div className="flex flex-col items-start min-w-0">
+                <span className={`text-xs font-bold truncate max-w-[130px] ${
+                  isNight ? "text-[#d8d0f0]" : "text-[#2a1a08]"
+                }`}>{g.name}</span>
+                <span className={`text-[10px] ${
+                  g.status === "COMPRADO" ? "text-emerald-500" :
+                  g.status === "RECIBIDO" ? "text-sky-400" :
+                  isNight ? "text-[#6a6090]" : "text-[#b09070]"
+                }`}>{g.status.charAt(0) + g.status.slice(1).toLowerCase()}</span>
+              </div>
+
+              {/* Check si seleccionado */}
+              {g.id === value && (
+                <span className={`ml-auto text-xs font-bold ${isNight ? "text-[#a098e0]" : "text-[#c84a10]"}`}>✓</span>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 const SLOTS: { key: Garment["slot"]; label: string; icon: string }[] = [
   { key: "TOP",       label: "Parte de arriba", icon: "👕" },
@@ -140,34 +285,19 @@ export function ShiftCard({ shift, inventory, requireCoat, userPhotoUrl }: {
                 : isNightCard ? "bg-white/5 hover:bg-white/8" : "bg-[#c4906a]/10 hover:bg-[#c4906a]/20"
             }`}>
 
-              {/* Thumbnail */}
-              <div className={`relative h-9 w-9 shrink-0 overflow-hidden rounded-lg flex items-center justify-center ${
-                isNightCard ? "bg-white/10" : "bg-[#c4906a]/20"
-              }`}>
-                {current?.photoUrl
-                  ? <Image src={current.photoUrl} alt={current.name} fill className="object-cover" />
-                  : <span className="text-lg">{icon}</span>
-                }
-              </div>
-
               {/* Label + select */}
               <div className="flex flex-1 flex-col gap-0.5 min-w-0">
                 <span className={`text-[10px] font-bold uppercase tracking-widest ${isNightCard ? "text-[#9890c8]" : "text-[#a07040]"}`}>
                   {label}
                 </span>
-                <select
+                <GarmentSelect
+                  options={options}
                   value={current?.id ?? ""}
+                  onChange={(id) => assign(key, id)}
                   disabled={isSaving}
-                  onChange={(e) => assign(key, e.target.value)}
-                  className={`w-full border-0 text-sm font-semibold focus:outline-none cursor-pointer appearance-none truncate disabled:opacity-60 disabled:cursor-wait ${
-                    isNightCard ? "night-select" : "bg-transparent text-[#2a1a08]"
-                  }`}
-                >
-                  <option value="">— sin asignar —</option>
-                  {options.map((g) => (
-                    <option key={g.id} value={g.id}>{g.name}</option>
-                  ))}
-                </select>
+                  icon={icon}
+                  isNight={isNightCard}
+                />
               </div>
 
               {/* Right indicator: save state or status dot */}
