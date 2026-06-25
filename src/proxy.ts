@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 /** Rutas accesibles sin sesión. El resto exige login. */
-const PUBLIC_PATHS = ["/login", "/signup", "/auth"];
+const PUBLIC_PATHS = ["/login", "/auth"];
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -43,8 +43,8 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Con sesión y entrando a login/signup -> a la home.
-  if (user && (path === "/login" || path === "/signup")) {
+  // Con sesión y entrando a login -> a la home.
+  if (user && path === "/login") {
     const url = request.nextUrl.clone();
     url.pathname = "/";
     return NextResponse.redirect(url);

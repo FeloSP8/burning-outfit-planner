@@ -24,35 +24,6 @@ export async function login(
   redirect("/");
 }
 
-export async function signup(
-  _prev: AuthState,
-  formData: FormData
-): Promise<AuthState> {
-  const email = String(formData.get("email") ?? "").trim();
-  const password = String(formData.get("password") ?? "");
-  const name = String(formData.get("name") ?? "").trim();
-
-  if (!email || !password) return { error: "Introduce email y contraseña." };
-  if (password.length < 6)
-    return { error: "La contraseña debe tener al menos 6 caracteres." };
-
-  const supabase = await createClient();
-  const { error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: { data: { name: name || "Yo" } },
-  });
-
-  if (error) {
-    if (error.message.toLowerCase().includes("already"))
-      return { error: "Ya existe una cuenta con ese email." };
-    return { error: "No se pudo crear la cuenta: " + error.message };
-  }
-
-  revalidatePath("/", "layout");
-  redirect("/");
-}
-
 export async function logout() {
   const supabase = await createClient();
   await supabase.auth.signOut();

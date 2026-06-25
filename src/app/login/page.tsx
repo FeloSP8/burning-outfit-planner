@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useActionState } from "react";
 import { login } from "@/app/auth/actions";
 
@@ -57,13 +56,6 @@ export default function LoginPage() {
           {pending ? "Entrando…" : "Entrar"}
         </button>
       </form>
-
-      <p className="mt-6 text-center text-sm text-[#6a4a20]">
-        ¿No tienes cuenta?{" "}
-        <Link href="/signup" className="font-bold text-[#c45010] hover:underline">
-          Regístrate
-        </Link>
-      </p>
     </div>
   );
 }
