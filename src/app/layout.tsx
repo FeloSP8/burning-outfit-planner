@@ -4,6 +4,7 @@ import Link from "next/link";
 import "./globals.css";
 import { getCurrentUser } from "@/lib/auth";
 import { NavMenu } from "@/components/NavMenu";
+import { Analytics } from "@vercel/analytics/next";
 
 // Body: Syne — geométrica, moderna, personalidad fuerte
 const syne = Syne({
@@ -56,6 +57,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <footer className="border-t border-[#b8956a]/20 py-4 text-center text-xs text-[#a08060]">
           Burning Man 2026 · Playa Mode 🌵
         </footer>
+        <Analytics />
       </body>
     </html>
   );
