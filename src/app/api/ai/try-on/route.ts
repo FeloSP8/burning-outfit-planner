@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const isNight = outfit.shift.type === "NOCHE";
-    const imageUrl = await generateTryOnLeonardo(userPhotoUrl, garments, extraPrompt, isNight, model);
+    const imageUrl = await generateTryOnLeonardo(user.id, userPhotoUrl, garments, extraPrompt, isNight, model);
 
     const result = await db.tryOnResult.upsert({
       where: { outfitId },

@@ -217,6 +217,7 @@ function buildPrompt(garmentInstructions: string, isNight: boolean, extraPrompt?
 // ─── Generadores por modelo ─────────────────────────────────────────────────
 
 async function generateV2WithRefs(
+  userId: string,
   model: "gpt-image-2" | "nano-banana-2",
   prompt: string,
   imageReferences: { image: { id: string; type: string } }[]
@@ -243,17 +244,18 @@ async function generateV2WithRefs(
 
   const data = JSON.parse(raw);
   if ((data.images as { url: string }[] | undefined)?.length)
-    return saveRemoteImage(data.images[0].url, "tryon");
+    return saveRemoteImage(userId, data.images[0].url, "tryon");
 
   const generationId =
     data.generate?.generationId ?? data.generationId ?? data.sdGenerationJob?.generationId;
   if (!generationId) throw new Error(`Sin generationId: ${raw}`);
 
   const [url] = await pollGeneration(generationId);
-  return saveRemoteImage(url, "tryon");
+  return saveRemoteImage(userId, url, "tryon");
 }
 
 async function generatePhoenix(
+  userId: string,
   prompt: string,
   userImageId: string
 ): Promise<string> {
@@ -288,12 +290,13 @@ async function generatePhoenix(
   if (!generationId) throw new Error(`Phoenix sin generationId: ${raw}`);
 
   const [url] = await pollGeneration(generationId);
-  return saveRemoteImage(url, "tryon");
+  return saveRemoteImage(userId, url, "tryon");
 }
 
 // ─── Función principal exportada ────────────────────────────────────────────
 
 export async function generateTryOnLeonardo(
+  userId: string,
   userPhotoUrl: string,
   garments: GarmentInput[],
   extraPrompt?: string,
@@ -321,7 +324,7 @@ export async function generateTryOnLeonardo(
 
   // ── Phoenix: controlnet Character Reference ──
   if (model === "phoenix") {
-    return generateWithRetry(() => generatePhoenix(prompt, userImageId));
+    return generateWithRetry(() => generatePhoenix(userId, prompt, userImageId));
   }
 
   // ── GPT Image 2 y Nano Banana 2: guidances.image_reference ──
@@ -332,6 +335,6 @@ export async function generateTryOnLeonardo(
   console.log(`[leonardo] ${imageReferences.length} refs → generando con ${model}...`);
 
   return generateWithRetry(() =>
-    generateV2WithRefs(model as "gpt-image-2" | "nano-banana-2", prompt, imageReferences)
+    generateV2WithRefs(userId, model as "gpt-image-2" | "nano-banana-2", prompt, imageReferences)
   );
 }

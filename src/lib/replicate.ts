@@ -11,6 +11,7 @@ type GarmentInput = {
 };
 
 export async function generateTryOn(
+  userId: string,
   userPhotoUrl: string,
   garments: GarmentInput[]
 ): Promise<string> {
@@ -48,5 +49,5 @@ export async function generateTryOn(
     currentHuman = output;
   }
 
-  return saveRemoteImage(currentHuman, "tryon");
+  return saveRemoteImage(userId, currentHuman, "tryon");
 }

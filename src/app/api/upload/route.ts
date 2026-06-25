@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
 
   const ext = file.type.split("/")[1].replace("jpeg", "jpg");
   const buf = Buffer.from(await file.arrayBuffer());
-  const url = await saveBuffer(buf, ext);
+  const url = await saveBuffer(user.id, buf, ext);
 
   return NextResponse.json({ url });
 }
