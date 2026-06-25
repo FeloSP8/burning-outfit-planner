@@ -9,6 +9,8 @@ export default defineConfig({
     path: "prisma/migrations",
   },
   datasource: {
-    url: process.env["DATABASE_URL"],
+    // Migraciones por la conexión directa (puerto 5432). El pooler de transacciones
+    // (6543) no soporta las sentencias DDL que ejecuta `prisma migrate`.
+    url: process.env["DIRECT_URL"] ?? process.env["DATABASE_URL"],
   },
 });

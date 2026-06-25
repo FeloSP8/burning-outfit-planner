@@ -4,11 +4,12 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
 }
 
 model User {
   id        String    @id @default(cuid())
+  email     String    @unique
   name      String    @default("Yo")
   photoUrl  String?
   days      Day[]
