@@ -49,13 +49,25 @@ export function GarmentForm({ garment: initial, onClose }: Props) {
 
   const uploadFile = useCallback(async (file: File) => {
     if (!file.type.startsWith("image/")) return;
-    setPreview(URL.createObjectURL(file));
+    if (file.size > 5 * 1024 * 1024) {
+      setFormError("La imagen no puede superar 5 MB.");
+      return;
+    }
+    setFormError(null);
+    let prevPreview: string | null = null;
+    setPreview((p) => { prevPreview = p; return URL.createObjectURL(file); });
     setUploading(true);
     const fd = new FormData();
     fd.append("file", file);
-    const { url } = await (await fetch("/api/upload", { method: "POST", body: fd })).json();
+    const res = await fetch("/api/upload", { method: "POST", body: fd });
+    const data = await res.json();
     setUploading(false);
-    if (url) setPhotoUrl(url);
+    if (!res.ok || data.error) {
+      setPreview(prevPreview);
+      setFormError(data.error ?? "No se pudo subir la imagen. Inténtalo de nuevo.");
+      return;
+    }
+    if (data.url) setPhotoUrl(data.url);
   }, []);
 
   useEffect(() => {

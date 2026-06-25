@@ -6,6 +6,7 @@ import Image from "next/image";
 export function UserPhotoWidget({ initialPhotoUrl, initialName }: { initialPhotoUrl: string | null; initialName: string }) {
   const [photoUrl, setPhotoUrl] = useState<string | null>(initialPhotoUrl);
   const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [name, setName] = useState(initialName);
   const [nameSaved, setNameSaved] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -25,16 +26,27 @@ export function UserPhotoWidget({ initialPhotoUrl, initialName }: { initialPhoto
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    setUploadError(null);
+    if (file.size > 5 * 1024 * 1024) {
+      setUploadError("La imagen no puede superar 5 MB.");
+      return;
+    }
     setUploading(true);
     const fd = new FormData();
     fd.append("file", file);
-    const { url } = await (await fetch("/api/upload", { method: "POST", body: fd })).json();
+    const res = await fetch("/api/upload", { method: "POST", body: fd });
+    const data = await res.json();
+    if (!res.ok || data.error) {
+      setUploading(false);
+      setUploadError(data.error ?? "No se pudo subir la imagen. Inténtalo de nuevo.");
+      return;
+    }
     await fetch("/api/user", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ photoUrl: url }),
+      body: JSON.stringify({ photoUrl: data.url }),
     });
-    setPhotoUrl(url);
+    setPhotoUrl(data.url);
     setUploading(false);
   }
 
@@ -82,6 +94,12 @@ export function UserPhotoWidget({ initialPhotoUrl, initialName }: { initialPhoto
 
       <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
     </div>
+
+    {uploadError && (
+      <p className="rounded-lg bg-red-50 border border-red-300 px-3 py-2 text-xs font-semibold text-red-700">
+        ⚠️ {uploadError}
+      </p>
+    )}
 
     {/* Nombre (se muestra en el muro a los demás) */}
     <div className="flex flex-col gap-1">
