@@ -1,0 +1,17 @@
+<svg width="64" height="64" viewBox="0 0 512 760" xmlns="http://www.w3.org/2000/svg">
+  <g fill="none" stroke="#000000" stroke-width="46" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Lado izquierdo: un solo trazo continuo de la mano (arriba centro) al pie (abajo izquierda) -->
+    <path d="M232 150
+             C 150 70, 70 44, 40 60
+             C 70 130, 150 200, 188 300
+             C 226 400, 230 540, 150 700"/>
+    <!-- Lado derecho: espejo -->
+    <path d="M280 150
+             C 362 70, 442 44, 472 60
+             C 442 130, 362 200, 324 300
+             C 286 400, 282 540, 362 700"/>
+  </g>
+  <!-- Rombo central (cabeza), relleno con hueco -->
+  <path fill="#000000" fill-rule="evenodd"
+        d="M256 60 L344 180 L256 340 L168 180 Z M256 145 L214 190 L256 268 L298 190 Z"/>
+</svg>
