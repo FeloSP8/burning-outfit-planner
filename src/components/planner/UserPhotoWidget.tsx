@@ -3,10 +3,24 @@
 import { useState, useRef } from "react";
 import Image from "next/image";
 
-export function UserPhotoWidget({ initialPhotoUrl }: { initialPhotoUrl: string | null }) {
+export function UserPhotoWidget({ initialPhotoUrl, initialName }: { initialPhotoUrl: string | null; initialName: string }) {
   const [photoUrl, setPhotoUrl] = useState<string | null>(initialPhotoUrl);
   const [uploading, setUploading] = useState(false);
+  const [name, setName] = useState(initialName);
+  const [nameSaved, setNameSaved] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  async function saveName() {
+    const trimmed = name.trim();
+    if (!trimmed || trimmed === initialName) return;
+    await fetch("/api/user", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: trimmed }),
+    });
+    setNameSaved(true);
+    setTimeout(() => setNameSaved(false), 2000);
+  }
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -25,6 +39,7 @@ export function UserPhotoWidget({ initialPhotoUrl }: { initialPhotoUrl: string |
   }
 
   return (
+    <div className="flex flex-col gap-4">
     <div className="flex items-center gap-4">
       {/* Avatar */}
       <button
@@ -66,6 +81,25 @@ export function UserPhotoWidget({ initialPhotoUrl }: { initialPhotoUrl: string |
       </div>
 
       <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
+    </div>
+
+    {/* Nombre (se muestra en el muro a los demás) */}
+    <div className="flex flex-col gap-1">
+      <label className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-[#a07040]">
+        Tu nombre
+        {nameSaved && <span className="text-emerald-600 normal-case tracking-normal">guardado ✓</span>}
+      </label>
+      <input
+        type="text"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        onBlur={saveName}
+        onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
+        placeholder="Cómo te verán en el muro"
+        maxLength={40}
+        className="w-full rounded-lg border-2 border-[#c4906a]/40 bg-[#f5e8cc] px-3 py-1.5 text-sm font-semibold text-[#2a1a08] placeholder-[#b09060] focus:border-[#c84a10]/60 focus:outline-none"
+      />
+    </div>
     </div>
   );
 }

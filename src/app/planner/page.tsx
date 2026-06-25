@@ -1,15 +1,17 @@
 import { db } from "@/lib/db";
+import { getCurrentUser } from "@/lib/auth";
 import { DayPlanner } from "@/components/planner/DayPlanner";
 import { RangeSetup } from "@/components/planner/RangeSetup";
 import { UserPhotoWidget } from "@/components/planner/UserPhotoWidget";
 import type { Day, Garment } from "@/types";
 
-const DEFAULT_USER_ID = process.env.SEED_USER_ID ?? "user_default";
-
 export default async function PlannerPage() {
-  const [rawDays, rawGarments, user] = await Promise.all([
+  const user = await getCurrentUser();
+  if (!user) return null; // el proxy ya redirige a /login
+
+  const [rawDays, rawGarments] = await Promise.all([
     db.day.findMany({
-      where: { userId: DEFAULT_USER_ID },
+      where: { userId: user.id },
       orderBy: { date: "asc" },
       include: {
         shifts: {
@@ -22,8 +24,7 @@ export default async function PlannerPage() {
         },
       },
     }),
-    db.garment.findMany({ where: { userId: DEFAULT_USER_ID }, orderBy: { createdAt: "asc" } }),
-    db.user.findUnique({ where: { id: DEFAULT_USER_ID } }),
+    db.garment.findMany({ where: { userId: user.id }, orderBy: { createdAt: "asc" } }),
   ]);
 
   const days = rawDays.map((d) => ({
@@ -44,7 +45,7 @@ export default async function PlannerPage() {
   })) as Day[];
 
   const garments = rawGarments.map((g) => ({ ...g, createdAt: g.createdAt.toISOString() })) as Garment[];
-  const userPhotoUrl = user?.photoUrl ?? null;
+  const userPhotoUrl = user.photoUrl ?? null;
 
   return (
     <div className="flex flex-col gap-8">
@@ -72,7 +73,7 @@ export default async function PlannerPage() {
           <p className="text-xs font-bold uppercase tracking-[0.15em] text-[#a07040]">
             Tu foto · Probador
           </p>
-          <UserPhotoWidget initialPhotoUrl={userPhotoUrl} />
+          <UserPhotoWidget initialPhotoUrl={userPhotoUrl} initialName={user.name} />
         </section>
       </div>
 

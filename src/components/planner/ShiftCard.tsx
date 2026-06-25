@@ -179,6 +179,8 @@ export function ShiftCard({ shift, inventory, requireCoat, userPhotoUrl }: {
   const [extraPrompt, setExtra]   = useState("");
   const [model, setModel]         = useState<ModelId>("gpt-image-2");
   const [slotState, setSlotState] = useState<Partial<Record<Garment["slot"], SlotSaveState>>>({});
+  const [shared, setShared]       = useState<boolean>(shift.outfit?.shared ?? false);
+  const [sharing, setSharing]     = useState(false);
 
   const isNight     = shift.type === "NOCHE";
   const getItem     = (slot: Garment["slot"]) => items.find((i) => i.garment.slot === slot)?.garment ?? null;
@@ -227,6 +229,27 @@ export function ShiftCard({ shift, inventory, requireCoat, userPhotoUrl }: {
     }
   }
 
+  async function toggleShared() {
+    if (!shift.outfit || sharing) return;
+    const next = !shared;
+    setSharing(true);
+    setShared(next); // optimista
+    try {
+      const res = await fetch(`/api/outfits/${shift.outfit.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ shared: next }),
+      });
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      setShared(data.shared);
+    } catch {
+      setShared(!next); // revertir si falla
+    } finally {
+      setSharing(false);
+    }
+  }
+
   async function runTryOn() {
     if (!shift.outfit || !userPhotoUrl) return;
     setLoading(true);
@@ -254,7 +277,7 @@ export function ShiftCard({ shift, inventory, requireCoat, userPhotoUrl }: {
 
       {/* Header */}
       <div className={`px-5 pt-4 pb-3 border-b ${isNightCard ? "border-[#2a2060]" : "border-[#c4906a]/20"}`}>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2">
           <h2 className={`text-xl font-black tracking-tight ${isNightCard ? "text-[#a098e0]" : "text-[#7a2e08]"}`}
               style={{ fontFamily: "var(--font-display)", fontStyle: "italic" }}>
             {isNightCard ? "🌙 Noche" : "☀️ Tarde"}
@@ -266,6 +289,40 @@ export function ShiftCard({ shift, inventory, requireCoat, userPhotoUrl }: {
             </span>
           )}
         </div>
+
+        {/* Toggle compartir en el muro */}
+        <button
+          type="button"
+          onClick={toggleShared}
+          disabled={sharing}
+          aria-pressed={shared}
+          className={`mt-2.5 flex w-full items-center gap-2 rounded-xl border-2 px-3 py-2 text-left transition-all disabled:opacity-60 ${
+            shared
+              ? isNightCard
+                ? "border-[#6a5ae0] bg-[#6a5ae0]/15"
+                : "border-[#c84a10] bg-[#c84a10]/10"
+              : isNightCard
+              ? "border-[#2a2060] bg-white/3 hover:bg-white/6"
+              : "border-[#c4906a]/25 bg-[#c4906a]/5 hover:bg-[#c4906a]/12"
+          }`}
+        >
+          {/* Switch */}
+          <span className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${
+            shared ? (isNightCard ? "bg-[#6a5ae0]" : "bg-[#c84a10]") : isNightCard ? "bg-white/15" : "bg-[#c4906a]/40"
+          }`}>
+            <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
+              shared ? "translate-x-[18px]" : "translate-x-[3px]"
+            }`} />
+          </span>
+          <span className="flex flex-col min-w-0">
+            <span className={`text-xs font-bold leading-tight ${isNightCard ? "text-[#d8d0f0]" : "text-[#2a1a08]"}`}>
+              🔗 {shared ? "Compartido en el muro" : "Compartir en el muro"}
+            </span>
+            <span className={`text-[10px] leading-snug ${isNightCard ? "text-[#6a6090]" : "text-[#a07040]"}`}>
+              {shared ? "Otros usuarios pueden ver este outfit" : "Solo tú ves este outfit"}
+            </span>
+          </span>
+        </button>
       </div>
 
       {/* Slots */}

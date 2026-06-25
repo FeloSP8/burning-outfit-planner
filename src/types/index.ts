@@ -32,6 +32,17 @@ export interface Outfit {
   shiftId: string;
   items: OutfitItem[];
   tryOn?: TryOnResult | null;
+  shared?: boolean;
+}
+
+export interface WallOutfit {
+  id: string;
+  authorName: string;
+  shiftType: ShiftType;
+  date: string;
+  dayLabel?: string | null;
+  tryOnUrl?: string | null;
+  items: OutfitItem[];
 }
 
 export interface Shift {

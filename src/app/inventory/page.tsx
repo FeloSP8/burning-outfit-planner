@@ -1,10 +1,9 @@
 import { db } from "@/lib/db";
+import { getCurrentUser } from "@/lib/auth";
 import { GarmentCard } from "@/components/inventory/GarmentCard";
 import { GarmentFormModal } from "@/components/inventory/GarmentFormModal";
 import { DownloadReportButton } from "@/components/inventory/DownloadReportButton";
 import type { Garment } from "@/types";
-
-const DEFAULT_USER_ID = process.env.SEED_USER_ID ?? "user_default";
 
 const SLOTS: { key: string; icon: string; label: string }[] = [
   { key: "TOP",       icon: "👕", label: "Parte de arriba" },
@@ -19,8 +18,11 @@ const BIKE_SLOTS: { key: string; icon: string; label: string }[] = [
 ];
 
 export default async function InventoryPage() {
+  const user = await getCurrentUser();
+  if (!user) return null; // el proxy ya redirige a /login
+
   const rawGarments = await db.garment.findMany({
-    where: { userId: DEFAULT_USER_ID },
+    where: { userId: user.id },
     orderBy: { createdAt: "asc" },
   });
   const garments = rawGarments.map((g) => ({ ...g, createdAt: g.createdAt.toISOString() })) as Garment[];

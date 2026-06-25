@@ -1,8 +1,7 @@
 import { db } from "@/lib/db";
+import { getCurrentUser } from "@/lib/auth";
 import Image from "next/image";
 import Link from "next/link";
-
-const DEFAULT_USER_ID = process.env.SEED_USER_ID ?? "user_default";
 
 const SLOT_LABEL: Record<string, string> = {
   TOP: "Arriba", BOTTOM: "Abajo", SHOES: "Calzado", ACCESSORY: "Accesorios", COAT: "Abrigo",
@@ -15,8 +14,11 @@ const STATUS_STYLE: Record<string, string> = {
 };
 
 export default async function OverviewPage() {
+  const user = await getCurrentUser();
+  if (!user) return null; // el proxy ya redirige a /login
+
   const days = await db.day.findMany({
-    where: { userId: DEFAULT_USER_ID },
+    where: { userId: user.id },
     orderBy: { date: "asc" },
     include: {
       shifts: {

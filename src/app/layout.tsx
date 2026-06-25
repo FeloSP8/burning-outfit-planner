@@ -49,6 +49,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                   { href: "/planner",   label: "Planificador" },
                   { href: "/inventory", label: "Inventario" },
                   { href: "/overview",  label: "Vista general" },
+                  { href: "/wall",      label: "Muro" },
                 ].map(({ href, label }) => (
                   <Link
                     key={href}

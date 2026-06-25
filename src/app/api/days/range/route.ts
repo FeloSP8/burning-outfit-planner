@@ -11,8 +11,7 @@ const DayEntrySchema = z.object({
 });
 
 const BodySchema = z.object({
-  days:      z.array(DayEntrySchema).min(1),
-  eventName: z.string().optional(),
+  days: z.array(DayEntrySchema).min(1),
 });
 
 export async function POST(req: NextRequest) {
@@ -24,11 +23,7 @@ export async function POST(req: NextRequest) {
   if (!parsed.success)
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 
-  const { days, eventName } = parsed.data;
-
-  if (eventName) {
-    await db.user.update({ where: { id: user.id }, data: { name: eventName } });
-  }
+  const { days } = parsed.data;
 
   const created = [];
 

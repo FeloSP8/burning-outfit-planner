@@ -1,13 +1,15 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
-
-const DEFAULT_USER_ID = process.env.SEED_USER_ID ?? "user_default";
+import { getCurrentUser } from "@/lib/auth";
 
 export default async function HomePage() {
-  const [dayCount, garmentCount] = await Promise.all([
-    db.day.count({ where: { userId: DEFAULT_USER_ID } }).catch(() => 0),
-    db.garment.count({ where: { userId: DEFAULT_USER_ID } }).catch(() => 0),
-  ]);
+  const user = await getCurrentUser();
+  const [dayCount, garmentCount] = user
+    ? await Promise.all([
+        db.day.count({ where: { userId: user.id } }).catch(() => 0),
+        db.garment.count({ where: { userId: user.id } }).catch(() => 0),
+      ])
+    : [0, 0];
 
   return (
     <div className="relative flex flex-col items-center justify-center gap-14 py-20 text-center">
