@@ -14,8 +14,9 @@ export function DayPlanner({ days, inventory, userPhotoUrl }: {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Day tabs */}
-      <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${days.length}, minmax(0, 1fr))` }}>
+      {/* Day tabs — scroll horizontal en móvil, grid uniforme en pantallas anchas */}
+      <div className="-mx-4 flex snap-x gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:grid sm:px-0"
+           style={{ scrollbarWidth: "thin", gridTemplateColumns: `repeat(${days.length}, minmax(0, 1fr))` }}>
         {days.map((d) => {
           const date = new Date(d.date);
           const isActive = d.id === activeDayId;
@@ -27,7 +28,7 @@ export function DayPlanner({ days, inventory, userPhotoUrl }: {
             <button
               key={d.id}
               onClick={() => setActiveDayId(d.id)}
-              className={`flex w-full flex-col items-center gap-1 rounded-xl px-2 py-3 transition-all border-2 ${
+              className={`flex w-20 shrink-0 snap-start flex-col items-center gap-1 rounded-xl px-2 py-3 transition-all border-2 sm:w-auto ${
                 isActive
                   ? "bg-[#c84a10] border-[#c84a10] text-white shadow-lg shadow-[#c84a10]/30"
                   : "bg-[#f5e0b8]/60 border-[#c4906a]/30 text-[#7a4a20] hover:bg-[#f5e0b8] hover:border-[#c4906a]/60"

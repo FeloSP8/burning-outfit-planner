@@ -51,7 +51,7 @@ export default async function PlannerPage() {
     <div className="flex flex-col gap-8">
       <div>
         <p
-          className="text-5xl text-[#7a2e08] leading-tight"
+          className="text-4xl text-[#7a2e08] leading-tight sm:text-5xl"
           style={{ fontFamily: "var(--font-display)", fontStyle: "italic", fontWeight: 900 }}
         >
           Planificador

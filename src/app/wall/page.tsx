@@ -35,7 +35,7 @@ export default async function WallPage() {
     <div className="flex flex-col gap-8">
       {/* Header */}
       <div>
-        <p className="text-5xl text-[#7a2e08] leading-tight"
+        <p className="text-4xl text-[#7a2e08] leading-tight sm:text-5xl"
           style={{ fontFamily: "var(--font-display)", fontStyle: "italic", fontWeight: 900 }}>
           Muro de outfits
         </p>

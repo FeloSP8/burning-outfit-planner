@@ -3,7 +3,7 @@ import { Syne, Playfair_Display } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
 import { getCurrentUser } from "@/lib/auth";
-import { LogoutButton } from "@/components/LogoutButton";
+import { NavMenu } from "@/components/NavMenu";
 
 // Body: Syne — geométrica, moderna, personalidad fuerte
 const syne = Syne({
@@ -33,42 +33,23 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body className="flex min-h-full flex-col">
         {user && (
           <header className="sticky top-0 z-40 border-b border-[#b8956a]/20 bg-[#e8c99a]/80 backdrop-blur-md">
-            <nav className="mx-auto flex max-w-6xl items-center gap-8 px-5 py-3.5">
-              <Link href="/" className="flex items-center gap-2.5 group">
+            <nav className="relative mx-auto flex max-w-6xl items-center gap-4 px-4 py-3 sm:px-5 sm:py-3.5">
+              <Link href="/" className="flex items-center gap-2 group shrink-0">
                 <span className="text-xl">🔥</span>
                 <span
-                  className="text-base font-black tracking-tight text-[#7a3a10] group-hover:text-[#c45010] transition-colors"
+                  className="text-sm font-black tracking-tight text-[#7a3a10] group-hover:text-[#c45010] transition-colors sm:text-base"
                   style={{ fontFamily: "var(--font-body)" }}
                 >
                   BURN OUTFITS
                 </span>
               </Link>
 
-              <div className="flex gap-1 ml-auto items-center">
-                {[
-                  { href: "/planner",   label: "Planificador" },
-                  { href: "/inventory", label: "Inventario" },
-                  { href: "/overview",  label: "Vista general" },
-                  { href: "/wall",      label: "Muro" },
-                ].map(({ href, label }) => (
-                  <Link
-                    key={href}
-                    href={href}
-                    className="rounded-lg px-4 py-1.5 text-sm font-semibold text-[#6a4a20] hover:bg-[#c4822a]/20 hover:text-[#4a2a08] transition-all"
-                  >
-                    {label}
-                  </Link>
-                ))}
-                <span className="ml-2 hidden text-sm font-semibold text-[#a08060] sm:inline">
-                  {user.name}
-                </span>
-                <LogoutButton />
-              </div>
+              <NavMenu userName={user.name} />
             </nav>
           </header>
         )}
 
-        <main className="mx-auto w-full max-w-6xl flex-1 px-5 py-8">
+        <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-5 sm:py-8">
           {children}
         </main>
 

@@ -33,11 +33,11 @@ export default async function InventoryPage() {
   }, {});
 
   return (
-    <div className="flex flex-col gap-10">
-      <div className="flex items-end justify-between">
+    <div className="flex flex-col gap-8 sm:gap-10">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p
-            className="text-5xl text-[#7a2e08] leading-tight"
+            className="text-4xl text-[#7a2e08] leading-tight sm:text-5xl"
             style={{ fontFamily: "var(--font-display)", fontStyle: "italic", fontWeight: 900 }}
           >
             Inventario
