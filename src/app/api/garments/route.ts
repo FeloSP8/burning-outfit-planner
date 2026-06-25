@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { getCurrentUser } from "@/lib/auth";
 import { z } from "zod";
-
-const DEFAULT_USER_ID = process.env.SEED_USER_ID ?? "user_default";
 
 const VALID_SLOTS = ["TOP", "BOTTOM", "SHOES", "ACCESSORY", "COAT", "BIKE_ACCESSORY"] as const;
 const VALID_STATUSES = ["COMPRADO", "RECIBIDO", "PENDIENTE"] as const;
@@ -18,10 +17,13 @@ const GarmentSchema = z.object({
 });
 
 export async function GET(req: NextRequest) {
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+
   const slot = req.nextUrl.searchParams.get("slot");
   const garments = await db.garment.findMany({
     where: {
-      userId: DEFAULT_USER_ID,
+      userId: user.id,
       ...(slot ? { slot } : {}),
     },
     orderBy: { createdAt: "asc" },
@@ -30,19 +32,16 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+
   const body = await req.json();
   const parsed = GarmentSchema.safeParse(body);
   if (!parsed.success)
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 
-  await db.user.upsert({
-    where: { id: DEFAULT_USER_ID },
-    create: { id: DEFAULT_USER_ID },
-    update: {},
-  });
-
   const garment = await db.garment.create({
-    data: { ...parsed.data, userId: DEFAULT_USER_ID },
+    data: { ...parsed.data, userId: user.id },
   });
   return NextResponse.json(garment, { status: 201 });
 }

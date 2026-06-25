@@ -1,17 +1,19 @@
 import { NextResponse } from "next/server";
 import { createElement } from "react";
 import { db } from "@/lib/db";
+import { getCurrentUser } from "@/lib/auth";
 import { InventoryPDF } from "@/lib/inventoryPdf";
 import type { Garment } from "@/types";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-const DEFAULT_USER_ID = process.env.SEED_USER_ID ?? "user_default";
-
 export async function GET() {
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+
   const rawGarments = await db.garment.findMany({
-    where: { userId: DEFAULT_USER_ID },
+    where: { userId: user.id },
     orderBy: [{ slot: "asc" }, { createdAt: "asc" }],
   });
 

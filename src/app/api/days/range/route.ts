@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { getCurrentUser } from "@/lib/auth";
 import { z } from "zod";
-
-const DEFAULT_USER_ID = process.env.SEED_USER_ID ?? "user_default";
 
 const DayEntrySchema = z.object({
   date:  z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -17,6 +16,9 @@ const BodySchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+
   const body = await req.json();
   const parsed = BodySchema.safeParse(body);
   if (!parsed.success)
@@ -24,11 +26,9 @@ export async function POST(req: NextRequest) {
 
   const { days, eventName } = parsed.data;
 
-  await db.user.upsert({
-    where:  { id: DEFAULT_USER_ID },
-    create: { id: DEFAULT_USER_ID, name: eventName ?? "Burning Man 2026" },
-    update: {},
-  });
+  if (eventName) {
+    await db.user.update({ where: { id: user.id }, data: { name: eventName } });
+  }
 
   const created = [];
 
@@ -36,8 +36,8 @@ export async function POST(req: NextRequest) {
     const date = new Date(entry.date + "T12:00:00.000Z");
 
     const day = await db.day.upsert({
-      where:  { userId_date: { userId: DEFAULT_USER_ID, date } },
-      create: { userId: DEFAULT_USER_ID, date, label: entry.label },
+      where:  { userId_date: { userId: user.id, date } },
+      create: { userId: user.id, date, label: entry.label },
       update: { label: entry.label },
     });
 
@@ -69,6 +69,9 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE() {
-  await db.day.deleteMany({ where: { userId: DEFAULT_USER_ID } });
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+
+  await db.day.deleteMany({ where: { userId: user.id } });
   return NextResponse.json({ ok: true });
 }

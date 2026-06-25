@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { getCurrentUser, ownsOutfit, ownsGarment } from "@/lib/auth";
 import { z } from "zod";
 
 // Todos los slots son únicos por outfit — el select solo puede mostrar una prenda a la vez
@@ -8,6 +9,9 @@ const UNIQUE_SLOTS = ["TOP", "BOTTOM", "SHOES", "COAT", "ACCESSORY"];
 const AssignSchema = z.object({ garmentId: z.string().min(1) });
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+
   const { id: outfitId } = await params;
   const body = await req.json();
   const parsed = AssignSchema.safeParse(body);
@@ -15,6 +19,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 
   const { garmentId } = parsed.data;
+
+  // El outfit y la prenda deben pertenecer al usuario de sesión.
+  if (!(await ownsOutfit(outfitId, user.id)))
+    return NextResponse.json({ error: "Outfit no encontrado" }, { status: 404 });
+  if (!(await ownsGarment(garmentId, user.id)))
+    return NextResponse.json({ error: "Prenda no encontrada" }, { status: 404 });
 
   const [outfit, garment] = await Promise.all([
     db.outfit.findUnique({ where: { id: outfitId }, include: { items: { include: { garment: true } }, shift: true } }),
@@ -43,10 +53,16 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+
   const { id: outfitId } = await params;
   const garmentId = req.nextUrl.searchParams.get("garmentId");
   if (!garmentId)
     return NextResponse.json({ error: "garmentId requerido" }, { status: 400 });
+
+  if (!(await ownsOutfit(outfitId, user.id)))
+    return NextResponse.json({ error: "Outfit no encontrado" }, { status: 404 });
 
   await db.outfitItem.deleteMany({ where: { outfitId, garmentId } });
   return NextResponse.json({ ok: true });

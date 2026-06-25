@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Syne, Playfair_Display } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
+import { getCurrentUser } from "@/lib/auth";
+import { LogoutButton } from "@/components/LogoutButton";
 
 // Body: Syne — geométrica, moderna, personalidad fuerte
 const syne = Syne({
@@ -23,39 +25,47 @@ export const metadata: Metadata = {
   description: "Planificador de outfits para Burning Man",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const user = await getCurrentUser();
+
   return (
     <html lang="es" className={`${syne.variable} ${playfair.variable} h-full`}>
       <body className="flex min-h-full flex-col">
-        <header className="sticky top-0 z-40 border-b border-[#b8956a]/20 bg-[#e8c99a]/80 backdrop-blur-md">
-          <nav className="mx-auto flex max-w-6xl items-center gap-8 px-5 py-3.5">
-            <Link href="/" className="flex items-center gap-2.5 group">
-              <span className="text-xl">🔥</span>
-              <span
-                className="text-base font-black tracking-tight text-[#7a3a10] group-hover:text-[#c45010] transition-colors"
-                style={{ fontFamily: "var(--font-body)" }}
-              >
-                BURN OUTFITS
-              </span>
-            </Link>
-
-            <div className="flex gap-1 ml-auto">
-              {[
-                { href: "/planner",   label: "Planificador" },
-                { href: "/inventory", label: "Inventario" },
-                { href: "/overview",  label: "Vista general" },
-              ].map(({ href, label }) => (
-                <Link
-                  key={href}
-                  href={href}
-                  className="rounded-lg px-4 py-1.5 text-sm font-semibold text-[#6a4a20] hover:bg-[#c4822a]/20 hover:text-[#4a2a08] transition-all"
+        {user && (
+          <header className="sticky top-0 z-40 border-b border-[#b8956a]/20 bg-[#e8c99a]/80 backdrop-blur-md">
+            <nav className="mx-auto flex max-w-6xl items-center gap-8 px-5 py-3.5">
+              <Link href="/" className="flex items-center gap-2.5 group">
+                <span className="text-xl">🔥</span>
+                <span
+                  className="text-base font-black tracking-tight text-[#7a3a10] group-hover:text-[#c45010] transition-colors"
+                  style={{ fontFamily: "var(--font-body)" }}
                 >
-                  {label}
-                </Link>
-              ))}
-            </div>
-          </nav>
-        </header>
+                  BURN OUTFITS
+                </span>
+              </Link>
+
+              <div className="flex gap-1 ml-auto items-center">
+                {[
+                  { href: "/planner",   label: "Planificador" },
+                  { href: "/inventory", label: "Inventario" },
+                  { href: "/overview",  label: "Vista general" },
+                ].map(({ href, label }) => (
+                  <Link
+                    key={href}
+                    href={href}
+                    className="rounded-lg px-4 py-1.5 text-sm font-semibold text-[#6a4a20] hover:bg-[#c4822a]/20 hover:text-[#4a2a08] transition-all"
+                  >
+                    {label}
+                  </Link>
+                ))}
+                <span className="ml-2 hidden text-sm font-semibold text-[#a08060] sm:inline">
+                  {user.name}
+                </span>
+                <LogoutButton />
+              </div>
+            </nav>
+          </header>
+        )}
 
         <main className="mx-auto w-full max-w-6xl flex-1 px-5 py-8">
           {children}

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { getCurrentUser, ownsOutfit } from "@/lib/auth";
 import { generateTryOnLeonardo } from "@/lib/leonardo";
 import { LEONARDO_MODELS, type ModelId } from "@/lib/leonardo-models";
 import { z } from "zod";
@@ -14,12 +15,19 @@ const Schema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+
   const body = await req.json();
   const parsed = Schema.safeParse(body);
   if (!parsed.success)
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 
   const { outfitId, userPhotoUrl, extraPrompt, model = "gpt-image-2" } = parsed.data;
+
+  // Verificar propiedad antes de gastar créditos de Leonardo.
+  if (!(await ownsOutfit(outfitId, user.id)))
+    return NextResponse.json({ error: "Outfit no encontrado" }, { status: 404 });
 
   const outfit = await db.outfit.findUnique({
     where: { id: outfitId },

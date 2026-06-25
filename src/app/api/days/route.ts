@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-
-const DEFAULT_USER_ID = process.env.SEED_USER_ID ?? "user_default";
+import { getCurrentUser } from "@/lib/auth";
 
 export async function GET() {
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+
   const days = await db.day.findMany({
-    where: { userId: DEFAULT_USER_ID },
+    where: { userId: user.id },
     orderBy: { date: "asc" },
     include: {
       shifts: {
