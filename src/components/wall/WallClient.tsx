@@ -12,7 +12,7 @@ const SLOT_ICON: Record<string, string> = {
 };
 
 // Emojis de reacción disponibles (⭐ se trata aparte como favorito).
-const REACTION_EMOJIS = ["🔥", "😍", "👏", "🤩", "💜", "😂", "👌"];
+const REACTION_EMOJIS = ["🔥", "😍", "👏", "🤩", "💜", "😂", "👌", "🏳️‍🌈"];
 const FAVORITE = "⭐";
 
 function formatPrice(price: number | null | undefined) {

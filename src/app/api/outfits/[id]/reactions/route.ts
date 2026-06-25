@@ -4,7 +4,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { z } from "zod";
 
 // Conjunto permitido de emojis de reacción (incluye ⭐ para favorito).
-const ALLOWED_EMOJIS = ["⭐", "🔥", "😍", "👏", "🤩", "💜", "😂", "👌"];
+const ALLOWED_EMOJIS = ["⭐", "🔥", "😍", "👏", "🤩", "💜", "😂", "👌", "🏳️‍🌈"];
 
 const Schema = z.object({ emoji: z.enum(ALLOWED_EMOJIS as [string, ...string[]]) });
 
