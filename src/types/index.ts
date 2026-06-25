@@ -35,6 +35,13 @@ export interface Outfit {
   shared?: boolean;
 }
 
+export interface ReactionSummary {
+  emoji: string;
+  count: number;
+  mine: boolean;      // ¿el usuario actual reaccionó con este emoji?
+  who: string[];      // nombres de quienes reaccionaron
+}
+
 export interface WallOutfit {
   id: string;
   authorName: string;
@@ -43,6 +50,8 @@ export interface WallOutfit {
   dayLabel?: string | null;
   tryOnUrl?: string | null;
   items: OutfitItem[];
+  reactions: ReactionSummary[];
+  favoriteCount: number;  // nº de ⭐ (para ordenar por más votados)
 }
 
 export interface Shift {

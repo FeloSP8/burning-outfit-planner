@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Image from "next/image";
-import type { WallOutfit } from "@/types";
+import type { WallOutfit, ReactionSummary } from "@/types";
 
 const SLOT_LABEL: Record<string, string> = {
   TOP: "Arriba", BOTTOM: "Abajo", SHOES: "Calzado", ACCESSORY: "Accesorios", COAT: "Abrigo", BIKE_ACCESSORY: "Bici",
@@ -11,12 +11,16 @@ const SLOT_ICON: Record<string, string> = {
   TOP: "👕", BOTTOM: "👖", SHOES: "👟", ACCESSORY: "🕶️", COAT: "🧥", BIKE_ACCESSORY: "🚲",
 };
 
+// Emojis de reacción disponibles (⭐ se trata aparte como favorito).
+const REACTION_EMOJIS = ["🔥", "😍", "👏", "🤩", "💜", "😂", "👌"];
+const FAVORITE = "⭐";
+
 function formatPrice(price: number | null | undefined) {
   if (price == null) return null;
   return new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR" }).format(price);
 }
 
-type ViewKey = "day" | "author";
+type ViewKey = "day" | "author" | "top";
 type ShiftFilter = "ALL" | "TARDE" | "NOCHE";
 
 // Orden de turnos dentro de un mismo día: Tarde antes que Noche
@@ -56,6 +60,7 @@ export function WallClient({ outfits }: { outfits: WallOutfit[] }) {
           <select value={view} onChange={(e) => setView(e.target.value as ViewKey)} className={selectCls}>
             <option value="day">Día y turno</option>
             <option value="author">Usuario</option>
+            <option value="top">⭐ Más votados</option>
           </select>
         </Control>
 
@@ -112,6 +117,12 @@ export function WallClient({ outfits }: { outfits: WallOutfit[] }) {
 type Group = { key: string; title: string; icon: string; sortKey: string; items: WallOutfit[] };
 
 function groupOutfits(outfits: WallOutfit[], view: ViewKey): Group[] {
+  // Vista "top": un único grupo con todos los outfits ordenados por ⭐ (desc).
+  if (view === "top") {
+    const items = [...outfits].sort((a, b) => b.favoriteCount - a.favoriteCount);
+    return [{ key: "top", title: "Más votados", icon: "⭐", sortKey: "0", items }];
+  }
+
   const map = new Map<string, Group>();
 
   for (const o of outfits) {
@@ -158,11 +169,51 @@ function OutfitCard({ outfit: o }: { outfit: WallOutfit }) {
   const date = new Date(o.date);
   const dateLabel = date.toLocaleDateString("es-ES", { day: "numeric", month: "short", timeZone: "UTC" });
 
+  // Estado local de reacciones (para actualización optimista)
+  const [reactions, setReactions] = useState<ReactionSummary[]>(o.reactions);
+  const [picker, setPicker] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  const fav = reactions.find((r) => r.emoji === FAVORITE);
+  const favCount = fav?.count ?? 0;
+  const favMine = fav?.mine ?? false;
+  const emojiReactions = reactions.filter((r) => r.emoji !== FAVORITE);
+
+  async function toggle(emoji: string) {
+    if (busy) return;
+    setBusy(true);
+    // Optimista: actualizar el estado local antes de la respuesta
+    setReactions((prev) => applyToggle(prev, emoji));
+    setPicker(false);
+    try {
+      const res = await fetch(`/api/outfits/${o.id}/reactions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ emoji }),
+      });
+      if (!res.ok) throw new Error();
+      const data = await res.json(); // { emoji, count, reacted }
+      // Reconciliar el contador con el valor real del servidor
+      setReactions((prev) => reconcile(prev, data.emoji, data.count, data.reacted));
+    } catch {
+      // revertir si falla
+      setReactions((prev) => applyToggle(prev, emoji));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const favBtn = `flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold transition-colors ${
+    favMine
+      ? "bg-amber-400 text-amber-950"
+      : isNight ? "bg-white/10 text-[#d8d0f0] hover:bg-white/20" : "bg-[#c4906a]/20 text-[#7a3a10] hover:bg-[#c4906a]/35"
+  }`;
+
   return (
     <div className={`flex flex-col overflow-hidden rounded-2xl border-2 ${
       isNight ? "bg-[#0e0c20] border-[#2a2060]" : "bg-[#fdf4e0] border-[#c4906a]/40"
     }`}>
-      {/* Header: autor + turno */}
+      {/* Header: autor + turno + favorito */}
       <div className={`flex items-center gap-2 border-b px-4 py-2.5 ${isNight ? "border-[#2a2060]" : "border-[#c4906a]/20"}`}>
         <span className="text-base">{isNight ? "🌙" : "☀️"}</span>
         <div className="flex flex-col min-w-0">
@@ -173,6 +224,17 @@ function OutfitCard({ outfit: o }: { outfit: WallOutfit }) {
             {isNight ? "Noche" : "Tarde"} · {dateLabel}{o.dayLabel ? ` · ${o.dayLabel}` : ""}
           </span>
         </div>
+        <button
+          type="button"
+          onClick={() => toggle(FAVORITE)}
+          disabled={busy}
+          aria-pressed={favMine}
+          title={favMine ? "Quitar de favoritos" : "Marcar favorito"}
+          className={`ml-auto shrink-0 ${favBtn}`}
+        >
+          <span>⭐</span>
+          {favCount > 0 && <span>{favCount}</span>}
+        </button>
       </div>
 
       {/* Try-on grande si existe */}
@@ -218,6 +280,86 @@ function OutfitCard({ outfit: o }: { outfit: WallOutfit }) {
           );
         })}
       </div>
+
+      {/* Barra de reacciones */}
+      <div className={`relative flex flex-wrap items-center gap-1.5 border-t px-4 py-2.5 ${
+        isNight ? "border-[#2a2060]" : "border-[#c4906a]/20"
+      }`}>
+        {emojiReactions.map((r) => (
+          <button
+            key={r.emoji}
+            type="button"
+            onClick={() => toggle(r.emoji)}
+            disabled={busy}
+            title={r.who.join(", ")}
+            className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-sm transition-colors ${
+              r.mine
+                ? isNight ? "bg-[#4a38c0] text-white" : "bg-[#c84a10] text-white"
+                : isNight ? "bg-white/10 hover:bg-white/20" : "bg-[#c4906a]/20 hover:bg-[#c4906a]/35"
+            }`}
+          >
+            <span>{r.emoji}</span>
+            <span className={`text-[11px] font-bold ${
+              r.mine ? "text-white" : isNight ? "text-[#d8d0f0]" : "text-[#7a3a10]"
+            }`}>{r.count}</span>
+          </button>
+        ))}
+
+        {/* Botón añadir reacción */}
+        <button
+          type="button"
+          onClick={() => setPicker((p) => !p)}
+          disabled={busy}
+          aria-label="Añadir reacción"
+          className={`flex h-7 w-7 items-center justify-center rounded-full text-sm transition-colors ${
+            isNight ? "bg-white/10 text-[#d8d0f0] hover:bg-white/20" : "bg-[#c4906a]/20 text-[#7a3a10] hover:bg-[#c4906a]/35"
+          }`}
+        >
+          ＋
+        </button>
+
+        {/* Picker de emojis */}
+        {picker && (
+          <div className={`absolute bottom-full left-4 z-20 mb-1 flex gap-1 rounded-xl border-2 p-1.5 shadow-xl ${
+            isNight ? "bg-[#1a1840] border-[#3a3070]" : "bg-[#fdf4e0] border-[#c4906a]/50"
+          }`}>
+            {REACTION_EMOJIS.map((e) => (
+              <button
+                key={e}
+                type="button"
+                onClick={() => toggle(e)}
+                className="rounded-lg px-1.5 py-0.5 text-lg transition-transform hover:scale-125"
+              >
+                {e}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
+}
+
+// Aplica un toggle optimista de un emoji sobre el resumen de reacciones.
+function applyToggle(reactions: ReactionSummary[], emoji: string): ReactionSummary[] {
+  const existing = reactions.find((r) => r.emoji === emoji);
+  if (existing?.mine) {
+    // quitar mi reacción
+    const next = reactions
+      .map((r) => r.emoji === emoji ? { ...r, count: r.count - 1, mine: false } : r)
+      .filter((r) => r.count > 0);
+    return next;
+  }
+  if (existing) {
+    return reactions.map((r) => r.emoji === emoji ? { ...r, count: r.count + 1, mine: true } : r);
+  }
+  return [...reactions, { emoji, count: 1, mine: true, who: [] }];
+}
+
+// Reconcilia el contador local con el valor real del servidor.
+function reconcile(reactions: ReactionSummary[], emoji: string, count: number, mine: boolean): ReactionSummary[] {
+  if (count === 0) return reactions.filter((r) => r.emoji !== emoji);
+  const existing = reactions.find((r) => r.emoji === emoji);
+  if (existing) return reactions.map((r) => r.emoji === emoji ? { ...r, count, mine } : r);
+  return [...reactions, { emoji, count, mine, who: [] }];
 }

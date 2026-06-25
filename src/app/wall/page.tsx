@@ -15,23 +15,41 @@ export default async function WallPage() {
       tryOn: true,
       items: { include: { garment: true }, orderBy: { id: "asc" } },
       shift: { include: { day: { include: { user: true } } } },
+      reactions: { include: { user: { select: { name: true } } } },
     },
   });
 
   const wall: WallOutfit[] = outfits
     .filter((o) => o.items.length > 0)
-    .map((o) => ({
-      id: o.id,
-      authorName: o.shift.day.user.name,
-      shiftType: o.shift.type as WallOutfit["shiftType"],
-      date: o.shift.day.date.toISOString(),
-      dayLabel: o.shift.day.label,
-      tryOnUrl: o.tryOn?.imageUrl ?? null,
-      items: o.items.map((it) => ({
-        id: it.id,
-        garment: { ...it.garment, createdAt: it.garment.createdAt.toISOString() } as Garment,
-      })),
-    }));
+    .map((o) => {
+      // Agrupar reacciones por emoji
+      const byEmoji = new Map<string, { count: number; mine: boolean; who: string[] }>();
+      for (const r of o.reactions) {
+        const e = byEmoji.get(r.emoji) ?? { count: 0, mine: false, who: [] };
+        e.count++;
+        e.who.push(r.user.name);
+        if (r.userId === user.id) e.mine = true;
+        byEmoji.set(r.emoji, e);
+      }
+      const reactions = Array.from(byEmoji.entries())
+        .map(([emoji, v]) => ({ emoji, ...v }))
+        .sort((a, b) => b.count - a.count);
+
+      return {
+        id: o.id,
+        authorName: o.shift.day.user.name,
+        shiftType: o.shift.type as WallOutfit["shiftType"],
+        date: o.shift.day.date.toISOString(),
+        dayLabel: o.shift.day.label,
+        tryOnUrl: o.tryOn?.imageUrl ?? null,
+        items: o.items.map((it) => ({
+          id: it.id,
+          garment: { ...it.garment, createdAt: it.garment.createdAt.toISOString() } as Garment,
+        })),
+        reactions,
+        favoriteCount: o.reactions.filter((r) => r.emoji === "⭐").length,
+      };
+    });
 
   return (
     <div className="flex flex-col gap-6">

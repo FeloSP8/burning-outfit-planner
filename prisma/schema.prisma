@@ -8,13 +8,14 @@ datasource db {
 }
 
 model User {
-  id        String    @id @default(cuid())
-  email     String    @unique
-  name      String    @default("Yo")
+  id        String     @id @default(cuid())
+  email     String     @unique
+  name      String     @default("Yo")
   photoUrl  String?
   days      Day[]
   garments  Garment[]
-  createdAt DateTime  @default(now())
+  reactions Reaction[]
+  createdAt DateTime   @default(now())
 }
 
 model Day {
@@ -44,6 +45,7 @@ model Outfit {
   shiftId   String       @unique
   items     OutfitItem[]
   tryOn     TryOnResult?
+  reactions Reaction[]
   shared    Boolean      @default(false)
   updatedAt DateTime     @updatedAt
 }
@@ -80,4 +82,20 @@ model TryOnResult {
   imageUrl  String
   userPhoto String
   createdAt DateTime @default(now())
+}
+
+// Reacción de un usuario a un outfit del muro.
+// `emoji` puede ser cualquier emoji de reacción (🔥😍👏…) o "⭐" para favorito.
+// Único por (usuario, outfit, emoji): no puedes repetir el mismo emoji.
+model Reaction {
+  id        String   @id @default(cuid())
+  emoji     String
+  outfit    Outfit   @relation(fields: [outfitId], references: [id], onDelete: Cascade)
+  outfitId  String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, outfitId, emoji])
+  @@index([outfitId])
 }
