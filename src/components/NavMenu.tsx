@@ -10,6 +10,7 @@ const LINKS = [
   { href: "/inventory", label: "Inventario" },
   { href: "/overview",  label: "Vista general" },
   { href: "/wall",      label: "Muro" },
+  { href: "/checklist", label: "Checklist" },
 ];
 
 export function NavMenu({ userName }: { userName: string }) {

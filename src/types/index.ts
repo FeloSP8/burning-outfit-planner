@@ -2,6 +2,20 @@ export type ShiftType = "TARDE" | "NOCHE";
 export type GarmentSlot = "TOP" | "BOTTOM" | "SHOES" | "ACCESSORY" | "COAT" | "BIKE_ACCESSORY";
 export type GarmentStatus = "COMPRADO" | "RECIBIDO" | "PENDIENTE";
 
+export type ChecklistType = "COMMON" | "INDIVIDUAL";
+
+export interface ChecklistItemData {
+  id: string;
+  text: string;
+  type: ChecklistType;
+  tags: string[];
+  done: boolean;             // COMMON: comprado/conseguido
+  assigneeName: string | null; // COMMON: quién se encarga
+  createdByName: string;
+  checkedBy: string[];       // INDIVIDUAL: nombres que ya lo tienen
+  iChecked: boolean;         // INDIVIDUAL: ¿yo lo tengo?
+}
+
 export interface Garment {
   id: string;
   name: string;

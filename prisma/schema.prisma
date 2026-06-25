@@ -8,14 +8,16 @@ datasource db {
 }
 
 model User {
-  id        String     @id @default(cuid())
-  email     String     @unique
-  name      String     @default("Yo")
-  photoUrl  String?
-  days      Day[]
-  garments  Garment[]
-  reactions Reaction[]
-  createdAt DateTime   @default(now())
+  id             String          @id @default(cuid())
+  email          String          @unique
+  name           String          @default("Yo")
+  photoUrl       String?
+  days           Day[]
+  garments       Garment[]
+  reactions      Reaction[]
+  checklistItems ChecklistItem[]
+  checklistChecks ChecklistCheck[]
+  createdAt      DateTime        @default(now())
 }
 
 model Day {
@@ -98,4 +100,33 @@ model Reaction {
 
   @@unique([userId, outfitId, emoji])
   @@index([outfitId])
+}
+
+// Checklist compartida de compras del grupo.
+// type COMMON: con una compra vale para todos (done global + assignee opcional).
+// type INDIVIDUAL: cada usuario debe comprar el suyo (estado vía ChecklistCheck).
+model ChecklistItem {
+  id           String           @id @default(cuid())
+  text         String
+  type         String           @default("INDIVIDUAL") // "COMMON" | "INDIVIDUAL"
+  tags         String           @default("")           // campo libre, separado por comas
+  done         Boolean          @default(false)        // solo relevante en COMMON
+  assigneeName String?                                 // quién se encarga (COMMON)
+  createdBy    User             @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  createdById  String
+  checks       ChecklistCheck[]
+  createdAt    DateTime         @default(now())
+}
+
+// Un usuario marcó como hecho/comprado un ítem individual de la checklist.
+model ChecklistCheck {
+  id        String        @id @default(cuid())
+  item      ChecklistItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  itemId    String
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  createdAt DateTime      @default(now())
+
+  @@unique([itemId, userId])
+  @@index([itemId])
 }

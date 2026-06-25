@@ -64,3 +64,12 @@ export async function ownsGarment(garmentId: string, userId: string): Promise<bo
   });
   return garment?.userId === userId;
 }
+
+// Email del usuario administrador (puede borrar ítems de la checklist).
+// Configurable vía ADMIN_EMAIL; por defecto, el dueño de la app.
+const ADMIN_EMAIL = (process.env.ADMIN_EMAIL ?? "felipesrmd@gmail.com").toLowerCase();
+
+/** ¿Es este usuario el administrador? */
+export function isAdmin(user: { email: string } | null): boolean {
+  return !!user && user.email.toLowerCase() === ADMIN_EMAIL;
+}
