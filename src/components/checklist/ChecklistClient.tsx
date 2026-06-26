@@ -6,12 +6,12 @@ import type { ChecklistItemData, ChecklistType } from "@/types";
 export function ChecklistClient({
   initialItems,
   isAdmin,
-  totalUsers,
+  allUsers,
   currentUserName,
 }: {
   initialItems: ChecklistItemData[];
   isAdmin: boolean;
-  totalUsers: number;
+  allUsers: string[];
   currentUserName: string;
 }) {
   const [items, setItems] = useState(initialItems);
@@ -181,7 +181,8 @@ export function ChecklistClient({
               key={item.id}
               item={item}
               isAdmin={isAdmin}
-              totalUsers={totalUsers}
+              allUsers={allUsers}
+              currentUserName={currentUserName}
               onToggleIndividual={() => toggleIndividual(item)}
               onToggleCommon={() => toggleCommon(item)}
               onSetAssignee={(n) => setAssignee(item, n)}
@@ -194,47 +195,59 @@ export function ChecklistClient({
   );
 }
 
+function initial(name: string) {
+  return (name.trim()[0] ?? "?").toUpperCase();
+}
+
+// Ficha de una persona: verde con ✓ si lo tiene, gris punteado si le falta.
+function PersonChip({ name, has, isMe }: { name: string; has: boolean; isMe: boolean }) {
+  const label = isMe ? "Tú" : name;
+  return (
+    <span
+      title={`${name}${has ? " — lo tiene" : " — le falta"}`}
+      className={`inline-flex items-center gap-1.5 rounded-full py-0.5 pl-0.5 pr-2.5 text-[11px] font-semibold ${
+        has
+          ? `bg-emerald-100 text-emerald-800 ${isMe ? "border-2 border-emerald-500" : "border border-emerald-300"}`
+          : `bg-[#f0e8d6] text-[#9a8560] border border-dashed border-[#c9b896] ${isMe ? "border-2 border-[#c84a10]/60" : ""}`
+      }`}
+    >
+      <span className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold text-white ${
+        has ? "bg-emerald-500" : "bg-[#d8c9a8] text-[#8a7550]"
+      }`}>
+        {initial(name)}
+      </span>
+      {label}{has && " ✓"}
+    </span>
+  );
+}
+
 function ChecklistRow({
-  item, isAdmin, totalUsers, onToggleIndividual, onToggleCommon, onSetAssignee, onRemove,
+  item, isAdmin, allUsers, currentUserName, onToggleIndividual, onToggleCommon, onSetAssignee, onRemove,
 }: {
   item: ChecklistItemData;
   isAdmin: boolean;
-  totalUsers: number;
+  allUsers: string[];
+  currentUserName: string;
   onToggleIndividual: () => void;
   onToggleCommon: () => void;
   onSetAssignee: (name: string) => void;
   onRemove: () => void;
 }) {
   const isCommon = item.type === "COMMON";
-  const done = isCommon ? item.done : item.iChecked;
+  const checked = new Set(item.checkedBy);
+  const haveCount = item.checkedBy.length;
+  const pct = allUsers.length > 0 ? Math.round((haveCount / allUsers.length) * 100) : 0;
 
   return (
-    <div className={`flex items-start gap-3 rounded-xl border-2 px-4 py-3 transition-colors ${
-      done ? "border-emerald-300 bg-emerald-50" : "border-[#c4906a]/30 bg-[#fdf4e0]"
-    }`}>
-      {/* Check */}
-      <button
-        type="button"
-        onClick={isCommon ? onToggleCommon : onToggleIndividual}
-        aria-pressed={done}
-        title={isCommon ? "Marcar comprado" : "Marcar que ya lo tienes"}
-        className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md border-2 transition-colors ${
-          done ? "border-emerald-500 bg-emerald-500 text-white" : "border-[#c4906a]/50 hover:border-[#c84a10]"
-        }`}
-      >
-        {done && <span className="text-sm font-black">✓</span>}
-      </button>
-
-      {/* Contenido */}
-      <div className="flex flex-1 flex-col gap-1 min-w-0">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className={`text-sm font-bold ${done ? "text-emerald-800 line-through" : "text-[#2a1a08]"}`}>
-            {item.text}
-          </span>
+    <div className="flex flex-col gap-3 rounded-xl border border-[#c4906a]/30 bg-[#fdf4e0] px-4 py-3.5">
+      {/* Cabecera: título + badges */}
+      <div className="flex items-start gap-2">
+        <div className="flex flex-1 flex-wrap items-center gap-2 min-w-0">
+          <span className="text-[15px] font-bold text-[#2a1a08]">{item.text}</span>
           <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
             isCommon ? "bg-indigo-100 text-indigo-700" : "bg-amber-100 text-amber-700"
           }`}>
-            {isCommon ? "🤝 común" : "👤 cada uno"}
+            {isCommon ? "común" : "cada uno"}
           </span>
           {item.tags.map((t) => (
             <span key={t} className="rounded-full bg-[#c4906a]/20 px-2 py-0.5 text-[10px] font-bold text-[#7a3a10]">
@@ -242,42 +255,104 @@ function ChecklistRow({
             </span>
           ))}
         </div>
-
-        {/* Estado */}
-        {isCommon ? (
-          <div className="flex items-center gap-2 text-[11px] text-[#a07040]">
-            <span className="font-semibold">Se encarga:</span>
-            <input
-              type="text"
-              defaultValue={item.assigneeName ?? ""}
-              onBlur={(e) => onSetAssignee(e.target.value)}
-              placeholder="nadie aún"
-              className="w-32 rounded border border-[#c4906a]/40 bg-white/60 px-2 py-0.5 text-[11px] font-semibold text-[#2a1a08] focus:border-[#c84a10]/60 focus:outline-none"
-            />
-          </div>
-        ) : (
-          <span className="text-[11px] font-semibold text-[#a07040]">
-            {item.checkedBy.length} de {totalUsers} lo tienen
-            {item.checkedBy.length > 0 && (
-              <span className="font-normal"> · {item.checkedBy.join(", ")}</span>
-            )}
-          </span>
+        {!isCommon && (
+          <span className="shrink-0 text-xs font-bold text-[#7a5030]">{haveCount}/{allUsers.length}</span>
         )}
-        <span className="text-[10px] text-[#b09060]">Añadido por {item.createdByName}</span>
+        {isAdmin && (
+          <button
+            type="button"
+            onClick={onRemove}
+            aria-label="Borrar"
+            title="Borrar (admin)"
+            className="shrink-0 rounded-md px-1.5 py-0.5 text-sm text-red-500 hover:bg-red-100 transition-colors"
+          >
+            🗑️
+          </button>
+        )}
       </div>
 
-      {/* Borrar (solo admin) */}
-      {isAdmin && (
+      {isCommon ? (
+        /* COMÚN: estado de quién se encarga */
+        <CommonStatus item={item} onSetAssignee={onSetAssignee} onToggleDone={onToggleCommon} />
+      ) : (
+        /* INDIVIDUAL: barra de progreso + ficha por persona */
+        <div className="flex flex-col gap-2.5">
+          <div className="h-1.5 overflow-hidden rounded-full bg-[#e8dcc4]">
+            <div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${pct}%` }} />
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {allUsers.map((name) => {
+              const has = checked.has(name);
+              const isMe = name === currentUserName;
+              return isMe ? (
+                <button key={name} type="button" onClick={onToggleIndividual} className="transition-transform hover:scale-105">
+                  <PersonChip name={name} has={has} isMe />
+                </button>
+              ) : (
+                <PersonChip key={name} name={name} has={has} isMe={false} />
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      <span className="text-[10px] text-[#b09060]">Añadido por {item.createdByName}</span>
+    </div>
+  );
+}
+
+function CommonStatus({
+  item, onSetAssignee, onToggleDone,
+}: {
+  item: ChecklistItemData;
+  onSetAssignee: (name: string) => void;
+  onToggleDone: () => void;
+}) {
+  const [editing, setEditing] = useState(false);
+
+  if (item.assigneeName) {
+    return (
+      <div className="flex items-center gap-2">
+        <span className="inline-flex items-center gap-2 rounded-lg border border-emerald-300 bg-emerald-100 px-2.5 py-1">
+          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 text-[10px] font-bold text-white">
+            {initial(item.assigneeName)}
+          </span>
+          <span className="text-xs text-emerald-800">
+            <b className="font-bold">{item.assigneeName}</b> lo trae ✓
+          </span>
+        </span>
         <button
           type="button"
-          onClick={onRemove}
-          aria-label="Borrar"
-          title="Borrar (admin)"
-          className="mt-0.5 shrink-0 rounded-md px-2 py-1 text-sm text-red-500 hover:bg-red-100 transition-colors"
+          onClick={() => onSetAssignee("")}
+          className="text-[11px] font-semibold text-[#a07040] underline-offset-2 hover:underline"
         >
-          🗑️
+          cambiar
         </button>
-      )}
-    </div>
+      </div>
+    );
+  }
+
+  if (editing) {
+    return (
+      <input
+        type="text"
+        autoFocus
+        defaultValue=""
+        onBlur={(e) => { onSetAssignee(e.target.value); setEditing(false); }}
+        onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
+        placeholder="¿Quién lo trae?"
+        className="w-48 rounded-lg border-2 border-[#c4906a]/40 bg-white/70 px-3 py-1.5 text-sm font-semibold text-[#2a1a08] focus:border-[#c84a10]/60 focus:outline-none"
+      />
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => setEditing(true)}
+      className="w-fit rounded-lg border border-dashed border-[#c9b896] px-3 py-1.5 text-xs font-semibold text-[#9a8560] hover:border-[#c84a10]/50 hover:text-[#7a3a10] transition-colors"
+    >
+      + ¿Quién se encarga?
+    </button>
   );
 }

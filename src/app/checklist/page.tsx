@@ -7,7 +7,7 @@ export default async function ChecklistPage() {
   const user = await getCurrentUser();
   if (!user) return null; // el proxy ya redirige a /login
 
-  const [rawItems, totalUsers] = await Promise.all([
+  const [rawItems, users] = await Promise.all([
     db.checklistItem.findMany({
       orderBy: { createdAt: "asc" },
       include: {
@@ -15,8 +15,10 @@ export default async function ChecklistPage() {
         checks: { include: { user: { select: { name: true } } } },
       },
     }),
-    db.user.count(),
+    db.user.findMany({ select: { name: true }, orderBy: { name: "asc" } }),
   ]);
+
+  const allUsers = users.map((u) => u.name);
 
   const items: ChecklistItemData[] = rawItems.map((it) => ({
     id: it.id,
@@ -42,7 +44,7 @@ export default async function ChecklistPage() {
         </p>
       </div>
 
-      <ChecklistClient initialItems={items} isAdmin={isAdmin(user)} totalUsers={totalUsers} currentUserName={user.name} />
+      <ChecklistClient initialItems={items} isAdmin={isAdmin(user)} allUsers={allUsers} currentUserName={user.name} />
     </div>
   );
 }
