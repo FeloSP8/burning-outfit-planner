@@ -238,6 +238,14 @@ function ChecklistRow({
   const haveCount = item.checkedBy.length;
   const pct = allUsers.length > 0 ? Math.round((haveCount / allUsers.length) * 100) : 0;
 
+  // Color de la barra: rojo → naranja → amarillo → verde según progreso
+  const barColor =
+    pct === 0   ? "#ef4444" :
+    pct <= 25   ? "#f97316" :
+    pct <= 50   ? "#eab308" :
+    pct <= 75   ? "#84cc16" :
+                  "#22c55e";
+
   return (
     <div className="flex flex-col gap-3 rounded-xl border border-[#c4906a]/30 bg-[#fdf4e0] px-4 py-3.5">
       {/* Cabecera: título + badges */}
@@ -278,7 +286,7 @@ function ChecklistRow({
         /* INDIVIDUAL: barra de progreso + ficha por persona */
         <div className="flex flex-col gap-2.5">
           <div className="h-1.5 overflow-hidden rounded-full bg-[#e8dcc4]">
-            <div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${pct}%` }} />
+            <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: barColor }} />
           </div>
           <div className="flex flex-wrap gap-2">
             {allUsers.map((name) => {
