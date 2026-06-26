@@ -42,7 +42,7 @@ export default async function ChecklistPage() {
         </p>
       </div>
 
-      <ChecklistClient initialItems={items} isAdmin={isAdmin(user)} totalUsers={totalUsers} />
+      <ChecklistClient initialItems={items} isAdmin={isAdmin(user)} totalUsers={totalUsers} currentUserName={user.name} />
     </div>
   );
 }

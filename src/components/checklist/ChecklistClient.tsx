@@ -1,19 +1,19 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import type { ChecklistItemData, ChecklistType } from "@/types";
 
 export function ChecklistClient({
   initialItems,
   isAdmin,
   totalUsers,
+  currentUserName,
 }: {
   initialItems: ChecklistItemData[];
   isAdmin: boolean;
   totalUsers: number;
+  currentUserName: string;
 }) {
-  const router = useRouter();
   const [items, setItems] = useState(initialItems);
   const [text, setText] = useState("");
   const [type, setType] = useState<ChecklistType>("INDIVIDUAL");
@@ -41,23 +41,42 @@ export function ChecklistClient({
         body: JSON.stringify({ text: t, type, tags }),
       });
       if (!res.ok) throw new Error();
+      const created = await res.json(); // { id, text, type, tags, ... }
+
+      // Añadir el ítem a la lista al instante (sin esperar a recargar).
+      const newItem: ChecklistItemData = {
+        id: created.id,
+        text: t,
+        type,
+        tags: tags.split(",").map((s) => s.trim()).filter(Boolean),
+        done: false,
+        assigneeName: null,
+        createdByName: currentUserName,
+        checkedBy: [],
+        iChecked: false,
+      };
+      setItems((prev) => [...prev, newItem]);
       setText("");
       setTags("");
-      router.refresh(); // recarga la lista del servidor
     } finally {
       setAdding(false);
     }
   }
 
   async function toggleIndividual(item: ChecklistItemData) {
-    // optimista
+    // optimista: alternar mi check y reflejar mi nombre en la lista
     setItems((prev) => prev.map((i) =>
       i.id === item.id
-        ? { ...i, iChecked: !i.iChecked, checkedBy: i.iChecked ? i.checkedBy.slice(0, -1) : [...i.checkedBy, "Tú"] }
+        ? {
+            ...i,
+            iChecked: !i.iChecked,
+            checkedBy: i.iChecked
+              ? i.checkedBy.filter((n) => n !== currentUserName)
+              : [...i.checkedBy, currentUserName],
+          }
         : i
     ));
     await fetch(`/api/checklist/${item.id}/check`, { method: "POST" });
-    router.refresh();
   }
 
   async function toggleCommon(item: ChecklistItemData) {
@@ -68,7 +87,6 @@ export function ChecklistClient({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ done: next }),
     });
-    router.refresh();
   }
 
   async function setAssignee(item: ChecklistItemData, name: string) {
@@ -85,7 +103,6 @@ export function ChecklistClient({
     if (!confirm(`¿Borrar "${item.text}" de la checklist?`)) return;
     setItems((prev) => prev.filter((i) => i.id !== item.id));
     await fetch(`/api/checklist/${item.id}`, { method: "DELETE" });
-    router.refresh();
   }
 
   const inputCls =
