@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
-import type { Shift, Garment, OutfitItem } from "@/types";
+import type { Shift, Garment, OutfitItem, Day } from "@/types";
 import { LEONARDO_MODELS, type ModelId } from "@/lib/leonardo-models";
 
 // ── Selector custom con previsualización de foto ──────────────────────────────
@@ -166,12 +167,15 @@ const STATUS_DOT: Record<string, string> = {
 
 type SlotSaveState = "idle" | "saving" | "saved" | "error";
 
-export function ShiftCard({ shift, inventory, requireCoat, userPhotoUrl }: {
+export function ShiftCard({ shift, inventory, requireCoat, userPhotoUrl, days, currentDayId }: {
   shift: Shift;
   inventory: Garment[];
   requireCoat: boolean;
   userPhotoUrl: string | null;
+  days: Day[];
+  currentDayId: string;
 }) {
+  const router = useRouter();
   const [items, setItems]         = useState<OutfitItem[]>(shift.outfit?.items ?? []);
   const [tryOnUrl, setTryOnUrl]   = useState<string | null>(shift.outfit?.tryOn?.imageUrl ?? null);
   const [loading, setLoading]     = useState(false);
@@ -181,11 +185,36 @@ export function ShiftCard({ shift, inventory, requireCoat, userPhotoUrl }: {
   const [slotState, setSlotState] = useState<Partial<Record<Garment["slot"], SlotSaveState>>>({});
   const [shared, setShared]       = useState<boolean>(shift.outfit?.shared ?? false);
   const [sharing, setSharing]     = useState(false);
+  const [targetDayId, setTargetDayId] = useState("");
+  const [moving, setMoving]           = useState(false);
+  const [moveError, setMoveError]     = useState<string | null>(null);
 
-  const isNight     = shift.type === "NOCHE";
-  const getItem     = (slot: Garment["slot"]) => items.find((i) => i.garment.slot === slot)?.garment ?? null;
-  const missingCoat = requireCoat && !getItem("COAT");
+  const isNight      = shift.type === "NOCHE";
+  const getItem      = (slot: Garment["slot"]) => items.find((i) => i.garment.slot === slot)?.garment ?? null;
+  const missingCoat  = requireCoat && !getItem("COAT");
   const visibleSlots = SLOTS.filter((s) => s.key !== "COAT" || isNight);
+  const eligibleDays = days.filter(
+    (d) => d.id !== currentDayId && d.shifts.some((s) => s.type === shift.type)
+  );
+
+  async function moveToDay() {
+    if (!targetDayId || !shift.outfit || moving) return;
+    setMoving(true);
+    setMoveError(null);
+    const res = await fetch(`/api/outfits/${shift.outfit.id}/move`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ targetDayId }),
+    });
+    const data = await res.json();
+    setMoving(false);
+    if (!res.ok) {
+      setMoveError(data.error ?? "No se pudo mover el outfit.");
+      return;
+    }
+    setTargetDayId("");
+    router.refresh();
+  }
 
   async function randomizeOutfit() {
     for (const { key } of visibleSlots) {
@@ -309,6 +338,51 @@ export function ShiftCard({ shift, inventory, requireCoat, userPhotoUrl }: {
             </span>
           )}
         </div>
+
+        {/* Cambiar día */}
+        {eligibleDays.length > 0 && (
+          <div className="mt-2.5 flex items-center gap-2">
+            <span className={`shrink-0 text-[10px] font-bold uppercase tracking-widest ${isNightCard ? "text-[#9890c8]" : "text-[#a07040]"}`}>
+              Cambiar día
+            </span>
+            <select
+              value={targetDayId}
+              onChange={(e) => { setTargetDayId(e.target.value); setMoveError(null); }}
+              disabled={moving}
+              className={`min-w-0 flex-1 rounded-lg border px-2 py-1 text-xs font-semibold focus:outline-none disabled:opacity-50 ${
+                isNightCard
+                  ? "border-[#2a2060] bg-[#1a1840] text-[#d8d0f0]"
+                  : "border-[#c4906a]/40 bg-[#f5e8cc] text-[#2a1a08]"
+              }`}
+            >
+              <option value="">— elegir día —</option>
+              {eligibleDays.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.label ?? `Día ${days.indexOf(d) + 1}`}
+                </option>
+              ))}
+            </select>
+            {targetDayId && (
+              <button
+                type="button"
+                onClick={moveToDay}
+                disabled={moving}
+                className={`shrink-0 rounded-lg px-2.5 py-1 text-xs font-bold text-white transition-all disabled:opacity-40 ${
+                  isNightCard
+                    ? "bg-[#4a38c0] hover:bg-[#5a48d0]"
+                    : "bg-[#c84a10] hover:bg-[#a83a08]"
+                }`}
+              >
+                {moving ? "…" : "Cambiar"}
+              </button>
+            )}
+          </div>
+        )}
+        {moveError && (
+          <p className="mt-1.5 rounded-lg border border-red-300 bg-red-50 px-2.5 py-1.5 text-[11px] font-semibold text-red-700">
+            ⚠️ {moveError}
+          </p>
+        )}
 
         {/* Toggle compartir en el muro */}
         <button

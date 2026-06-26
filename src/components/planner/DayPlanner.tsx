@@ -52,7 +52,7 @@ export function DayPlanner({ days, inventory, userPhotoUrl }: {
             const shift = activeDay.shifts.find((s) => s.type === type);
             if (!shift) return null;
             return (
-              <ShiftCard key={shift.id} shift={shift} inventory={inventory} requireCoat={type === "NOCHE"} userPhotoUrl={userPhotoUrl} />
+              <ShiftCard key={shift.id} shift={shift} inventory={inventory} requireCoat={type === "NOCHE"} userPhotoUrl={userPhotoUrl} days={days} currentDayId={activeDayId} />
             );
           })}
         </div>
