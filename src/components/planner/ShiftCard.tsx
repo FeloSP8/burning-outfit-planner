@@ -187,6 +187,14 @@ export function ShiftCard({ shift, inventory, requireCoat, userPhotoUrl }: {
   const missingCoat = requireCoat && !getItem("COAT");
   const visibleSlots = SLOTS.filter((s) => s.key !== "COAT" || isNight);
 
+  async function randomizeOutfit() {
+    for (const { key } of visibleSlots) {
+      const options = inventory.filter((g) => g.slot === key);
+      const pick = options.length > 0 ? options[Math.floor(Math.random() * options.length)] : null;
+      await assign(key, pick?.id ?? "");
+    }
+  }
+
   function setSlotSave(slot: Garment["slot"], state: SlotSaveState) {
     setSlotState((prev) => ({ ...prev, [slot]: state }));
   }
@@ -282,6 +290,18 @@ export function ShiftCard({ shift, inventory, requireCoat, userPhotoUrl }: {
               style={{ fontFamily: "var(--font-display)", fontStyle: "italic" }}>
             {isNightCard ? "🌙 Noche" : "☀️ Tarde"}
           </h2>
+          <button
+            type="button"
+            onClick={randomizeOutfit}
+            title="Generar look aleatorio"
+            className={`ml-auto rounded-xl border-2 px-3 py-1.5 text-xs font-bold transition-all ${
+              isNightCard
+                ? "border-[#3a3070] text-[#9890c8] hover:border-[#6a5ae0] hover:bg-[#6a5ae0]/15 hover:text-[#c8c0f8]"
+                : "border-[#c4906a]/40 text-[#a07040] hover:border-[#c84a10]/50 hover:bg-[#c84a10]/10 hover:text-[#7a2e08]"
+            }`}
+          >
+            🎲 Look aleatorio
+          </button>
           {missingCoat && (
             <span className="flex items-center gap-1.5 rounded-full bg-red-100 border border-red-300 px-3 py-1 text-[11px] font-bold text-red-700 uppercase tracking-wider">
               <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
