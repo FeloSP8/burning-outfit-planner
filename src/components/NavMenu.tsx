@@ -6,11 +6,11 @@ import { usePathname } from "next/navigation";
 import { LogoutButton } from "@/components/LogoutButton";
 
 const LINKS = [
+  { href: "/wall",      label: "Muro" },
+  { href: "/checklist", label: "Checklist" },
   { href: "/planner",   label: "Planificador" },
   { href: "/inventory", label: "Inventario" },
   { href: "/overview",  label: "Vista general" },
-  { href: "/wall",      label: "Muro" },
-  { href: "/checklist", label: "Checklist" },
 ];
 
 export function NavMenu({ userName }: { userName: string }) {
