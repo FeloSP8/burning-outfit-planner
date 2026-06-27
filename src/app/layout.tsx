@@ -4,6 +4,7 @@ import Link from "next/link";
 import "./globals.css";
 import { getCurrentUser } from "@/lib/auth";
 import { NavMenu } from "@/components/NavMenu";
+import { BurningCountdown } from "@/components/BurningCountdown";
 import { Analytics } from "@vercel/analytics/next";
 
 // Body: Syne — geométrica, moderna, personalidad fuerte
@@ -44,6 +45,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                   BURN OUTFITS
                 </span>
               </Link>
+
+              <div className="flex flex-1 justify-center">
+                <BurningCountdown />
+              </div>
 
               <NavMenu userName={user.name} />
             </nav>
