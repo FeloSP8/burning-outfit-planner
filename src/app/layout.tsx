@@ -35,6 +35,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body className="flex min-h-full flex-col">
         {user && (
           <header className="sticky top-0 z-40 border-b border-[#b8956a]/20 bg-[#e8c99a]/80 backdrop-blur-md">
+            {/* Fila principal: logo + hamburguesa (móvil) / logo + countdown + links (desktop) */}
             <nav className="relative mx-auto flex max-w-6xl items-center gap-4 px-4 py-3 sm:px-5 sm:py-3.5">
               <Link href="/" className="flex items-center gap-2 group shrink-0">
                 <span className="text-xl">🔥</span>
@@ -46,12 +47,18 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 </span>
               </Link>
 
-              <div className="flex flex-1 justify-center">
+              {/* Countdown solo en desktop, centrado */}
+              <div className="hidden sm:flex flex-1 justify-center">
                 <BurningCountdown />
               </div>
 
               <NavMenu userName={user.name} />
             </nav>
+
+            {/* Countdown en móvil: segunda línea compacta */}
+            <div className="flex justify-center border-t border-[#b8956a]/15 py-1.5 sm:hidden">
+              <BurningCountdown />
+            </div>
           </header>
         )}
 
