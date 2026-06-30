@@ -46,6 +46,8 @@ export function GarmentForm({ garment: initial, onClose }: Props) {
   const [pasteHint, setPasteHint]  = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
   const [formError, setFormError]     = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting]           = useState(false);
 
   const uploadFile = useCallback(async (file: File) => {
     if (!file.type.startsWith("image/")) return;
@@ -90,6 +92,20 @@ export function GarmentForm({ garment: initial, onClose }: Props) {
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (file) await uploadFile(file);
+  }
+
+  async function handleDelete() {
+    if (!initial?.id) return;
+    setDeleting(true);
+    const res = await fetch(`/api/garments/${initial.id}`, { method: "DELETE" });
+    setDeleting(false);
+    if (res.ok) {
+      router.refresh();
+      onClose?.();
+    } else {
+      setFormError("No se pudo borrar la prenda. Inténtalo de nuevo.");
+      setConfirmDelete(false);
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -245,17 +261,39 @@ export function GarmentForm({ garment: initial, onClose }: Props) {
       </div>
 
       {/* Actions */}
-      <div className="flex gap-2 pt-1">
-        {onClose && (
-          <button type="button" onClick={onClose}
-            className="flex-1 rounded-xl border-2 border-[#c4906a]/40 py-2.5 text-sm font-bold text-[#7a4a20] hover:bg-[#f5e0b8] transition-colors">
-            Cancelar
+      <div className="flex flex-col gap-2 pt-1">
+        <div className="flex gap-2">
+          {onClose && (
+            <button type="button" onClick={onClose}
+              className="flex-1 rounded-xl border-2 border-[#c4906a]/40 py-2.5 text-sm font-bold text-[#7a4a20] hover:bg-[#f5e0b8] transition-colors">
+              Cancelar
+            </button>
+          )}
+          <button type="submit" disabled={saving || uploading}
+            className="flex-1 rounded-xl bg-[#c84a10] py-2.5 text-sm font-bold text-white shadow-md shadow-[#c84a10]/20 hover:bg-[#a83a08] disabled:opacity-40 transition-all">
+            {saving ? "Guardando…" : isEdit ? "Guardar cambios" : "Guardar prenda"}
           </button>
+        </div>
+
+        {isEdit && (
+          confirmDelete ? (
+            <div className="flex gap-2">
+              <button type="button" onClick={() => setConfirmDelete(false)}
+                className="flex-1 rounded-xl border-2 border-[#c4906a]/40 py-2 text-sm font-bold text-[#7a4a20] hover:bg-[#f5e0b8] transition-colors">
+                Cancelar
+              </button>
+              <button type="button" onClick={handleDelete} disabled={deleting}
+                className="flex-1 rounded-xl bg-red-600 py-2 text-sm font-bold text-white hover:bg-red-700 disabled:opacity-40 transition-all">
+                {deleting ? "Borrando…" : "Sí, borrar prenda"}
+              </button>
+            </div>
+          ) : (
+            <button type="button" onClick={() => setConfirmDelete(true)}
+              className="w-full rounded-xl border-2 border-red-200 py-2 text-sm font-bold text-red-500 hover:bg-red-50 hover:border-red-300 transition-all">
+              Borrar prenda
+            </button>
+          )
         )}
-        <button type="submit" disabled={saving || uploading}
-          className="flex-1 rounded-xl bg-[#c84a10] py-2.5 text-sm font-bold text-white shadow-md shadow-[#c84a10]/20 hover:bg-[#a83a08] disabled:opacity-40 transition-all">
-          {saving ? "Guardando…" : isEdit ? "Guardar cambios" : "Guardar prenda"}
-        </button>
       </div>
     </form>
   );
