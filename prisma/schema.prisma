@@ -110,6 +110,7 @@ model ChecklistItem {
   text         String
   type         String           @default("INDIVIDUAL") // "COMMON" | "INDIVIDUAL"
   tags         String           @default("")           // campo libre, separado por comas
+  origin       String?                                 // "ESPANA" | "ALLI" | null (sin clasificar)
   done         Boolean          @default(false)        // solo relevante en COMMON
   assigneeName String?                                 // quién se encarga (COMMON)
   createdBy    User             @relation(fields: [createdById], references: [id], onDelete: Cascade)

@@ -30,9 +30,10 @@ export async function GET() {
 }
 
 const CreateSchema = z.object({
-  text: z.string().min(1).max(120),
-  type: z.enum(["COMMON", "INDIVIDUAL"]),
-  tags: z.string().max(200).optional().default(""),
+  text:   z.string().min(1).max(120),
+  type:   z.enum(["COMMON", "INDIVIDUAL"]),
+  tags:   z.string().max(200).optional().default(""),
+  origin: z.enum(["ESPANA", "ALLI"]).nullable().optional(),
 });
 
 // POST — crea un ítem (cualquier usuario autenticado).
@@ -44,9 +45,9 @@ export async function POST(req: NextRequest) {
   if (!parsed.success)
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 
-  const { text, type, tags } = parsed.data;
+  const { text, type, tags, origin } = parsed.data;
   const item = await db.checklistItem.create({
-    data: { text: text.trim(), type, tags: tags.trim(), createdById: user.id },
+    data: { text: text.trim(), type, tags: tags.trim(), origin: origin ?? null, createdById: user.id },
   });
   return NextResponse.json(item, { status: 201 });
 }

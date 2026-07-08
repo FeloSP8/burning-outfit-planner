@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
 import { getCurrentUser, isAdmin } from "@/lib/auth";
 import { ChecklistClient } from "@/components/checklist/ChecklistClient";
-import type { ChecklistItemData, ChecklistType } from "@/types";
+import type { ChecklistItemData, ChecklistOrigin, ChecklistType } from "@/types";
 
 export default async function ChecklistPage() {
   const user = await getCurrentUser();
@@ -24,6 +24,7 @@ export default async function ChecklistPage() {
     id: it.id,
     text: it.text,
     type: it.type as ChecklistType,
+    origin: (it.origin as ChecklistOrigin) ?? null,
     tags: it.tags ? it.tags.split(",").map((t) => t.trim()).filter(Boolean) : [],
     done: it.done,
     assigneeName: it.assigneeName,
