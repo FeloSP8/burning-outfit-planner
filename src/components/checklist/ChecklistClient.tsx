@@ -98,6 +98,20 @@ export function ChecklistClient({
     }
   }
 
+  async function changeType(item: ChecklistItemData) {
+    const next: ChecklistType = item.type === "COMMON" ? "INDIVIDUAL" : "COMMON";
+    setItems((prev) => prev.map((i) =>
+      i.id === item.id
+        ? { ...i, type: next, ...(next === "INDIVIDUAL" ? { done: false, assigneeName: null } : {}) }
+        : i
+    ));
+    await fetch(`/api/checklist/${item.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: next }),
+    });
+  }
+
   async function changeOrigin(item: ChecklistItemData, next: ChecklistOrigin) {
     setItems((prev) => prev.map((i) => i.id === item.id ? { ...i, origin: next } : i));
     await fetch(`/api/checklist/${item.id}`, {
@@ -273,6 +287,7 @@ export function ChecklistClient({
                       onSetAssignee={(n) => setAssignee(item, n)}
                       onRemove={() => remove(item)}
                       onChangeOrigin={(o) => changeOrigin(item, o)}
+                      onChangeType={() => changeType(item)}
                     />
                   ))}
                 </div>
@@ -312,7 +327,7 @@ function PersonChip({ name, has, isMe }: { name: string; has: boolean; isMe: boo
 
 function ChecklistRow({
   item, isAdmin, allUsers, currentUserName,
-  onToggleIndividual, onToggleCommon, onSetAssignee, onRemove, onChangeOrigin,
+  onToggleIndividual, onToggleCommon, onSetAssignee, onRemove, onChangeOrigin, onChangeType,
 }: {
   item: ChecklistItemData;
   isAdmin: boolean;
@@ -323,6 +338,7 @@ function ChecklistRow({
   onSetAssignee: (name: string) => void;
   onRemove: () => void;
   onChangeOrigin: (o: ChecklistOrigin) => void;
+  onChangeType: () => void;
 }) {
   const isCommon  = item.type === "COMMON";
   const checked   = new Set(item.checkedBy);
@@ -342,11 +358,16 @@ function ChecklistRow({
       <div className="flex items-start gap-2">
         <div className="flex flex-1 flex-wrap items-center gap-2 min-w-0">
           <span className="text-[15px] font-bold text-[#2a1a08]">{item.text}</span>
-          <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
-            isCommon ? "bg-indigo-100 text-indigo-700" : "bg-amber-100 text-amber-700"
-          }`}>
+          <button
+            type="button"
+            onClick={onChangeType}
+            title={isCommon ? "Cambiar a individual" : "Cambiar a común"}
+            className={`rounded-full px-2 py-0.5 text-[10px] font-bold transition-colors hover:opacity-70 ${
+              isCommon ? "bg-indigo-100 text-indigo-700" : "bg-amber-100 text-amber-700"
+            }`}
+          >
             {isCommon ? "común" : "cada uno"}
-          </span>
+          </button>
           {item.tags.map((t) => (
             <span key={t} className="rounded-full bg-[#c4906a]/20 px-2 py-0.5 text-[10px] font-bold text-[#7a3a10]">
               #{t}
