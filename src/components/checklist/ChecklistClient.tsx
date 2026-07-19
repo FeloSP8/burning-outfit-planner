@@ -370,7 +370,13 @@ function ChecklistRow({
       </div>
 
       {isCommon ? (
-        <CommonStatus item={item} allUsers={allUsers} onSetAssignee={onSetAssignee} onToggleDone={onToggleCommon} />
+        <CommonStatus
+          item={item}
+          allUsers={allUsers}
+          needsAssignee={item.origin !== "ALLI"}
+          onSetAssignee={onSetAssignee}
+          onToggleDone={onToggleCommon}
+        />
       ) : (
         <div className="flex flex-col gap-2.5">
           <div className="h-1.5 overflow-hidden rounded-full bg-[#e8dcc4]">
@@ -418,13 +424,43 @@ function ChecklistRow({
 }
 
 function CommonStatus({
-  item, allUsers, onSetAssignee, onToggleDone,
+  item, allUsers, needsAssignee, onSetAssignee, onToggleDone,
 }: {
   item: ChecklistItemData;
   allUsers: string[];
+  needsAssignee: boolean;
   onSetAssignee: (name: string) => void;
   onToggleDone: () => void;
 }) {
+  // Simple toggle for "buy there" items — no assignee needed
+  if (!needsAssignee) {
+    if (item.done) {
+      return (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-300 bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-800">
+            ✓ Comprado
+          </span>
+          <button
+            type="button"
+            onClick={onToggleDone}
+            className="text-[11px] font-semibold text-[#a07040] underline-offset-2 hover:underline"
+          >
+            desmarcar
+          </button>
+        </div>
+      );
+    }
+    return (
+      <button
+        type="button"
+        onClick={onToggleDone}
+        className="w-fit rounded-lg border-2 border-dashed border-[#c9b896] px-3 py-1.5 text-xs font-semibold text-[#9a8560] hover:border-emerald-400 hover:text-emerald-700 transition-colors"
+      >
+        ✓ Marcar como comprado
+      </button>
+    );
+  }
+
   // State 3: confirmed done ✓ → green
   if (item.done) {
     return (
