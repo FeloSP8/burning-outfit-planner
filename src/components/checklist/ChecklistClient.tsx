@@ -60,6 +60,11 @@ export function ChecklistClient({
     { key: "NONE",   origin: null },
   ];
 
+  function isCompleted(item: ChecklistItemData): boolean {
+    if (item.type === "COMMON") return item.done;
+    return allUsers.length > 0 && item.checkedBy.length >= allUsers.length;
+  }
+
   async function addItem(e: React.FormEvent) {
     e.preventDefault();
     const t = text.trim();
@@ -123,11 +128,15 @@ export function ChecklistClient({
 
   async function setAssignee(item: ChecklistItemData, name: string) {
     const value = name.trim() || null;
-    setItems((prev) => prev.map((i) => i.id === item.id ? { ...i, assigneeName: value } : i));
+    // Clearing the assignee also resets done to false
+    const resetDone = !value && item.done;
+    setItems((prev) => prev.map((i) =>
+      i.id === item.id ? { ...i, assigneeName: value, ...(resetDone ? { done: false } : {}) } : i
+    ));
     await fetch(`/api/checklist/${item.id}/check`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ assigneeName: value }),
+      body: JSON.stringify({ assigneeName: value, ...(resetDone ? { done: false } : {}) }),
     });
   }
 
@@ -233,8 +242,12 @@ export function ChecklistClient({
       ) : (
         <div className="flex flex-col gap-6">
           {groups.map(({ key, origin: groupOrigin }) => {
-            const groupItems = visible.filter((i) => (i.origin ?? null) === groupOrigin);
-            if (groupItems.length === 0) return null;
+            const rawItems = visible.filter((i) => (i.origin ?? null) === groupOrigin);
+            if (rawItems.length === 0) return null;
+            // Completed items go to the end
+            const groupItems = [...rawItems].sort(
+              (a, b) => (isCompleted(a) ? 1 : 0) - (isCompleted(b) ? 1 : 0)
+            );
             const meta = ORIGIN_META[key];
             return (
               <div key={key} className="flex flex-col gap-2">
@@ -357,7 +370,7 @@ function ChecklistRow({
       </div>
 
       {isCommon ? (
-        <CommonStatus item={item} onSetAssignee={onSetAssignee} onToggleDone={onToggleCommon} />
+        <CommonStatus item={item} allUsers={allUsers} onSetAssignee={onSetAssignee} onToggleDone={onToggleCommon} />
       ) : (
         <div className="flex flex-col gap-2.5">
           <div className="h-1.5 overflow-hidden rounded-full bg-[#e8dcc4]">
@@ -405,25 +418,55 @@ function ChecklistRow({
 }
 
 function CommonStatus({
-  item, onSetAssignee, onToggleDone,
+  item, allUsers, onSetAssignee, onToggleDone,
 }: {
   item: ChecklistItemData;
+  allUsers: string[];
   onSetAssignee: (name: string) => void;
   onToggleDone: () => void;
 }) {
-  const [editing, setEditing] = useState(false);
-
-  if (item.assigneeName) {
+  // State 3: confirmed done ✓ → green
+  if (item.done) {
     return (
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <span className="inline-flex items-center gap-2 rounded-lg border border-emerald-300 bg-emerald-100 px-2.5 py-1">
           <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 text-[10px] font-bold text-white">
-            {initial(item.assigneeName)}
+            {initial(item.assigneeName ?? "?")}
           </span>
-          <span className="text-xs text-emerald-800">
-            <b className="font-bold">{item.assigneeName}</b> lo trae ✓
+          <span className="text-xs font-semibold text-emerald-800">
+            <b className="font-bold">{item.assigneeName ?? "Alguien"}</b> lo trae ✓
           </span>
         </span>
+        <button
+          type="button"
+          onClick={onToggleDone}
+          className="text-[11px] font-semibold text-[#a07040] underline-offset-2 hover:underline"
+        >
+          desmarcar
+        </button>
+      </div>
+    );
+  }
+
+  // State 2: assignee set but not yet confirmed → amber
+  if (item.assigneeName) {
+    return (
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="inline-flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-2.5 py-1">
+          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-400 text-[10px] font-bold text-white">
+            {initial(item.assigneeName)}
+          </span>
+          <span className="text-xs font-semibold text-amber-800">
+            <b className="font-bold">{item.assigneeName}</b> se encarga
+          </span>
+        </span>
+        <button
+          type="button"
+          onClick={onToggleDone}
+          className="rounded-lg bg-emerald-500 px-3 py-1 text-xs font-bold text-white hover:bg-emerald-600 transition-colors"
+        >
+          ✓ Listo
+        </button>
         <button
           type="button"
           onClick={() => onSetAssignee("")}
@@ -435,27 +478,17 @@ function CommonStatus({
     );
   }
 
-  if (editing) {
-    return (
-      <input
-        type="text"
-        autoFocus
-        defaultValue=""
-        onBlur={(e) => { onSetAssignee(e.target.value); setEditing(false); }}
-        onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur(); }}
-        placeholder="¿Quién lo trae?"
-        className="w-48 rounded-lg border-2 border-[#c4906a]/40 bg-white/70 px-3 py-1.5 text-sm font-semibold text-[#2a1a08] focus:border-[#c84a10]/60 focus:outline-none"
-      />
-    );
-  }
-
+  // State 1: no assignee → dropdown to pick
   return (
-    <button
-      type="button"
-      onClick={() => setEditing(true)}
-      className="w-fit rounded-lg border border-dashed border-[#c9b896] px-3 py-1.5 text-xs font-semibold text-[#9a8560] hover:border-[#c84a10]/50 hover:text-[#7a3a10] transition-colors"
+    <select
+      defaultValue=""
+      onChange={(e) => { if (e.target.value) onSetAssignee(e.target.value); }}
+      className="w-fit rounded-lg border-2 border-dashed border-[#c9b896] bg-[#fdf4e0] px-3 py-1.5 text-xs font-semibold text-[#9a8560] focus:border-[#c84a10]/60 focus:outline-none hover:border-[#c84a10]/40 transition-colors"
     >
-      + ¿Quién se encarga?
-    </button>
+      <option value="">¿Quién se encarga?</option>
+      {allUsers.map((name) => (
+        <option key={name} value={name}>{name}</option>
+      ))}
+    </select>
   );
 }
