@@ -448,24 +448,25 @@ function CommonStatus({
     );
   }
 
-  // State 2: assignee set but not yet confirmed → amber
+  // State 2: assignee set but not yet confirmed → dashed/muted (clearly pending)
   if (item.assigneeName) {
     return (
       <div className="flex flex-wrap items-center gap-2">
-        <span className="inline-flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-2.5 py-1">
-          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-400 text-[10px] font-bold text-white">
+        <span className="inline-flex items-center gap-2 rounded-lg border-2 border-dashed border-[#c9b896] bg-[#fdf4e0] px-2.5 py-1">
+          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#d8c9a8] text-[10px] font-bold text-[#7a6040]">
             {initial(item.assigneeName)}
           </span>
-          <span className="text-xs font-semibold text-amber-800">
+          <span className="text-xs font-semibold text-[#7a5030]">
             <b className="font-bold">{item.assigneeName}</b> se encarga
           </span>
         </span>
+        <span className="text-[10px] font-bold uppercase tracking-widest text-[#b09060]">→</span>
         <button
           type="button"
           onClick={onToggleDone}
-          className="rounded-lg bg-emerald-500 px-3 py-1 text-xs font-bold text-white hover:bg-emerald-600 transition-colors"
+          className="rounded-lg border-2 border-emerald-500 px-3 py-1 text-xs font-bold text-emerald-700 hover:bg-emerald-500 hover:text-white transition-colors"
         >
-          ✓ Listo
+          ✓ Marcar como listo
         </button>
         <button
           type="button"
