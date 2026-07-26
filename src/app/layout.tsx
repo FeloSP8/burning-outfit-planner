@@ -26,6 +26,18 @@ const lunok = localFont({
   style: "normal",
   // Fallback métrico: evita el salto de layout al cargar.
   fallback: ["Georgia", "serif"],
+  // OJO: Lunok solo tiene 85 glifos dibujados. Los otros 163 (acentos, ñ, ¿, ¡,
+  // y también ! $ & ? _) existen en la cmap pero apuntan a una caja de relleno
+  // — todos con advance 830. Sin este unicode-range, "Estadísticas" pinta un
+  // cuadro en vez de la í. Limitando el rango, esos caracteres caen al
+  // fallback (Georgia) en lugar de romperse.
+  declarations: [
+    {
+      prop: "unicode-range",
+      value:
+        "U+0020, U+0022-0023, U+0025, U+0027-003E, U+0040-005D, U+0061-007A, U+00A0",
+    },
+  ],
 });
 
 export const metadata: Metadata = {

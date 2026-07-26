@@ -23,5 +23,10 @@ licencia o cambiar de fuente.**
 - Se sirve **self-hosted** vía `next/font/local` en `src/app/layout.tsx`. El CSS
   de cdnfonts no declara `font-display` (texto invisible mientras carga) y usa
   `local('Lunok')`, que serviría otra versión si el usuario la tiene instalada.
-- Cobertura: Basic Latin + Latin-1. Los acentos y signos del español
-  (`á é í ó ú ñ ¿ ¡`) están cubiertos — verificado.
+- **Cobertura real: solo 85 glifos dibujados** (ASCII básico sin `! $ & ? _`).
+  Los otros 163 de la fuente —acentos, `ñ`, `¿`, `¡`— existen en la tabla `cmap`
+  pero apuntan a una caja de relleno: todos comparten `advance` 830. Es decir,
+  la fuente **no** tiene acentos, aunque cdnfonts anuncie soporte de español.
+  Por eso `layout.tsx` declara un `unicode-range` que limita Lunok a los
+  caracteres reales; el resto cae al fallback (Georgia) en vez de pintar un
+  cuadro. Si se cambia de fuente, hay que quitar ese `unicode-range`.
