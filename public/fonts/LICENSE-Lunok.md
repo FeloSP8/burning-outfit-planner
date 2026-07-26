@@ -30,3 +30,14 @@ licencia o cambiar de fuente.**
   Por eso `layout.tsx` declara un `unicode-range` que limita Lunok a los
   caracteres reales; el resto cae al fallback (Georgia) en vez de pintar un
   cuadro. Si se cambia de fuente, hay que quitar ese `unicode-range`.
+
+## Al escribir títulos nuevos
+
+**Evita acentos y `¿ ¡ ! ? & $ _` en cualquier texto que use `--font-display`.**
+Mezclar Lunok y Georgia dentro de una palabra queda mal, así que los títulos
+están redactados para no necesitarlos ("Stats", "Topes y medias", "Notas de la
+ruta"). El `unicode-range` se mantiene como red de seguridad para texto
+dinámico (nombres de usuario, etiquetas) que sí pueda traerlos.
+
+El texto de cuerpo y el menú usan Syne (`--font-body`), que tiene el juego
+completo: ahí se escribe en español normal, con sus tildes.

@@ -141,7 +141,7 @@ export default async function StatsPage() {
       <div>
         <h1 className="text-4xl text-[#7a2e08] sm:text-5xl"
             style={{ fontFamily: "var(--font-display)" }}>
-          Estadísticas
+          Stats
         </h1>
         <p className="mt-1 text-sm font-medium text-[#a07040]">
           {activeUsers.length} persona{activeUsers.length !== 1 ? "s" : ""} · {all.length} prendas registradas
@@ -305,10 +305,10 @@ export default async function StatsPage() {
         </div>
       </section>
 
-      {/* ── Top prendas más caras ──────────────────────────────────── */}
+      {/* ── Top de precio ──────────────────────────────────── */}
       {topExpensive.length > 0 && (
         <section className="flex flex-col gap-4">
-          <SectionTitle>Top prendas más caras</SectionTitle>
+          <SectionTitle>Top de precio</SectionTitle>
           <div className="flex flex-col gap-2">
             {topExpensive.map((g, i) => (
               <div key={g.id} className="flex items-center gap-3 rounded-xl border-2 border-[#c4906a]/25 bg-[#f5e8cc]/60 px-4 py-3">
@@ -327,9 +327,9 @@ export default async function StatsPage() {
         </section>
       )}
 
-      {/* ── Máximos, mínimos y medias globales ────────────────────── */}
+      {/* ── Topes y medias globales ────────────────────── */}
       <section className="flex flex-col gap-4">
-        <SectionTitle>Máximos, mínimos y medias</SectionTitle>
+        <SectionTitle>Topes y medias</SectionTitle>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <div className="rounded-2xl border-2 border-[#c4906a]/30 bg-[#f5e8cc]/70 px-4 py-4 flex flex-col gap-1">
             <span className="text-[10px] font-bold uppercase tracking-widest text-[#a07040]">Precio máximo</span>

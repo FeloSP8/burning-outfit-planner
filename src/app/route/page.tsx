@@ -229,11 +229,11 @@ export default async function RoutePage() {
         </p>
       </div>
 
-      {/* Notas de planificación */}
+      {/* Notas de la ruta */}
       <div>
         <p className="mb-4 text-2xl text-[#7a2e08] sm:text-3xl"
           style={{ fontFamily: "var(--font-display)" }}>
-          Notas de planificación
+          Notas de la ruta
         </p>
 
         <div className="grid gap-3 sm:grid-cols-2">
