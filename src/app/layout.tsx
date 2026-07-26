@@ -41,28 +41,28 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body className="flex min-h-full flex-col">
         {user && (
           <header className="sticky top-0 z-40 border-b border-[#b8956a]/20 bg-[#e8c99a]/80 backdrop-blur-md">
-            {/* Fila principal: logo + hamburguesa (móvil) / logo + countdown + links (desktop) */}
+            {/* Fila principal: logo + hamburguesa, o logo + links en xl */}
             <nav className="relative mx-auto flex max-w-6xl items-center gap-4 px-4 py-3 sm:px-5 sm:py-3.5">
               <Link href="/" className="flex items-center gap-2 group shrink-0">
                 <span className="text-xl">🔥</span>
+                {/* En minúsculas a propósito: la "o" de Lunok solo lleva el
+                    trazo interior en caja baja; en mayúscula sale limpia. */}
                 <span
-                  className="text-base tracking-wide text-[#7a3a10] group-hover:text-[#c45010] transition-colors sm:text-lg"
+                  className="text-lg tracking-wide text-[#7a3a10] group-hover:text-[#c45010] transition-colors sm:text-xl"
                   style={{ fontFamily: "var(--font-display)" }}
                 >
-                  BURN OUTFITS
+                  burn outfits
                 </span>
               </Link>
-
-              {/* Countdown solo en desktop, centrado */}
-              <div className="hidden sm:flex flex-1 justify-center">
-                <BurningCountdown />
-              </div>
 
               <NavMenu userName={user.name} />
             </nav>
 
-            {/* Countdown en móvil: segunda línea compacta */}
-            <div className="flex justify-center border-t border-[#b8956a]/15 py-1.5 sm:hidden">
+            {/* Countdown siempre en su propia línea. En la fila principal no
+                cabe: el nav está limitado a max-w-6xl (1152px) y logo + los 7
+                enlaces + countdown suman ~1282px, así que "Vista general" se
+                partía en dos líneas en cualquier monitor. */}
+            <div className="flex justify-center border-t border-[#b8956a]/15 py-1.5">
               <BurningCountdown />
             </div>
           </header>
