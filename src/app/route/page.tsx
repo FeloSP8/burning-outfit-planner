@@ -26,7 +26,7 @@ export default async function RoutePage() {
       {/* Header */}
       <div>
         <p className="text-4xl text-[#7a2e08] leading-tight sm:text-5xl"
-          style={{ fontFamily: "var(--font-display)", fontStyle: "italic", fontWeight: 900 }}>
+          style={{ fontFamily: "var(--font-display)" }}>
           Ruta a la playa
         </p>
         <p className="mt-1 text-sm font-medium text-[#7a5030]">
@@ -59,8 +59,8 @@ export default async function RoutePage() {
       <div className="overflow-hidden rounded-2xl border-2 border-[#c4906a]/40 bg-[#fdf4e0]">
         <div className="flex flex-wrap items-center gap-3 border-b border-[#c4906a]/20 px-4 py-3">
           <span className="text-base">🗺️</span>
-          <span className="text-sm font-black text-[#7a2e08]"
-            style={{ fontFamily: "var(--font-display)", fontStyle: "italic" }}>
+          <span className="text-sm text-[#7a2e08]"
+            style={{ fontFamily: "var(--font-display)" }}>
             El recorrido
           </span>
           <a
@@ -88,7 +88,7 @@ export default async function RoutePage() {
       {/* Paradas */}
       <div>
         <p className="mb-4 text-2xl text-[#7a2e08] sm:text-3xl"
-          style={{ fontFamily: "var(--font-display)", fontStyle: "italic", fontWeight: 900 }}>
+          style={{ fontFamily: "var(--font-display)" }}>
           Paradas
         </p>
 
@@ -152,7 +152,7 @@ export default async function RoutePage() {
       {/* Tramos */}
       <div>
         <p className="mb-4 text-2xl text-[#7a2e08] sm:text-3xl"
-          style={{ fontFamily: "var(--font-display)", fontStyle: "italic", fontWeight: 900 }}>
+          style={{ fontFamily: "var(--font-display)" }}>
           Tramos
         </p>
 
@@ -193,8 +193,8 @@ export default async function RoutePage() {
       <div className="rounded-2xl border-2 border-[#c4906a]/40 bg-[#fdf4e0] px-4 py-4">
         <div className="mb-3 flex items-center gap-2">
           <span className="text-base">🚐</span>
-          <span className="text-sm font-black text-[#7a2e08]"
-            style={{ fontFamily: "var(--font-display)", fontStyle: "italic" }}>
+          <span className="text-sm text-[#7a2e08]"
+            style={{ fontFamily: "var(--font-display)" }}>
             La autocaravana
           </span>
         </div>
@@ -232,7 +232,7 @@ export default async function RoutePage() {
       {/* Notas de planificación */}
       <div>
         <p className="mb-4 text-2xl text-[#7a2e08] sm:text-3xl"
-          style={{ fontFamily: "var(--font-display)", fontStyle: "italic", fontWeight: 900 }}>
+          style={{ fontFamily: "var(--font-display)" }}>
           Notas de planificación
         </p>
 
@@ -258,8 +258,8 @@ export default async function RoutePage() {
       <div className="rounded-2xl border-2 border-amber-300/70 bg-amber-50 px-4 py-4">
         <div className="mb-3 flex items-center gap-2">
           <span className="text-base">⚠️</span>
-          <span className="text-sm font-black text-[#7a2e08]"
-            style={{ fontFamily: "var(--font-display)", fontStyle: "italic" }}>
+          <span className="text-sm text-[#7a2e08]"
+            style={{ fontFamily: "var(--font-display)" }}>
             Pendiente de resolver
           </span>
         </div>

@@ -152,7 +152,7 @@ export function GarmentForm({ garment: initial, onClose }: Props) {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      <h2 className="text-3xl font-black text-[#7a2e08]" style={{ fontFamily: "var(--font-display)", fontStyle: "italic" }}>
+      <h2 className="text-3xl text-[#7a2e08]" style={{ fontFamily: "var(--font-display)" }}>
         {isEdit ? "Editar prenda" : "Nueva prenda"}
       </h2>
 

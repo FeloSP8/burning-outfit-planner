@@ -22,8 +22,8 @@ function pct(n: number, total: number) {
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <h2 className="text-xl font-black tracking-tight text-[#7a2e08]"
-        style={{ fontFamily: "var(--font-display)", fontStyle: "italic" }}>
+    <h2 className="text-xl tracking-tight text-[#7a2e08]"
+        style={{ fontFamily: "var(--font-display)" }}>
       {children}
     </h2>
   );
@@ -139,7 +139,7 @@ export default async function StatsPage() {
 
       {/* Título */}
       <div>
-        <h1 className="text-4xl font-black italic text-[#7a2e08] sm:text-5xl"
+        <h1 className="text-4xl text-[#7a2e08] sm:text-5xl"
             style={{ fontFamily: "var(--font-display)" }}>
           Estadísticas
         </h1>

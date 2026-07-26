@@ -52,7 +52,7 @@ export default async function PlannerPage() {
       <div>
         <p
           className="text-4xl text-[#7a2e08] leading-tight sm:text-5xl"
-          style={{ fontFamily: "var(--font-display)", fontStyle: "italic", fontWeight: 900 }}
+          style={{ fontFamily: "var(--font-display)" }}
         >
           Planificador
         </p>

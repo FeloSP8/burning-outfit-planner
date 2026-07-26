@@ -3,7 +3,7 @@
 /* ── Tokens ──────────────────────────────────────────── */
 :root {
   --font-body:    'Syne', system-ui, sans-serif;
-  --font-display: 'Playfair Display', Georgia, serif;
+  --font-display: 'Lunok', Georgia, serif;
 
   /* Arena palette */
   --sand-50:  #fdf6e8;

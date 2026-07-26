@@ -315,8 +315,8 @@ export function ShiftCard({ shift, inventory, requireCoat, userPhotoUrl, days, c
       {/* Header */}
       <div className={`px-5 pt-4 pb-3 border-b ${isNightCard ? "border-[#2a2060]" : "border-[#c4906a]/20"}`}>
         <div className="flex items-center justify-between gap-2">
-          <h2 className={`text-xl font-black tracking-tight ${isNightCard ? "text-[#a098e0]" : "text-[#7a2e08]"}`}
-              style={{ fontFamily: "var(--font-display)", fontStyle: "italic" }}>
+          <h2 className={`text-xl tracking-tight ${isNightCard ? "text-[#a098e0]" : "text-[#7a2e08]"}`}
+              style={{ fontFamily: "var(--font-display)" }}>
             {isNightCard ? "🌙 Noche" : "☀️ Tarde"}
           </h2>
           <button

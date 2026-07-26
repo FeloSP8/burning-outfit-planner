@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { Syne, Playfair_Display } from "next/font/google";
+import { Syne } from "next/font/google";
+import localFont from "next/font/local";
 import Link from "next/link";
 import "./globals.css";
 import { getCurrentUser } from "@/lib/auth";
@@ -14,12 +15,17 @@ const syne = Syne({
   weight: ["400", "500", "600", "700", "800"],
 });
 
-// Display: Playfair Display — elegante, contraste alto
-const playfair = Playfair_Display({
+// Display: Lunok — display de un solo corte (regular 400, sin cursiva ni negrita).
+// Self-hosted: el CSS de cdnfonts no declara font-display y usa local(), que
+// serviría una versión distinta si el usuario tiene Lunok instalada.
+const lunok = localFont({
+  src: "../../public/fonts/LunokRegular.woff",
   variable: "--font-display",
-  subsets: ["latin"],
-  weight: ["700", "900"],
-  style: ["normal", "italic"],
+  display: "swap",
+  weight: "400",
+  style: "normal",
+  // Fallback métrico: evita el salto de layout al cargar.
+  fallback: ["Georgia", "serif"],
 });
 
 export const metadata: Metadata = {
@@ -31,7 +37,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const user = await getCurrentUser();
 
   return (
-    <html lang="es" className={`${syne.variable} ${playfair.variable} h-full`}>
+    <html lang="es" className={`${syne.variable} ${lunok.variable} h-full`}>
       <body className="flex min-h-full flex-col">
         {user && (
           <header className="sticky top-0 z-40 border-b border-[#b8956a]/20 bg-[#e8c99a]/80 backdrop-blur-md">

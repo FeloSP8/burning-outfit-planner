@@ -59,7 +59,7 @@ export default async function OverviewPage() {
       {/* Header */}
       <div>
         <p className="text-4xl text-[#7a2e08] leading-tight sm:text-5xl"
-          style={{ fontFamily: "var(--font-display)", fontStyle: "italic", fontWeight: 900 }}>
+          style={{ fontFamily: "var(--font-display)" }}>
           Vista General
         </p>
         <p className="mt-1 text-sm font-medium text-[#7a5030]">
@@ -111,8 +111,8 @@ export default async function OverviewPage() {
                         isNight ? "border-[#2a2060]" : "border-[#c4906a]/20"
                       }`}>
                         <span className="text-base">{isNight ? "🌙" : "☀️"}</span>
-                        <span className={`text-sm font-black ${isNight ? "text-[#a098e0]" : "text-[#7a2e08]"}`}
-                          style={{ fontFamily: "var(--font-display)", fontStyle: "italic" }}>
+                        <span className={`text-sm ${isNight ? "text-[#a098e0]" : "text-[#7a2e08]"}`}
+                          style={{ fontFamily: "var(--font-display)" }}>
                           {isNight ? "Noche" : "Tarde"}
                         </span>
                         {tryOnUrl && (
