@@ -95,7 +95,7 @@ export function WallClient({ outfits }: { outfits: WallOutfit[] }) {
               {/* Cabecera de grupo */}
               <div className="flex items-center gap-2 border-b-2 border-[#c4906a]/30 pb-2">
                 <span className="text-lg">{g.icon}</span>
-                <h2 className="text-lg font-black text-[#7a2e08]" style={{ fontFamily: "var(--font-body)" }}>
+                <h2 className="text-xl text-[#7a2e08]" style={{ fontFamily: "var(--font-display)" }}>
                   {g.title}
                 </h2>
                 <span className="rounded-full bg-[#8a5a20]/20 px-2 py-0.5 text-xs font-bold text-[#5a3010]">

@@ -60,7 +60,7 @@ export default async function InventoryPage() {
           <section key={key}>
             <div className="mb-4 flex items-center gap-2.5">
               <span className="text-xl">{icon}</span>
-              <span className="text-lg font-black text-[#2a1a08] tracking-tight" style={{ fontFamily: "var(--font-body)" }}>
+              <span className="text-xl text-[#2a1a08]" style={{ fontFamily: "var(--font-display)" }}>
                 {label}
               </span>
               <span className="rounded-full bg-[#8a5a20]/20 px-2 py-0.5 text-xs font-bold text-[#5a3010]">
@@ -92,7 +92,7 @@ export default async function InventoryPage() {
             <section key={key}>
               <div className="mb-4 flex items-center gap-2.5">
                 <span className="text-xl">{icon}</span>
-                <span className="text-lg font-black text-[#2a1a08] tracking-tight" style={{ fontFamily: "var(--font-body)" }}>
+                <span className="text-xl text-[#2a1a08]" style={{ fontFamily: "var(--font-display)" }}>
                   {label}
                 </span>
                 <span className="rounded-full bg-[#8a5a20]/20 px-2 py-0.5 text-xs font-bold text-[#5a3010]">

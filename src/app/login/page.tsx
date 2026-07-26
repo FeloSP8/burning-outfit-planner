@@ -10,11 +10,13 @@ export default function LoginPage() {
     <div className="mx-auto mt-10 max-w-sm">
       <div className="mb-8 text-center">
         <span className="text-3xl">🔥</span>
+        {/* En minúsculas como el logo del header: la "o" de Lunok solo lleva
+            el trazo interior en caja baja. */}
         <h1
-          className="mt-2 text-2xl font-black tracking-tight text-[#7a3a10]"
-          style={{ fontFamily: "var(--font-body)" }}
+          className="mt-2 text-3xl tracking-wide text-[#7a3a10]"
+          style={{ fontFamily: "var(--font-display)" }}
         >
-          BURN OUTFITS
+          burn outfits
         </h1>
         <p className="mt-1 text-sm text-[#a08060]">Entra a tu planificador</p>
       </div>
