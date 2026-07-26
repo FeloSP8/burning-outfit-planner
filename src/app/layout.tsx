@@ -46,8 +46,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <Link href="/" className="flex items-center gap-2 group shrink-0">
                 <span className="text-xl">🔥</span>
                 <span
-                  className="text-sm font-black tracking-tight text-[#7a3a10] group-hover:text-[#c45010] transition-colors sm:text-base"
-                  style={{ fontFamily: "var(--font-body)" }}
+                  className="text-base tracking-wide text-[#7a3a10] group-hover:text-[#c45010] transition-colors sm:text-lg"
+                  style={{ fontFamily: "var(--font-display)" }}
                 >
                   BURN OUTFITS
                 </span>
