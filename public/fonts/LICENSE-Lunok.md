@@ -35,9 +35,10 @@ licencia o cambiar de fuente.**
 
 **Evita acentos y `¿ ¡ ! ? & $ _` en cualquier texto que use `--font-display`.**
 Mezclar Lunok y Georgia dentro de una palabra queda mal, así que los títulos
-están redactados para no necesitarlos ("Stats", "Topes y medias", "Notas de la
-ruta"). El `unicode-range` se mantiene como red de seguridad para texto
-dinámico (nombres de usuario, etiquetas) que sí pueda traerlos.
+se escriben sin tilde ("Estadisticas", "Maximos, minimos y medias"). Es una
+decisión estética consciente: se prefiere el texto reconocible sin tilde antes
+que reformularlo. El `unicode-range` se mantiene como red de seguridad para
+texto dinámico (nombres de usuario, etiquetas) que sí pueda traerlos.
 
 El texto de cuerpo y el menú usan Syne (`--font-body`), que tiene el juego
 completo: ahí se escribe en español normal, con sus tildes.
