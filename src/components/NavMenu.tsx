@@ -12,6 +12,7 @@ const LINKS = [
   { href: "/inventory", label: "Inventario" },
   { href: "/overview",  label: "Vista general" },
   { href: "/stats",     label: "Estadísticas" },
+  { href: "/route",     label: "Ruta" },
 ];
 
 export function NavMenu({ userName }: { userName: string }) {
