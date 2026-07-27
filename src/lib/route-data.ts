@@ -192,3 +192,23 @@ export function buildDirectionsOpenUrl(): string {
 
   return `https://www.google.com/maps/dir/?${params.toString()}`;
 }
+
+/**
+ * Enlace de navegación real: omite `origin`, así Google Maps arranca desde la
+ * ubicación actual del móvil y ofrece «Iniciar» en vez de «Vista previa».
+ *
+ * Con el origen fijado en Newark, Google solo puede previsualizar la ruta
+ * mientras no estés allí — por eso hace falta esta variante para usarlo de
+ * navegador durante el viaje. Las paradas pasan todas a waypoints (6, dentro
+ * del límite de 9 que admite la API de URLs) y BRC queda como destino.
+ */
+export function buildNavigateFromHereUrl(): string {
+  const params = new URLSearchParams({
+    api: "1",
+    destination: ROUTE_STOPS[ROUTE_STOPS.length - 1].coords.join(","),
+    waypoints: ROUTE_STOPS.slice(0, -1).map((s) => s.coords.join(",")).join("|"),
+    travelmode: "driving",
+  });
+
+  return `https://www.google.com/maps/dir/?${params.toString()}`;
+}

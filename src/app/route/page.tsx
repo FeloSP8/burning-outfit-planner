@@ -6,6 +6,7 @@ import {
   ROUTE_NOTES,
   ROUTE_PENDING,
   ROUTE_SHARE_URL,
+  buildNavigateFromHereUrl,
 } from "@/lib/route-data";
 import { getRouteGeometry } from "@/lib/route-geometry";
 import { RouteMap } from "@/components/route/RouteMap";
@@ -20,6 +21,7 @@ export default async function RoutePage() {
   if (!user) return null; // el proxy ya redirige a /login
 
   const { points: routePoints, isRealRoad } = await getRouteGeometry();
+  const navigateUrl = buildNavigateFromHereUrl();
 
   return (
     <div className="flex flex-col gap-10">
@@ -64,14 +66,26 @@ export default async function RoutePage() {
             style={{ fontFamily: "var(--font-display)" }}>
             El recorrido
           </span>
-          <a
-            href={ROUTE_SHARE_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="ml-auto rounded-xl bg-[#c84a10] px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-[#a83a08]"
-          >
-            Abrir en Google Maps →
-          </a>
+          <div className="ml-auto flex flex-wrap items-center gap-2">
+            <a
+              href={navigateUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Navega desde donde estés ahora, pasando por todas las paradas"
+              className="rounded-xl bg-[#c84a10] px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-[#a83a08]"
+            >
+              🧭 Navegar desde aquí
+            </a>
+            <a
+              href={ROUTE_SHARE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Abre la ruta guardada, desde Newark — vista previa del recorrido completo"
+              className="rounded-xl border-2 border-[#c84a10]/50 px-4 py-2 text-xs font-bold text-[#c84a10] transition-colors hover:bg-[#c84a10]/10"
+            >
+              Ver ruta completa →
+            </a>
+          </div>
         </div>
 
         <div className="relative aspect-[4/3] w-full sm:aspect-[16/9]">
