@@ -6,8 +6,9 @@ import {
   ROUTE_NOTES,
   ROUTE_PENDING,
   ROUTE_SHARE_URL,
-  buildDirectionsEmbedUrl,
 } from "@/lib/route-data";
+import { getRouteGeometry } from "@/lib/route-geometry";
+import { RouteMap } from "@/components/route/RouteMap";
 
 export const metadata = {
   title: "Ruta · Burning Outfit Planner",
@@ -18,7 +19,7 @@ export default async function RoutePage() {
   const user = await getCurrentUser();
   if (!user) return null; // el proxy ya redirige a /login
 
-  const embedUrl = buildDirectionsEmbedUrl();
+  const { points: routePoints, isRealRoad } = await getRouteGeometry();
 
   return (
     <div className="flex flex-col gap-10">
@@ -74,14 +75,7 @@ export default async function RoutePage() {
         </div>
 
         <div className="relative aspect-[4/3] w-full sm:aspect-[16/9]">
-          <iframe
-            src={embedUrl}
-            title="Ruta Newark → Black Rock City en Google Maps"
-            loading="lazy"
-            referrerPolicy="no-referrer-when-downgrade"
-            allowFullScreen
-            className="absolute inset-0 h-full w-full border-0"
-          />
+          <RouteMap stops={ROUTE_STOPS} routePoints={routePoints} isRealRoad={isRealRoad} />
         </div>
       </div>
 

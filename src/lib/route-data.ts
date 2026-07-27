@@ -171,29 +171,14 @@ export const ROUTE_PENDING: string[] = [
 ];
 
 /**
- * Embed de Google Maps con la ruta reconstruida a partir de las coordenadas.
+ * El mapa ya no se incrusta con un iframe de Google.
  *
- * El enlace corto (maps.app.goo.gl) no se puede incrustar en un iframe: Google
- * lo bloquea salvo que el mapa esté compartido públicamente. Por eso el mapa
- * visible se construye con origin/destination/waypoints, y el enlace original
- * se mantiene como referencia canónica en ROUTE_SHARE_URL.
+ * El endpoint antiguo `maps.google.com/maps?saddr=…&daddr=…&output=embed`
+ * ignora los waypoints múltiples y cae a un mapa del mundo sin ruta ni
+ * marcadores; la Embed API que sí los dibuja exige clave con facturación.
+ * El mapa se pinta ahora con Leaflet y teselas de OpenStreetMap
+ * (ver `route-geometry.ts` y `components/route/RouteMap.tsx`).
  */
-export function buildDirectionsEmbedUrl(): string {
-  const toParam = ([lat, lng]: [number, number]) => `${lat},${lng}`;
-
-  const origin = toParam(ROUTE_STOPS[0].coords);
-  const destination = toParam(ROUTE_STOPS[ROUTE_STOPS.length - 1].coords);
-  const waypoints = ROUTE_STOPS.slice(1, -1).map((s) => toParam(s.coords)).join("|");
-
-  const params = new URLSearchParams({
-    saddr: origin,
-    daddr: `${waypoints}|${destination}`,
-    dirflg: "d",
-    output: "embed",
-  });
-
-  return `https://maps.google.com/maps?${params.toString()}`;
-}
 
 /** Enlace "abrir en Google Maps" reconstruido, como alternativa al enlace corto. */
 export function buildDirectionsOpenUrl(): string {
