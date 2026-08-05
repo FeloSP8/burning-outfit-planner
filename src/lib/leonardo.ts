@@ -341,19 +341,19 @@ export async function generateTryOnLeonardo(
   );
 }
 
-// ─── Estilismo (peinado, tinte, bigote, maquillaje…) ────────────────────────
+// ─── Estilismo de cara (pelo y vello facial) ────────────────────────────────
 
 /**
- * Construye el prompt de estilismo. A diferencia del try-on, aquí NO se toca la
- * ropa ni el fondo: la foto de partida se mantiene y solo cambia lo pedido.
+ * Construye el prompt de estilismo. A diferencia del try-on aquí no se toca
+ * nada más que el pelo y el vello facial: misma cara, misma ropa, mismo fondo.
  */
 function buildStylePrompt(styleLines: string[]): string {
   const parts = [
-    "Restyle the person in ref 1. It is the SAME real person: keep the face shape, eyes, nose, mouth, skin tone and body identical.",
-    "Keep the same clothes, same pose, same framing, same background and same lighting as ref 1.",
-    "Change ONLY the styling listed below:",
+    "Change the hair and facial hair of the person in ref 1. It is the SAME real person: keep the face shape, eyes, nose, mouth, jawline, skin tone and body identical.",
+    "Keep the same clothes, same pose, same framing, same background and same lighting as ref 1. Do NOT add makeup, hats, glasses or any accessory.",
+    "Apply ONLY this:",
     ...styleLines.map((l) => `- ${l}`),
-    "Photorealistic, natural skin texture, sharp detail. No other changes.",
+    "Photorealistic, natural hair texture and natural skin texture, sharp detail. No other changes.",
   ];
   let prompt = parts.join("\n");
   if (prompt.length > PROMPT_MAX) {
@@ -365,8 +365,8 @@ function buildStylePrompt(styleLines: string[]): string {
 }
 
 /**
- * Genera una variante de la foto del usuario alterando solo el estilismo
- * (peinado, color de pelo, vello facial, maquillaje, complementos de cabeza).
+ * Genera una variante de la foto del usuario alterando solo el estilismo de la
+ * cara: peinado, color de pelo y vello facial.
  * Devuelve la URL pública de la imagen ya guardada en Storage.
  */
 export async function generateStyleLookLeonardo(

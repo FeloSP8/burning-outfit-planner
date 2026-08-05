@@ -37,9 +37,9 @@ Aplicación web para planificar el vestuario de un festival en el desierto (Burn
 - El resultado se guarda en base de datos y se muestra en la card y en la Vista General
 - Modo mock con `AI_MOCK=true` para desarrollar sin gastar créditos
 
-### 💇 Estudio de Estilismo
-- Parte de la foto que ya tienes en la app y genera variantes cambiando **solo el estilismo**: la ropa, la pose y el fondo se mantienen
-- Cinco categorías de presets: **Peinado · Color de pelo · Vello facial · Cara y maquillaje · Complementos de cabeza** (peinado, tinte y vello facial admiten una opción cada uno; el resto se combinan)
+### 💇 Estilismo (`/style`)
+- Sección propia en el menú. Parte de la foto que ya tienes en la app y genera variantes cambiando **solo el pelo y el vello facial**: la cara, la ropa, la pose y el fondo se mantienen
+- Tres categorías de presets, una opción por categoría: **Peinado** (12) · **Color de pelo** (10) · **Vello facial** (11)
 - Campo de texto libre para detalles que no están en los presets
 - Los cambios se pueden **encadenar**: el resultado queda seleccionado como foto de partida para la siguiente generación
 - Cualquier look se puede marcar como **foto de modelo**, y a partir de ahí el Probador Virtual lo usa como base
@@ -77,6 +77,7 @@ src/
 ├── app/
 │   ├── page.tsx                         # Home — stats del evento + guía de 3 pasos
 │   ├── planner/page.tsx                 # Planificador — días × turnos × outfits
+│   ├── style/page.tsx                   # Estilismo — variantes de pelo y vello facial
 │   ├── inventory/page.tsx               # Inventario — prendas agrupadas por categoría
 │   ├── overview/page.tsx                # Vista general — galería de todos los outfits
 │   ├── layout.tsx                       # Shell: nav, fuentes (Syne+Playfair), fondo arena
@@ -94,15 +95,16 @@ src/
 │       ├── style-looks/route.ts         # GET looks de estilismo del usuario
 │       ├── style-looks/[id]/route.ts    # DELETE borrar un look (y su imagen)
 │       ├── ai/try-on/route.ts           # POST try-on con Leonardo.Ai GPT Image 2
-│       └── ai/style/route.ts            # POST estilismo sobre la foto del usuario
+│       └── ai/style/route.ts            # POST estilismo de pelo/barba sobre tu foto
 │
 ├── components/
 │   ├── planner/
 │   │   ├── DayPlanner.tsx              # Tabs de días + grid de turnos (client)
 │   │   ├── ShiftCard.tsx               # Card Tarde/Noche: slots, guardado auto, try-on + campo extra
 │   │   ├── RangeSetup.tsx              # Selector de fechas + tabla de toggles Tarde/Noche
-│   │   ├── UserPhotoWidget.tsx         # Avatar circular + subida de foto de perfil
-│   │   └── StyleStudio.tsx             # Estudio de estilismo: presets, galería de looks
+│   │   └── UserPhotoWidget.tsx         # Avatar circular + subida de foto de perfil
+│   ├── style/
+│   │   └── StyleStudio.tsx             # Estilismo: presets de pelo/barba + galería de looks
 │   └── inventory/
 │       ├── GarmentCard.tsx             # Card: hover → botones editar/eliminar
 │       ├── GarmentForm.tsx             # Formulario crear/editar (paste Ctrl+V incluido)
@@ -112,7 +114,7 @@ src/
 ├── lib/
 │   ├── db.ts                           # Prisma singleton con adapter better-sqlite3
 │   ├── leonardo.ts                     # Try-on y estilismo con Leonardo.Ai + collage + mock
-│   ├── style-presets.ts                # Catálogo de estilismos (peinado, tinte, bigote…)
+│   ├── style-presets.ts                # Catálogo de estilismos (peinado, tinte, barba)
 │   ├── inventoryPdf.tsx                # Documento PDF del inventario (@react-pdf/renderer)
 │   └── storage.ts                      # Guardar/leer imágenes en /public/uploads
 │
@@ -140,7 +142,7 @@ User (1) ──< Day (1) ──< Shift  (type: TARDE|NOCHE)
 
 Outfit (1) ──────────────< TryOnResult  (imageUrl generada por Leonardo.Ai)
 
-User   (1) ──────────────< StyleLook    (variante de la foto: peinado, tinte, bigote…)
+User   (1) ──────────────< StyleLook    (variante de la foto: peinado, tinte, barba)
 ```
 
 **Reglas de negocio:**

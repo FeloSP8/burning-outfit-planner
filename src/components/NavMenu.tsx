@@ -10,6 +10,7 @@ const LINKS = [
   { href: "/checklist", label: "Checklist" },
   { href: "/planner",   label: "Planificador" },
   { href: "/inventory", label: "Inventario" },
+  { href: "/style",     label: "Estilismo" },
   { href: "/overview",  label: "Vista general" },
   { href: "/stats",     label: "Estadísticas" },
   { href: "/route",     label: "Ruta" },

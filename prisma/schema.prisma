@@ -88,8 +88,8 @@ model TryOnResult {
 }
 
 // Variante de la foto del usuario generada por IA cambiando solo el estilismo
-// (peinado, tinte, bigote, maquillaje…). `sourcePhoto` es la imagen de partida
-// y `prompt` el detalle exacto que se le pidió al modelo, para poder repetirlo.
+// de la cara (peinado, tinte, barba). `sourcePhoto` es la imagen de partida y
+// `prompt` el detalle exacto que se le pidió al modelo, para poder repetirlo.
 model StyleLook {
   id          String   @id @default(cuid())
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
