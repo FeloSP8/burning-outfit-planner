@@ -51,6 +51,19 @@ body {
   font-size: 15px;
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
+
+  /* Ligaduras desactivadas en toda la app por culpa de Lunok: su tabla GSUB
+     declara la feature `liga` con cuatro ligaduras —st, er, ff y tt— y esos
+     cuatro glifos NO están dibujados. Son la misma caja de relleno que los
+     acentos (advance 830), así que "Estilismo" se pintaba "E▮ilismo" y
+     "Estadisticas" o "Vista general" caían igual. Como `liga` está activa por
+     defecto, el unicode-range de layout.tsx no sirve aquí: la sustitución la
+     hace el motor de texto sobre glifos, no sobre code points.
+     Es global y no solo en los títulos para que el próximo título que se añada
+     con `font-family: var(--font-display)` no vuelva a romperse. En Syne
+     (cuerpo) esto solo desactiva ligaduras cosméticas tipo fi/fl. */
+  font-variant-ligatures: none;
+  font-feature-settings: "liga" 0, "clig" 0, "dlig" 0;
 }
 
 /* ── Scrollbar ───────────────────────────────────────── */

@@ -30,6 +30,18 @@ licencia o cambiar de fuente.**
   Por eso `layout.tsx` declara un `unicode-range` que limita Lunok a los
   caracteres reales; el resto cae al fallback (Georgia) en vez de pintar un
   cuadro. Si se cambia de fuente, hay que quitar ese `unicode-range`.
+- **Sus ligaduras también son cajas de relleno.** La tabla `GSUB` declara la
+  feature `liga` con cuatro ligaduras —`st`, `er`, `ff` y `tt`— y los cuatro
+  glifos (`s_t`, `e_r`, `f_f`, `t_t`) están sin dibujar: mismo `advance` 830 que
+  los acentos. Como `liga` se aplica por defecto, "Estilismo" se pintaba
+  "E▮ilismo" y "Estadisticas" o "Vista general" caían igual. El `unicode-range`
+  no protege de esto: la sustitución la hace el motor de texto sobre glifos, no
+  sobre code points. Por eso `globals.css` desactiva las ligaduras en `body`
+  (`font-variant-ligatures: none`), en toda la app y no solo en los títulos,
+  para que un título nuevo no vuelva a romperse. Si se cambia de fuente, esa
+  regla se puede quitar.
+  (Detalle: la caja de relleno es en realidad un QR de "BUY FONT LICENSE" de la
+  fundición — de ahí el borrón cuadriculado.)
 
 ## Al escribir títulos nuevos
 
