@@ -106,19 +106,19 @@ export function StyleStudio({
       // el mensaje se pierde; con el catch al menos queda el código de estado.
       const data = await res.json().catch(() => ({}));
       if (!res.ok || data.error) {
-        // El código de estado va en el mensaje: si el servidor manda un error
-        // que no es texto, al menos queda algo con lo que tirar del hilo.
-        setError(
-          typeof data.error === "string"
-            ? data.error
-            : `No se pudo generar el estilismo (error ${res.status}).`
-        );
+        // Siempre con el código delante: un error de la app y uno del servidor
+        // se parecían tanto que no había forma de saber cuál era cuál mirando
+        // la pantalla. Con "[400] …" o "[500] …" se distingue de un vistazo.
+        const detalle =
+          typeof data.error === "string" ? data.error : "Respuesta inesperada del servidor.";
+        setError(`[${res.status}] ${detalle}`);
         return;
       }
       setLooks((prev) => [data as StyleLook, ...prev]);
       setBaseUrl(data.imageUrl); // encadenar cambios sobre el resultado
     } catch {
-      setError("No se pudo generar el estilismo. Inténtalo de nuevo.");
+      // Sin respuesta: no llegó a haber petición o se cortó por el camino.
+      setError("No se pudo contactar con el servidor. Revisa la conexión e inténtalo de nuevo.");
     } finally {
       setLoading(false);
     }
