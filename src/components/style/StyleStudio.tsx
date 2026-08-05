@@ -102,9 +102,17 @@ export function StyleStudio({
           model,
         }),
       });
-      const data = await res.json();
+      // Si el servidor devuelve HTML (un 500 sin capturar), res.json() peta y
+      // el mensaje se pierde; con el catch al menos queda el código de estado.
+      const data = await res.json().catch(() => ({}));
       if (!res.ok || data.error) {
-        setError(typeof data.error === "string" ? data.error : "No se pudo generar el estilismo.");
+        // El código de estado va en el mensaje: si el servidor manda un error
+        // que no es texto, al menos queda algo con lo que tirar del hilo.
+        setError(
+          typeof data.error === "string"
+            ? data.error
+            : `No se pudo generar el estilismo (error ${res.status}).`
+        );
         return;
       }
       setLooks((prev) => [data as StyleLook, ...prev]);
