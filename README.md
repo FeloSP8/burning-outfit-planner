@@ -194,6 +194,18 @@ LEONARDO_API_KEY=""
 npx prisma migrate dev --name init
 ```
 
+En una base de datos que ya existe (producción incluida), aplicar las migraciones
+pendientes — con `DIRECT_URL` apuntando al puerto 5432, el pooler de transacciones
+no admite DDL:
+
+```bash
+npx prisma migrate deploy
+```
+
+Las migraciones de Prisma ya activan RLS en las tablas que crean. Los ficheros de
+`supabase/migrations/` son la misma protección por la vía del Supabase CLI
+(`supabase db push`) y son idempotentes.
+
 ### 4. Arrancar
 
 ```bash
