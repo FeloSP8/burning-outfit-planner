@@ -159,21 +159,27 @@ export function StyleStudio({
     <div className="grid gap-5 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)] lg:items-start">
 
       {/* ── Controles ─────────────────────────────────────────────── */}
-      <div className="flex flex-col gap-4 rounded-2xl border border-[#c4906a]/30 bg-[#f5e0b8]/50 p-5">
+      {/* min-w-0: sin esto el ancho mínimo del panel lo fija el contenido de la
+          tira de miniaturas (min-content), y con muchas fotos de partida el
+          grid se ensancha y desborda la página entera en móvil. */}
+      <div className="flex min-w-0 flex-col gap-4 rounded-2xl border border-[#c4906a]/30 bg-[#f5e0b8]/50 p-5">
 
         {/* Foto de partida */}
-        <div className="flex flex-col gap-1.5">
+        <div className="flex min-w-0 flex-col gap-1.5">
           <span className="text-[10px] font-bold uppercase tracking-widest text-[#a07040]">
             Foto de partida
           </span>
-          <div className="flex gap-2 overflow-x-auto pb-1">
+          {/* La máscara difumina el borde derecho: con muchas fotos, el último
+              thumbnail queda cortado y sin ella parece un fallo de maquetación
+              en vez de "aquí sigue habiendo". */}
+          <div className="flex w-full min-w-0 snap-x snap-mandatory gap-2 overflow-x-auto pb-1 [mask-image:linear-gradient(to_right,black_calc(100%-28px),transparent)]">
             {baseOptions.map((opt) => (
               <button
                 key={opt.url}
                 type="button"
                 onClick={() => setBaseUrl(opt.url)}
                 title={opt.label}
-                className={`relative h-20 w-16 shrink-0 overflow-hidden rounded-xl border-2 transition-all ${
+                className={`relative h-20 w-16 shrink-0 snap-start overflow-hidden rounded-xl border-2 transition-all ${
                   opt.url === effectiveBase
                     ? "border-[#c84a10] ring-2 ring-[#c84a10]/25"
                     : "border-[#c4906a]/30 hover:border-[#c84a10]/50"
@@ -299,7 +305,7 @@ export function StyleStudio({
       </div>
 
       {/* ── Galería de looks ──────────────────────────────────────── */}
-      <div className="flex flex-col gap-2">
+      <div className="flex min-w-0 flex-col gap-2">
         <span className="text-[10px] font-bold uppercase tracking-widest text-[#a07040]">
           Tus looks {looks.length > 0 && `(${looks.length})`}
         </span>
