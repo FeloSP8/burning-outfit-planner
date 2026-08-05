@@ -17,6 +17,7 @@ model User {
   reactions      Reaction[]
   checklistItems ChecklistItem[]
   checklistChecks ChecklistCheck[]
+  styleLooks     StyleLook[]
   createdAt      DateTime        @default(now())
 }
 
@@ -84,6 +85,23 @@ model TryOnResult {
   imageUrl  String
   userPhoto String
   createdAt DateTime @default(now())
+}
+
+// Variante de la foto del usuario generada por IA cambiando solo el estilismo
+// (peinado, tinte, bigote, maquillaje…). `sourcePhoto` es la imagen de partida
+// y `prompt` el detalle exacto que se le pidió al modelo, para poder repetirlo.
+model StyleLook {
+  id          String   @id @default(cuid())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  imageUrl    String
+  sourcePhoto String
+  label       String   // resumen legible para la UI ("Cresta mohawk · Rosa neón")
+  prompt      String   // instrucciones completas enviadas al modelo
+  model       String   // modelo de Leonardo usado
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
 }
 
 // Reacción de un usuario a un outfit del muro.

@@ -220,7 +220,8 @@ async function generateV2WithRefs(
   userId: string,
   model: "gpt-image-2" | "nano-banana-2",
   prompt: string,
-  imageReferences: { image: { id: string; type: string } }[]
+  imageReferences: { image: { id: string; type: string } }[],
+  prefix = "tryon"
 ): Promise<string> {
   const body = {
     model,
@@ -244,20 +245,21 @@ async function generateV2WithRefs(
 
   const data = JSON.parse(raw);
   if ((data.images as { url: string }[] | undefined)?.length)
-    return saveRemoteImage(userId, data.images[0].url, "tryon");
+    return saveRemoteImage(userId, data.images[0].url, prefix);
 
   const generationId =
     data.generate?.generationId ?? data.generationId ?? data.sdGenerationJob?.generationId;
   if (!generationId) throw new Error(`Sin generationId: ${raw}`);
 
   const [url] = await pollGeneration(generationId);
-  return saveRemoteImage(userId, url, "tryon");
+  return saveRemoteImage(userId, url, prefix);
 }
 
 async function generatePhoenix(
   userId: string,
   prompt: string,
-  userImageId: string
+  userImageId: string,
+  prefix = "tryon"
 ): Promise<string> {
   // Phoenix usa v1 + controlnets. Character Reference (preprocessorId 397) preserva la persona.
   const body = {
@@ -290,7 +292,7 @@ async function generatePhoenix(
   if (!generationId) throw new Error(`Phoenix sin generationId: ${raw}`);
 
   const [url] = await pollGeneration(generationId);
-  return saveRemoteImage(userId, url, "tryon");
+  return saveRemoteImage(userId, url, prefix);
 }
 
 // ─── Función principal exportada ────────────────────────────────────────────
@@ -336,5 +338,64 @@ export async function generateTryOnLeonardo(
 
   return generateWithRetry(() =>
     generateV2WithRefs(userId, model as "gpt-image-2" | "nano-banana-2", prompt, imageReferences)
+  );
+}
+
+// ─── Estilismo (peinado, tinte, bigote, maquillaje…) ────────────────────────
+
+/**
+ * Construye el prompt de estilismo. A diferencia del try-on, aquí NO se toca la
+ * ropa ni el fondo: la foto de partida se mantiene y solo cambia lo pedido.
+ */
+function buildStylePrompt(styleLines: string[]): string {
+  const parts = [
+    "Restyle the person in ref 1. It is the SAME real person: keep the face shape, eyes, nose, mouth, skin tone and body identical.",
+    "Keep the same clothes, same pose, same framing, same background and same lighting as ref 1.",
+    "Change ONLY the styling listed below:",
+    ...styleLines.map((l) => `- ${l}`),
+    "Photorealistic, natural skin texture, sharp detail. No other changes.",
+  ];
+  let prompt = parts.join("\n");
+  if (prompt.length > PROMPT_MAX) {
+    prompt = prompt.slice(0, PROMPT_MAX);
+    console.warn(`[leonardo] Prompt de estilismo truncado a ${PROMPT_MAX} chars`);
+  }
+  console.log(`[leonardo] Prompt estilismo (${prompt.length} chars)`);
+  return prompt;
+}
+
+/**
+ * Genera una variante de la foto del usuario alterando solo el estilismo
+ * (peinado, color de pelo, vello facial, maquillaje, complementos de cabeza).
+ * Devuelve la URL pública de la imagen ya guardada en Storage.
+ */
+export async function generateStyleLookLeonardo(
+  userId: string,
+  sourcePhotoUrl: string,
+  styleLines: string[],
+  model: ModelId = "gpt-image-2"
+): Promise<string> {
+  if (styleLines.length === 0) throw new Error("Sin instrucciones de estilismo");
+  if (MOCK) return sourcePhotoUrl;
+  if (!API_KEY) throw new Error("LEONARDO_API_KEY no configurada");
+
+  console.log(`[leonardo] estilismo con ${model}:`, styleLines.join(" | "));
+
+  const prompt = buildStylePrompt(styleLines);
+  const sourceImageId = await uploadImage(sourcePhotoUrl);
+  console.log(`[leonardo] Foto base: ${sourceImageId}`);
+
+  if (model === "phoenix") {
+    return generateWithRetry(() => generatePhoenix(userId, prompt, sourceImageId, "style"));
+  }
+
+  return generateWithRetry(() =>
+    generateV2WithRefs(
+      userId,
+      model as "gpt-image-2" | "nano-banana-2",
+      prompt,
+      [{ image: { id: sourceImageId, type: "UPLOADED" } }],
+      "style"
+    )
   );
 }

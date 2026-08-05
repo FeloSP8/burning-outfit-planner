@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 
 export function UserPhotoWidget({ initialPhotoUrl, initialName }: { initialPhotoUrl: string | null; initialName: string }) {
+  const router = useRouter();
   const [photoUrl, setPhotoUrl] = useState<string | null>(initialPhotoUrl);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -48,6 +50,7 @@ export function UserPhotoWidget({ initialPhotoUrl, initialName }: { initialPhoto
     });
     setPhotoUrl(data.url);
     setUploading(false);
+    router.refresh(); // el estudio de estilismo y el probador leen la foto del servidor
   }
 
   return (

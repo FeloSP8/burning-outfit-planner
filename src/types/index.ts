@@ -43,6 +43,17 @@ export interface TryOnResult {
   createdAt: string;
 }
 
+/** Variante de la foto del usuario con el estilismo cambiado por IA. */
+export interface StyleLook {
+  id: string;
+  imageUrl: string;
+  sourcePhoto: string;
+  label: string;
+  prompt: string;
+  model: string;
+  createdAt: string;
+}
+
 export interface Outfit {
   id: string;
   shiftId: string;

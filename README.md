@@ -37,6 +37,15 @@ Aplicación web para planificar el vestuario de un festival en el desierto (Burn
 - El resultado se guarda en base de datos y se muestra en la card y en la Vista General
 - Modo mock con `AI_MOCK=true` para desarrollar sin gastar créditos
 
+### 💇 Estudio de Estilismo
+- Parte de la foto que ya tienes en la app y genera variantes cambiando **solo el estilismo**: la ropa, la pose y el fondo se mantienen
+- Cinco categorías de presets: **Peinado · Color de pelo · Vello facial · Cara y maquillaje · Complementos de cabeza** (peinado, tinte y vello facial admiten una opción cada uno; el resto se combinan)
+- Campo de texto libre para detalles que no están en los presets
+- Los cambios se pueden **encadenar**: el resultado queda seleccionado como foto de partida para la siguiente generación
+- Cualquier look se puede marcar como **foto de modelo**, y a partir de ahí el Probador Virtual lo usa como base
+- Los looks se guardan en la tabla `StyleLook` y se pueden borrar (excepto el que esté en uso como foto de modelo)
+- Mismo selector de modelo que el probador (GPT Image 2 · Nano Banana 2 · Phoenix) y mismo modo mock con `AI_MOCK=true`
+
 ### 🖼️ Vista General
 - Galería de todos los días y turnos del evento
 - Muestra la imagen del try-on cuando existe, o placeholder con enlace directo a generarla
@@ -82,14 +91,18 @@ src/
 │       ├── outfits/[id]/items/route.ts  # POST asignar prenda  ·  DELETE quitar
 │       ├── upload/route.ts              # POST subir imagen → { url }  (max 5 MB)
 │       ├── inventory-pdf/route.ts       # GET generar PDF del inventario completo
-│       └── ai/try-on/route.ts           # POST try-on con Leonardo.Ai GPT Image 2
+│       ├── style-looks/route.ts         # GET looks de estilismo del usuario
+│       ├── style-looks/[id]/route.ts    # DELETE borrar un look (y su imagen)
+│       ├── ai/try-on/route.ts           # POST try-on con Leonardo.Ai GPT Image 2
+│       └── ai/style/route.ts            # POST estilismo sobre la foto del usuario
 │
 ├── components/
 │   ├── planner/
 │   │   ├── DayPlanner.tsx              # Tabs de días + grid de turnos (client)
 │   │   ├── ShiftCard.tsx               # Card Tarde/Noche: slots, guardado auto, try-on + campo extra
 │   │   ├── RangeSetup.tsx              # Selector de fechas + tabla de toggles Tarde/Noche
-│   │   └── UserPhotoWidget.tsx         # Avatar circular + subida de foto de perfil
+│   │   ├── UserPhotoWidget.tsx         # Avatar circular + subida de foto de perfil
+│   │   └── StyleStudio.tsx             # Estudio de estilismo: presets, galería de looks
 │   └── inventory/
 │       ├── GarmentCard.tsx             # Card: hover → botones editar/eliminar
 │       ├── GarmentForm.tsx             # Formulario crear/editar (paste Ctrl+V incluido)
@@ -98,7 +111,8 @@ src/
 │
 ├── lib/
 │   ├── db.ts                           # Prisma singleton con adapter better-sqlite3
-│   ├── leonardo.ts                     # Try-on con Leonardo.Ai GPT Image 2 + collage + mock
+│   ├── leonardo.ts                     # Try-on y estilismo con Leonardo.Ai + collage + mock
+│   ├── style-presets.ts                # Catálogo de estilismos (peinado, tinte, bigote…)
 │   ├── inventoryPdf.tsx                # Documento PDF del inventario (@react-pdf/renderer)
 │   └── storage.ts                      # Guardar/leer imágenes en /public/uploads
 │
@@ -125,6 +139,8 @@ User (1) ──< Day (1) ──< Shift  (type: TARDE|NOCHE)
                            Garment  (slot: TOP|BOTTOM|SHOES|ACCESSORY|COAT|BIKE_ACCESSORY)
 
 Outfit (1) ──────────────< TryOnResult  (imageUrl generada por Leonardo.Ai)
+
+User   (1) ──────────────< StyleLook    (variante de la foto: peinado, tinte, bigote…)
 ```
 
 **Reglas de negocio:**
@@ -134,6 +150,8 @@ Outfit (1) ──────────────< TryOnResult  (imageUrl ge
 - `ACCESSORY` admite múltiples prendas en el mismo outfit
 - `BIKE_ACCESSORY` solo aparece en el inventario, nunca en la lógica de outfits
 - La card Noche muestra aviso si no tiene `COAT` asignado
+- `StyleLook.sourcePhoto` guarda la foto de partida, así que la foto original sigue siendo recuperable aunque se marque un look como foto de modelo
+- No se puede borrar el `StyleLook` que sea la foto de modelo actual (`User.photoUrl`)
 
 ---
 

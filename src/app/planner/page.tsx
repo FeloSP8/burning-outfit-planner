@@ -3,13 +3,14 @@ import { getCurrentUser } from "@/lib/auth";
 import { DayPlanner } from "@/components/planner/DayPlanner";
 import { RangeSetup } from "@/components/planner/RangeSetup";
 import { UserPhotoWidget } from "@/components/planner/UserPhotoWidget";
-import type { Day, Garment } from "@/types";
+import { StyleStudio } from "@/components/planner/StyleStudio";
+import type { Day, Garment, StyleLook } from "@/types";
 
 export default async function PlannerPage() {
   const user = await getCurrentUser();
   if (!user) return null; // el proxy ya redirige a /login
 
-  const [rawDays, rawGarments] = await Promise.all([
+  const [rawDays, rawGarments, rawLooks] = await Promise.all([
     db.day.findMany({
       where: { userId: user.id },
       orderBy: { date: "asc" },
@@ -25,6 +26,7 @@ export default async function PlannerPage() {
       },
     }),
     db.garment.findMany({ where: { userId: user.id }, orderBy: { createdAt: "asc" } }),
+    db.styleLook.findMany({ where: { userId: user.id }, orderBy: { createdAt: "desc" } }),
   ]);
 
   const days = rawDays.map((d) => ({
@@ -45,6 +47,7 @@ export default async function PlannerPage() {
   })) as Day[];
 
   const garments = rawGarments.map((g) => ({ ...g, createdAt: g.createdAt.toISOString() })) as Garment[];
+  const styleLooks = rawLooks.map((l) => ({ ...l, createdAt: l.createdAt.toISOString() })) as StyleLook[];
   const userPhotoUrl = user.photoUrl ?? null;
 
   return (
@@ -73,9 +76,12 @@ export default async function PlannerPage() {
           <p className="text-xs font-bold uppercase tracking-[0.15em] text-[#a07040]">
             Tu foto · Probador
           </p>
-          <UserPhotoWidget initialPhotoUrl={userPhotoUrl} initialName={user.name} />
+          {/* key: al cambiar la foto desde el estudio, el widget se remonta con la nueva */}
+          <UserPhotoWidget key={userPhotoUrl ?? "sin-foto"} initialPhotoUrl={userPhotoUrl} initialName={user.name} />
         </section>
       </div>
+
+      <StyleStudio userPhotoUrl={userPhotoUrl} initialLooks={styleLooks} />
 
       {days.length > 0 ? (
         <DayPlanner days={days} inventory={garments} userPhotoUrl={userPhotoUrl} />
