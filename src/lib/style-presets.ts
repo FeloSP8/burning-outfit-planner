@@ -21,6 +21,14 @@ export type StyleCategory = {
   hint: string;
   /** Si es exclusiva, solo puede haber un preset seleccionado a la vez. */
   exclusive: boolean;
+  /**
+   * Encabezado en inglés que se antepone al texto libre de la categoría, para
+   * que una frase escrita a mano llegue al modelo con la misma estructura que
+   * un preset: "Hairstyle: melena con dos coletas."
+   */
+  promptPrefix: string;
+  /** Ejemplo para el campo de texto libre. */
+  placeholder: string;
   presets: StylePreset[];
 };
 
@@ -28,8 +36,10 @@ export const STYLE_CATEGORIES: StyleCategory[] = [
   {
     id: "hairstyle",
     label: "Peinado",
-    hint: "elige uno",
+    hint: "elige uno o escríbelo",
     exclusive: true,
+    promptPrefix: "Hairstyle",
+    placeholder: "Ej: melena a lo afro con la raya al lado",
     presets: [
       { id: "mohawk",    emoji: "🦅", label: "Cresta mohawk",   prompt: "Hairstyle: tall spiked mohawk with shaved sides." },
       { id: "dreads",    emoji: "🧶", label: "Rastas",          prompt: "Hairstyle: long dreadlocks gathered back." },
@@ -48,8 +58,10 @@ export const STYLE_CATEGORIES: StyleCategory[] = [
   {
     id: "haircolor",
     label: "Color de pelo",
-    hint: "elige uno",
+    hint: "elige uno o escríbelo",
     exclusive: true,
+    promptPrefix: "Hair color",
+    placeholder: "Ej: castaño con las puntas decoloradas",
     presets: [
       { id: "pink",     emoji: "🩷", label: "Rosa neón",        prompt: "Hair color: vivid neon pink." },
       { id: "blue",     emoji: "💙", label: "Azul eléctrico",   prompt: "Hair color: electric blue." },
@@ -66,8 +78,10 @@ export const STYLE_CATEGORIES: StyleCategory[] = [
   {
     id: "facialhair",
     label: "Vello facial",
-    hint: "elige uno",
+    hint: "elige uno o escríbelo",
     exclusive: true,
+    promptPrefix: "Facial hair",
+    placeholder: "Ej: bigote fino y perilla recortada",
     presets: [
       { id: "handlebar",   emoji: "👨", label: "Bigote manillar", prompt: "Facial hair: thick handlebar moustache with curled tips." },
       { id: "moustache",   emoji: "🥸", label: "Bigote clásico",  prompt: "Facial hair: neat classic moustache, no beard." },
@@ -95,3 +109,41 @@ export function getStylePreset(id: string): StylePreset | undefined {
 
 /** Todos los ids válidos — útil para validar la entrada de la API. */
 export const STYLE_PRESET_IDS = [...PRESETS_BY_ID.keys()];
+
+/**
+ * Resuelve lo que se va a pedir al modelo a partir de los chips marcados y del
+ * texto libre de cada categoría. Una entrada por categoría como mucho, y en el
+ * orden del catálogo (peinado → color → vello facial), así que el prompt sale
+ * siempre con la misma estructura.
+ *
+ * El texto escrito a mano **sustituye** al chip de su categoría: en la UI son
+ * excluyentes, y aquí se respeta la misma regla para que un cliente desfasado
+ * no pueda pedir dos peinados a la vez.
+ *
+ * La usan tanto el estudio (para el resumen "Se aplicará: …") como la API (para
+ * el prompt y la etiqueta del look), de modo que las dos digan lo mismo.
+ */
+export function resolveStyleSelection(
+  presetIds: string[],
+  custom: Record<string, string | undefined> = {}
+): { lines: string[]; labels: string[] } {
+  const lines: string[] = [];
+  const labels: string[] = [];
+
+  for (const cat of STYLE_CATEGORIES) {
+    const text = custom[cat.id]?.trim();
+    if (text) {
+      // Punto final como en los presets: cada instrucción llega cerrada.
+      lines.push(`${cat.promptPrefix}: ${text.endsWith(".") ? text : text + "."}`);
+      labels.push(text);
+      continue;
+    }
+    const preset = cat.presets.find((p) => presetIds.includes(p.id));
+    if (preset) {
+      lines.push(preset.prompt);
+      labels.push(preset.label);
+    }
+  }
+
+  return { lines, labels };
+}

@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { STYLE_CATEGORIES, getStylePreset } from "@/lib/style-presets";
+import { STYLE_CATEGORIES, resolveStyleSelection } from "@/lib/style-presets";
 import { LEONARDO_MODELS, type ModelId } from "@/lib/leonardo-models";
 import type { StyleLook } from "@/types";
 
@@ -27,7 +27,8 @@ export function StyleStudio({
   const [looks, setLooks]     = useState<StyleLook[]>(initialLooks);
   const [baseUrl, setBaseUrl] = useState<string>(userPhotoUrl ?? "");
   const [picked, setPicked]   = useState<string[]>([]);
-  const [custom, setCustom]   = useState("");
+  // Texto libre por categoría — alternativa al chip, no un añadido.
+  const [custom, setCustom]   = useState<Record<string, string>>({});
   const [model, setModel]     = useState<ModelId>("gpt-image-2");
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState<string | null>(null);
@@ -63,9 +64,24 @@ export function StyleStudio({
       }
       return [...prev, presetId];
     });
+    // Elegir un chip descarta lo escrito en esa categoría: no puedes pedir dos
+    // peinados a la vez.
+    if (category) setCustom((prev) => ({ ...prev, [category.id]: "" }));
   }
 
-  const hasInstructions = picked.length > 0 || custom.trim().length > 0;
+  function writeCustom(categoryId: string, text: string) {
+    setCustom((prev) => ({ ...prev, [categoryId]: text }));
+    if (!text.trim()) return;
+    const category = STYLE_CATEGORIES.find((c) => c.id === categoryId);
+    if (!category) return;
+    const siblings = new Set(category.presets.map((p) => p.id));
+    setPicked((prev) => prev.filter((id) => !siblings.has(id)));
+  }
+
+  // Mismo resolutor que usa la API, para que el resumen y lo que se genera no
+  // puedan discrepar.
+  const summary = resolveStyleSelection(picked, custom).labels;
+  const hasInstructions = summary.length > 0;
 
   async function generate() {
     if (!effectiveBase || !hasInstructions || loading) return;
@@ -78,7 +94,11 @@ export function StyleStudio({
         body: JSON.stringify({
           sourcePhotoUrl: effectiveBase,
           presets: picked,
-          customPrompt: custom.trim() || undefined,
+          custom: Object.fromEntries(
+            Object.entries(custom)
+              .map(([k, v]) => [k, v.trim()])
+              .filter(([, v]) => v)
+          ),
           model,
         }),
       });
@@ -223,23 +243,23 @@ export function StyleStudio({
                 );
               })}
             </div>
+
+            {/* Texto libre de la categoría: sustituye al chip, no se suma */}
+            <input
+              type="text"
+              value={custom[cat.id] ?? ""}
+              onChange={(e) => writeCustom(cat.id, e.target.value)}
+              maxLength={200}
+              placeholder={cat.placeholder}
+              aria-label={`${cat.label} — escríbelo tú`}
+              className={`mt-0.5 w-full min-w-0 rounded-xl border-2 px-3 py-2 text-xs font-medium text-[#2a1a08] placeholder-[#b09060] focus:outline-none ${
+                custom[cat.id]?.trim()
+                  ? "border-[#c84a10] bg-[#c84a10]/8"
+                  : "border-[#c4906a]/30 bg-[#c4906a]/10 focus:border-[#c84a10]/50"
+              }`}
+            />
           </div>
         ))}
-
-        {/* Texto libre */}
-        <div className="flex flex-col gap-1">
-          <label className="text-[10px] font-bold uppercase tracking-widest text-[#a07040]">
-            Otro detalle (opcional)
-          </label>
-          <textarea
-            value={custom}
-            onChange={(e) => setCustom(e.target.value)}
-            rows={2}
-            maxLength={300}
-            placeholder="Ej: raya al lado y las puntas quemadas por el sol"
-            className="w-full resize-none rounded-xl border-2 border-[#c4906a]/30 bg-[#c4906a]/10 px-3 py-2 text-xs font-medium text-[#2a1a08] placeholder-[#b09060] focus:border-[#c84a10]/50 focus:outline-none"
-          />
-        </div>
 
         {/* Modelo */}
         <div className="flex flex-col gap-1">
@@ -267,9 +287,9 @@ export function StyleStudio({
         </div>
 
         {/* Resumen + CTA */}
-        {picked.length > 0 && (
+        {summary.length > 0 && (
           <p className="text-[11px] font-semibold text-[#7a5030]">
-            Se aplicará: {picked.map((id) => getStylePreset(id)?.label).filter(Boolean).join(" · ")}
+            Se aplicará: {summary.join(" · ")}
           </p>
         )}
 

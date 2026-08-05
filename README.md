@@ -39,8 +39,9 @@ Aplicación web para planificar el vestuario de un festival en el desierto (Burn
 
 ### 💇 Estilismo (`/style`)
 - Sección propia en el menú. Parte de la foto que ya tienes en la app y genera variantes cambiando **solo el pelo y el vello facial**: la cara, la ropa, la pose y el fondo se mantienen
-- Tres categorías de presets, una opción por categoría: **Peinado** (12) · **Color de pelo** (10) · **Vello facial** (11)
-- Campo de texto libre para detalles que no están en los presets
+- Tres categorías, una entrada por categoría: **Peinado** (12 presets) · **Color de pelo** (10) · **Vello facial** (11)
+- Cada categoría tiene además su **campo de texto**: se escribe el estilismo en español en vez de elegir un preset. Son excluyentes — al escribir se desmarca el chip de esa categoría y al elegir chip se vacía el texto
+- El texto libre llega al modelo con el mismo encabezado que los presets (`Hairstyle:`, `Hair color:`, `Facial hair:`), así que rinde igual
 - Los cambios se pueden **encadenar**: el resultado queda seleccionado como foto de partida para la siguiente generación
 - Cualquier look se puede marcar como **foto de modelo**, y a partir de ahí el Probador Virtual lo usa como base
 - Los looks se guardan en la tabla `StyleLook` y se pueden borrar (excepto el que esté en uso como foto de modelo)

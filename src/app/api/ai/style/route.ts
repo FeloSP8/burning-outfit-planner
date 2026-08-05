@@ -3,16 +3,19 @@ import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
 import { generateStyleLookLeonardo } from "@/lib/leonardo";
 import { LEONARDO_MODELS, type ModelId } from "@/lib/leonardo-models";
-import { getStylePreset } from "@/lib/style-presets";
+import { getStylePreset, STYLE_CATEGORIES, resolveStyleSelection } from "@/lib/style-presets";
 import { z } from "zod";
 
 const VALID_MODELS = LEONARDO_MODELS.map((m) => m.id) as [ModelId, ...ModelId[]];
+const CATEGORY_IDS = STYLE_CATEGORIES.map((c) => c.id) as [string, ...string[]];
 
 const Schema = z.object({
   // Foto de partida: la del perfil o un look generado antes (para encadenar cambios).
   sourcePhotoUrl: z.string().min(1),
   presets:        z.array(z.string().min(1)).max(10).optional(),
-  customPrompt:   z.string().max(300).optional(),
+  // Texto libre por categoría: { hairstyle: "melena con dos coletas", … }.
+  // Alternativa al preset — si viene texto, manda sobre el preset de esa categoría.
+  custom:         z.record(z.enum(CATEGORY_IDS), z.string().max(200)).optional(),
   model:          z.enum(VALID_MODELS).optional(),
 });
 
@@ -24,7 +27,7 @@ export async function POST(req: NextRequest) {
   if (!parsed.success)
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
 
-  const { sourcePhotoUrl, presets = [], customPrompt, model = "gpt-image-2" } = parsed.data;
+  const { sourcePhotoUrl, presets = [], custom = {}, model = "gpt-image-2" } = parsed.data;
 
   // La foto de partida tiene que ser del usuario: su foto de modelo, un look
   // suyo, o la foto original de la que salió un look (sigue siendo elegible
@@ -44,18 +47,15 @@ export async function POST(req: NextRequest) {
       { status: 403 }
     );
 
-  // Presets → líneas de prompt en inglés. Un id desconocido es error del cliente.
-  const chosen = presets.map((id) => ({ id, preset: getStylePreset(id) }));
-  const unknown = chosen.filter((c) => !c.preset).map((c) => c.id);
+  // Un id de preset desconocido es un error del cliente, no algo que ignorar.
+  const unknown = presets.filter((id) => !getStylePreset(id));
   if (unknown.length > 0)
     return NextResponse.json(
       { error: `Estilismo desconocido: ${unknown.join(", ")}` },
       { status: 400 }
     );
 
-  const styleLines = chosen.map((c) => c.preset!.prompt);
-  const extra = customPrompt?.trim();
-  if (extra) styleLines.push(extra);
+  const { lines: styleLines, labels: labelParts } = resolveStyleSelection(presets, custom);
 
   if (styleLines.length === 0)
     return NextResponse.json(
@@ -63,10 +63,7 @@ export async function POST(req: NextRequest) {
       { status: 422 }
     );
 
-  const label =
-    [...chosen.map((c) => c.preset!.label), ...(extra ? [extra] : [])]
-      .join(" · ")
-      .slice(0, 120);
+  const label = labelParts.join(" · ").slice(0, 120);
 
   try {
     const imageUrl = await generateStyleLookLeonardo(user.id, sourcePhotoUrl, styleLines, model);
