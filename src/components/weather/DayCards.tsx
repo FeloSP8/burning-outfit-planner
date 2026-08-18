@@ -10,14 +10,16 @@
  */
 
 import {
+  WIND_BANDS,
   dayFlags,
-  gustSeverity,
+  kmhToMph,
   rainSeverity,
+  windBand,
   type DailyPoint,
   type ModelForecast,
   type Severity,
 } from "@/lib/weather";
-import { SEV, fmtDate, fmtRain, fmtWind, weatherCode } from "./format";
+import { SEV, WIND_STYLE, fmtDate, fmtRain, fmtWind, weatherCode } from "./format";
 
 export interface DayConsensus {
   date: string;
@@ -78,6 +80,76 @@ export function consensusFor(models: ModelForecast[], date: string): DayConsensu
   return consensus;
 }
 
+/**
+ * Medidor de viento: cifra, nombre del tramo y una barra de cinco casillas
+ * que se van encendiendo. La casilla es lo que responde "¿mucho o poco?" sin
+ * tener que saberse los mph de memoria.
+ */
+function WindGauge({ kmh, compact = false }: { kmh: number | null; compact?: boolean }) {
+  const band = windBand(kmh);
+  const style = band ? WIND_STYLE[band.id] : null;
+  const activeIndex = band ? WIND_BANDS.findIndex((b) => b.id === band.id) : -1;
+
+  return (
+    // En la lista los anchos van fijos para que las columnas de todos los días
+    // caigan alineadas y se puedan comparar de un barrido vertical.
+    <div className={compact ? "flex items-center gap-2" : "flex flex-col gap-1"}>
+      <p
+        className={`text-sm font-black tabular-nums ${compact ? "w-36 shrink-0" : ""} ${
+          style?.text ?? "text-[#a07040]"
+        }`}
+      >
+        💨 {fmtWind(kmh)}
+        {!compact && <span className="ml-1 text-[11px] font-bold text-[#a07040]">en ráfaga</span>}
+      </p>
+
+      <div className="flex items-center gap-2">
+        {band && (
+          <span
+            className={`shrink-0 rounded-lg px-2 py-0.5 text-center text-[11px] font-black uppercase tracking-wide ${
+              compact ? "w-24" : ""
+            } ${style!.chip}`}
+          >
+            {band.label}
+          </span>
+        )}
+        <span className="flex gap-0.5" aria-hidden>
+          {WIND_BANDS.map((b, i) => (
+            <span
+              key={b.id}
+              className={`h-1.5 w-4 rounded-full ${
+                i <= activeIndex ? WIND_STYLE[b.id].bar : "bg-[#c4906a]/25"
+              }`}
+            />
+          ))}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/** Leyenda del código de color, para que la escala no haya que adivinarla. */
+export function WindLegend() {
+  return (
+    <div className="flex flex-wrap items-center gap-2 rounded-2xl border-2 border-[#c4906a]/40 bg-[#fdf4e0] px-4 py-3">
+      <span className="text-[11px] font-black uppercase tracking-widest text-[#a07040]">
+        💨 Ráfagas
+      </span>
+      {WIND_BANDS.map((b) => (
+        <span key={b.id} className="flex items-center gap-1.5" title={b.hint}>
+          <span className={`h-2.5 w-2.5 rounded-full ${WIND_STYLE[b.id].bar}`} />
+          <span className="text-[11px] font-bold text-[#2a1a08]">{b.label}</span>
+          <span className="text-[11px] font-semibold tabular-nums text-[#a07040]">
+            {b.maxKmh === Infinity
+              ? `> ${b.minKmh} km/h · > ${Math.round(kmhToMph(b.minKmh))} mph`
+              : `${b.minKmh}-${b.maxKmh} km/h · ${Math.round(kmhToMph(b.minKmh))}-${Math.round(kmhToMph(b.maxKmh))} mph`}
+          </span>
+        </span>
+      ))}
+    </div>
+  );
+}
+
 /** Tarjeta grande: un vistazo y ya sabes cómo vestirte ese día. */
 function DayCard({ date, day, note }: { date: string; day: DayConsensus | null; note?: string }) {
   if (!day) {
@@ -94,7 +166,6 @@ function DayCard({ date, day, note }: { date: string; day: DayConsensus | null; 
   }
 
   const { emoji, label } = weatherCode(day.code);
-  const gust = gustSeverity(day.gustKmh);
   const rain = rainSeverity(day.precipMm);
 
   return (
@@ -114,11 +185,8 @@ function DayCard({ date, day, note }: { date: string; day: DayConsensus | null; 
       </p>
       <p className="mt-0.5 text-xs font-bold text-[#7a5030]">{label}</p>
 
-      <div className="mt-3 flex flex-col gap-1 border-t border-[#c4906a]/25 pt-2">
-        <p className={`text-sm font-black tabular-nums ${SEV[gust].text}`}>
-          💨 {fmtWind(day.gustKmh)}
-          <span className="ml-1 text-[11px] font-bold text-[#a07040]">en ráfaga</span>
-        </p>
+      <div className="mt-3 flex flex-col gap-2 border-t border-[#c4906a]/25 pt-2">
+        <WindGauge kmh={day.gustKmh} />
         <p className={`text-sm font-black tabular-nums ${SEV[rain].text}`}>
           💧 {fmtRain(day.precipMm)}
           {day.precipProb != null && (
@@ -195,10 +263,8 @@ export function DayList({ dates, models }: { dates: string[]; models: ModelForec
                 {day?.tMinC == null ? "" : `${Math.round(day.tMinC)}°`}
               </span>
             </span>
-            <span
-              className={`shrink-0 text-xs font-bold tabular-nums ${SEV[gustSeverity(day?.gustKmh ?? null)].text}`}
-            >
-              💨 {fmtWind(day?.gustKmh ?? null)}
+            <span className="shrink-0">
+              <WindGauge kmh={day?.gustKmh ?? null} compact />
             </span>
             <span
               className={`shrink-0 text-xs font-bold tabular-nums ${SEV[rainSeverity(day?.precipMm ?? null)].text}`}

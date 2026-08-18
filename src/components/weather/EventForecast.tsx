@@ -12,13 +12,13 @@
 import {
   EVENT,
   dayFlags,
-  gustSeverity,
   rainSeverity,
+  windBand,
   type DailyPoint,
   type Ensemble,
   type ModelForecast,
 } from "@/lib/weather";
-import { SEV, fmtDate, fmtRain, fmtTempShort, fmtWind, weatherCode } from "./format";
+import { SEV, WIND_STYLE, fmtDate, fmtRain, fmtTempShort, fmtWind, weatherCode } from "./format";
 
 /** Todas las fechas `YYYY-MM-DD` entre dos extremos, inclusive. */
 function dateRange(start: string, end: string): string[] {
@@ -42,7 +42,7 @@ function ModelRow({ model, day }: { model: ModelForecast; day: DailyPoint | unde
   }
 
   const { emoji, label } = weatherCode(day.code);
-  const gust = gustSeverity(day.gustKmh);
+  const band = windBand(day.gustKmh);
   const rain = rainSeverity(day.precipMm);
 
   return (
@@ -60,8 +60,11 @@ function ModelRow({ model, day }: { model: ModelForecast; day: DailyPoint | unde
           <span className="font-semibold text-[#a07040]"> ({Math.round(day.precipProb)}%)</span>
         )}
       </span>
-      <span className={`text-xs font-bold tabular-nums ${SEV[gust].text}`}>
+      <span
+        className={`text-xs font-bold tabular-nums ${band ? WIND_STYLE[band.id].text : "text-[#a07040]"}`}
+      >
         💨 {fmtWind(day.gustKmh)}
+        {band && <span className="ml-1 text-[11px] font-black uppercase">{band.label}</span>}
       </span>
       {day.uvMax != null && (
         <span className="text-xs font-semibold tabular-nums text-[#7a5030]">

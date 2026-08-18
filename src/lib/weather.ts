@@ -864,6 +864,37 @@ export async function getSynopticObservation(): Promise<StationObservation | nul
 // Semáforo de umbrales
 // ─────────────────────────────────────────────────────────
 
+/**
+ * Escala de viento en cinco tramos, para leer de un vistazo si el día es de
+ * viento flojo, normal o de los que arrancan sombras. Los cortes son los
+ * umbrales operativos del playa (15 / 25 / 40 / 50 mph); el primero es el
+ * único cosmético: separa "no se nota" de "hay polvo suelto en el aire".
+ */
+export type WindBandId = "flojo" | "moderado" | "fuerte" | "muy-fuerte" | "extremo";
+
+export interface WindBand {
+  id: WindBandId;
+  label: string;
+  /** Qué significa ese viento acampado en el desierto. */
+  hint: string;
+  minKmh: number;
+  maxKmh: number;
+}
+
+export const WIND_BANDS: WindBand[] = [
+  { id: "flojo", label: "Flojo", hint: "Ni te enteras. Día de montar cosas.", minKmh: 0, maxKmh: 25 },
+  { id: "moderado", label: "Moderado", hint: "Polvo suelto en el aire, pero nada se rompe.", minKmh: 25, maxKmh: GUST.warn },
+  { id: "fuerte", label: "Fuerte", hint: "Empiezan a fallar sombras y carpas mal ancladas.", minKmh: GUST.warn, maxKmh: GUST.high },
+  { id: "muy-fuerte", label: "Muy fuerte", hint: "Whiteout de polvo, visibilidad por debajo de 1 milla.", minKmh: GUST.high, maxKmh: GUST.extreme },
+  { id: "extremo", label: "Extremo", hint: "Cierre de puertas y daños serios en campamento.", minKmh: GUST.extreme, maxKmh: Infinity },
+];
+
+/** En qué tramo cae una ráfaga. `null` si no hay dato. */
+export function windBand(kmh: number | null): WindBand | null {
+  if (kmh === null) return null;
+  return WIND_BANDS.find((b) => kmh < b.maxKmh) ?? WIND_BANDS[WIND_BANDS.length - 1];
+}
+
 export function gustSeverity(kmh: number | null): Severity {
   if (kmh === null) return "ok";
   if (kmh >= GUST.extreme) return "extreme";

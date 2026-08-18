@@ -8,7 +8,7 @@ import {
   playaToday,
 } from "@/lib/weather";
 import { CLIMATOLOGY, PLAYA_MEMORY, SOURCES, THRESHOLDS } from "@/lib/weather-guide";
-import { DayCardGrid, DayList } from "@/components/weather/DayCards";
+import { DayCardGrid, DayList, WindLegend } from "@/components/weather/DayCards";
 import { WeatherRegions } from "@/components/weather/WeatherRegions";
 import { EventForecast } from "@/components/weather/EventForecast";
 import { SEV, fmtCoords, fmtKm, fmtPlayaTime, fmtTemp, fmtWind } from "@/components/weather/format";
@@ -195,13 +195,18 @@ export default async function WeatherPage() {
         {!hasModels ? (
           <SourceDown what="El pronóstico" />
         ) : (
-          <DayCardGrid
-            dates={eventDates}
-            models={bundle.models}
-            emptyNote={(date) =>
-              `Faltan ${daysBetween(today, date)} días. Ningún modelo llega tan lejos todavía.`
-            }
-          />
+          <>
+            <WindLegend />
+            <div className="mt-3">
+              <DayCardGrid
+                dates={eventDates}
+                models={bundle.models}
+                emptyNote={(date) =>
+                  `Faltan ${daysBetween(today, date)} días. Ningún modelo llega tan lejos todavía.`
+                }
+              />
+            </div>
+          </>
         )}
 
         <p className="mt-3 text-[11px] font-medium leading-relaxed text-[#a07040]">

@@ -1,6 +1,6 @@
 /** Formateo y colores compartidos por las secciones de la página del tiempo. */
 
-import { cToF, kmhToMph, mmToInches, type Severity } from "@/lib/weather";
+import { cToF, kmhToMph, mmToInches, type Severity, type WindBandId } from "@/lib/weather";
 
 const es = (n: number, digits = 1) =>
   n.toLocaleString("es-ES", { maximumFractionDigits: digits });
@@ -108,3 +108,36 @@ export function weatherCode(code: number | null): { emoji: string; label: string
   const hit = code === null ? undefined : WMO[code];
   return { emoji: hit?.[0] ?? "🌡️", label: hit?.[1] ?? "Sin dato" };
 }
+
+/**
+ * Código de color del viento: rampa verde → rojo. El color va siempre
+ * acompañado del nombre del tramo, para que no dependa de distinguir
+ * matices — ni de ver bien el color.
+ */
+export const WIND_STYLE: Record<WindBandId, { chip: string; text: string; bar: string }> = {
+  flojo: {
+    chip: "bg-emerald-200/80 text-emerald-950",
+    text: "text-emerald-800",
+    bar: "bg-emerald-500",
+  },
+  moderado: {
+    chip: "bg-lime-200/80 text-lime-950",
+    text: "text-lime-800",
+    bar: "bg-lime-500",
+  },
+  fuerte: {
+    chip: "bg-amber-300/80 text-amber-950",
+    text: "text-amber-800",
+    bar: "bg-amber-500",
+  },
+  "muy-fuerte": {
+    chip: "bg-orange-400/80 text-orange-950",
+    text: "text-orange-800",
+    bar: "bg-orange-500",
+  },
+  extremo: {
+    chip: "bg-red-400/90 text-red-950",
+    text: "text-red-800",
+    bar: "bg-red-600",
+  },
+};
