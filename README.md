@@ -50,7 +50,7 @@ Aplicación web para planificar el vestuario de un festival en el desierto (Burn
 ### 🌤️ El tiempo (`/weather`)
 - **El pronóstico primero**: la semana del evento en tarjetas grandes, una por día — máxima y mínima, ráfaga máxima y lluvia acumulada — más una tira compacta de los próximos días para el viaje y las compras
 - Los dos modelos (GFS+HRRR y ECMWF) se resumen en **una sola lectura conservadora**: media en temperatura, **peor caso en ráfaga y lluvia**, y el día se marca como "los modelos discrepan" cuando no cuentan la misma historia
-- **Código de color del viento** en cinco tramos con nombre y barra de progreso — Flojo (<25 km/h) · Moderado (25-40) · Fuerte (40-64) · Muy fuerte (64-80) · Extremo (>80) — con leyenda encima de las tarjetas, para ver de un barrido si el día es de mucho, poco o regular
+- **Código de color del viento** en cinco tramos con nombre y barra de progreso — Flojo (<25 km/h) · Moderado (25-39) · Fuerte (40-63) · Muy fuerte (64-79) · Extremo (≥80) — con leyenda encima de las tarjetas, para ver de un barrido si el día es de mucho, poco o regular. El valor del corte pertenece siempre al tramo superior: 40 km/h es Fuerte
 - Borde y chip de color por **umbral del playa**: ráfagas 25/40/50 mph, lluvia 0,25″/0,5″, mínima <50°F, máxima >100°F, UV >8. Los días fuera del horizonte de los modelos lo dicen en vez de inventar un número
 - **Avisos oficiales del NWS** (flash flood, dust storm, high wind) arriba del todo, en corto y con la instrucción de actuación
 - Todo lo demás va plegado en **"La letra pequeña"**: sobre qué se pronostica exactamente, los modelos uno a uno con el ensemble, el pronóstico oficial del NWS Reno, observaciones reales, polvo de CAMS, umbrales, climatología y fuentes

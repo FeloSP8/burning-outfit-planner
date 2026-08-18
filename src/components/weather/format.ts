@@ -1,6 +1,6 @@
 /** Formateo y colores compartidos por las secciones de la página del tiempo. */
 
-import { cToF, kmhToMph, mmToInches, type Severity, type WindBandId } from "@/lib/weather";
+import { cToF, kmhToMph, mmToInches, type Severity, type WindBand, type WindBandId } from "@/lib/weather";
 
 const es = (n: number, digits = 1) =>
   n.toLocaleString("es-ES", { maximumFractionDigits: digits });
@@ -141,3 +141,18 @@ export const WIND_STYLE: Record<WindBandId, { chip: string; text: string; bar: s
     bar: "bg-red-600",
   },
 };
+
+/**
+ * Rango de un tramo de viento, escrito sin solapes: el valor del corte
+ * pertenece siempre al tramo superior (40 km/h es Fuerte, no Moderado), así
+ * que la etiqueta del de abajo termina en 39 y no en 40.
+ */
+export function windBandRange(band: WindBand): string {
+  const mph = (kmh: number) => Math.round(kmhToMph(kmh));
+  if (band.minKmh === 0) return `< ${band.maxKmh} km/h · < ${mph(band.maxKmh)} mph`;
+  if (band.maxKmh === Infinity)
+    return `≥ ${band.minKmh} km/h · ≥ ${mph(band.minKmh)} mph`;
+  const topKmh = band.maxKmh - 1;
+  const topMph = Math.ceil(kmhToMph(band.maxKmh)) - 1;
+  return `${band.minKmh}-${topKmh} km/h · ${mph(band.minKmh)}-${topMph} mph`;
+}

@@ -12,14 +12,13 @@
 import {
   WIND_BANDS,
   dayFlags,
-  kmhToMph,
   rainSeverity,
   windBand,
   type DailyPoint,
   type ModelForecast,
   type Severity,
 } from "@/lib/weather";
-import { SEV, WIND_STYLE, fmtDate, fmtRain, fmtWind, weatherCode } from "./format";
+import { SEV, WIND_STYLE, fmtDate, fmtRain, fmtWind, weatherCode, windBandRange } from "./format";
 
 export interface DayConsensus {
   date: string;
@@ -140,9 +139,7 @@ export function WindLegend() {
           <span className={`h-2.5 w-2.5 rounded-full ${WIND_STYLE[b.id].bar}`} />
           <span className="text-[11px] font-bold text-[#2a1a08]">{b.label}</span>
           <span className="text-[11px] font-semibold tabular-nums text-[#a07040]">
-            {b.maxKmh === Infinity
-              ? `> ${b.minKmh} km/h · > ${Math.round(kmhToMph(b.minKmh))} mph`
-              : `${b.minKmh}-${b.maxKmh} km/h · ${Math.round(kmhToMph(b.minKmh))}-${Math.round(kmhToMph(b.maxKmh))} mph`}
+            {windBandRange(b)}
           </span>
         </span>
       ))}
