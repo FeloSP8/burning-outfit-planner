@@ -103,13 +103,8 @@ export function WeatherRegions({
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <p
-          className="text-2xl text-[#7a2e08] sm:text-3xl"
-          style={{ fontFamily: "var(--font-display)" }}
-        >
-          Sobre qué se pronostica
-        </p>
-        <p className="mt-1 text-xs font-medium leading-relaxed text-[#7a5030]">
+        {/* El título lo pone el desplegable que envuelve a este bloque. */}
+        <p className="text-xs font-medium leading-relaxed text-[#7a5030]">
           En el playa <span className="font-black">no hay ninguna estación meteorológica</span>.
           El aeropuerto de Black Rock City (88NV) es una pista de tierra estacional sin METAR
           permanente, así que nadie mide el desierto donde acampamos. Todo lo que hay debajo son

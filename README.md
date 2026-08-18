@@ -48,13 +48,12 @@ Aplicación web para planificar el vestuario de un festival en el desierto (Burn
 - Mismo selector de modelo que el probador (GPT Image 2 · Nano Banana 2 · Phoenix) y mismo modo mock con `AI_MOCK=true`
 
 ### 🌤️ El tiempo (`/weather`)
-- Pronóstico para Black Rock City con la jerarquía de fuentes del meta-análisis: **NWS Reno (WFO REV)** como autoridad y avisos, **Open-Meteo** para el contraste multi-modelo y **observaciones reales** de las estaciones cercanas
-- **Avisos oficiales activos** (flash flood, dust storm, high wind, excessive heat) en cabecera, con las instrucciones íntegras
-- Bloque **"Sobre qué se pronostica"**: no hay ninguna estación en el playa, así que se enseñan las coordenadas exactas del nodo que responde por cada fuente (celda del NWS, rejilla de GFS+HRRR, de ECMWF IFS y de CAMS) con su desvío al Hombre calculado al vuelo, más la tabla de estaciones reales y sus distancias
-- **La semana del evento** día a día con GFS+HRRR y ECMWF enfrentados — sin promediarlos: cuando discrepan, la incertidumbre es la noticia — y la probabilidad real del **ensemble GFS** (31 miembros): % de miembros con lluvia >0,25″ y con ráfagas >40 mph
-- Semáforo de **umbrales accionables** por día: ráfagas 25/40/50 mph, lluvia 0,25″/0,5″, mínima <50°F, máxima >100°F, UV >8
-- **Banner de confianza**: a más de 14 días avisa de que ningún modelo tiene habilidad determinista, en vez de fingir precisión
-- Polvo y PM10 de **CAMS**, climatología de Gerlach y memoria del playa (2023, 2024, 2025)
+- **El pronóstico primero**: la semana del evento en tarjetas grandes, una por día — máxima y mínima, ráfaga máxima y lluvia acumulada — más una tira compacta de los próximos días para el viaje y las compras
+- Los dos modelos (GFS+HRRR y ECMWF) se resumen en **una sola lectura conservadora**: media en temperatura, **peor caso en ráfaga y lluvia**, y el día se marca como "los modelos discrepan" cuando no cuentan la misma historia
+- Borde y chip de color por **umbral del playa**: ráfagas 25/40/50 mph, lluvia 0,25″/0,5″, mínima <50°F, máxima >100°F, UV >8. Los días fuera del horizonte de los modelos lo dicen en vez de inventar un número
+- **Avisos oficiales del NWS** (flash flood, dust storm, high wind) arriba del todo, en corto y con la instrucción de actuación
+- Todo lo demás va plegado en **"La letra pequeña"**: sobre qué se pronostica exactamente, los modelos uno a uno con el ensemble, el pronóstico oficial del NWS Reno, observaciones reales, polvo de CAMS, umbrales, climatología y fuentes
+- **Sobre qué se pronostica**: no hay ninguna estación en el playa, así que se enseñan las coordenadas del nodo que responde por cada fuente (celda del NWS, GFS+HRRR, ECMWF IFS y CAMS) con su desvío al Hombre calculado al vuelo, más las estaciones reales y sus distancias
 - Funciona **sin ninguna API key**. `SYNOPTIC_TOKEN` es opcional y solo añade el PWS de Gerlach (F0371), la observación más cercana al playa
 
 ### 🖼️ Vista General
@@ -91,7 +90,7 @@ src/
 │   ├── style/page.tsx                   # Estilismo — variantes de pelo y vello facial
 │   ├── inventory/page.tsx               # Inventario — prendas agrupadas por categoría
 │   ├── overview/page.tsx                # Vista general — galería de todos los outfits
-│   ├── weather/page.tsx                 # El tiempo — pronóstico, avisos y zonas de pronóstico
+│   ├── weather/page.tsx                 # El tiempo — pronóstico diario + metodología plegada
 │   ├── layout.tsx                       # Shell: nav, fuentes (Syne+Playfair), fondo arena
 │   ├── globals.css                      # Degradado arena, tokens CSS, scrollbar, selects
 │   └── api/
@@ -119,7 +118,8 @@ src/
 │   │   └── StyleStudio.tsx             # Estilismo: presets de pelo/barba + galería de looks
 │   ├── weather/
 │   │   ├── WeatherRegions.tsx          # Qué punto responde por BRC en cada fuente + distancias
-│   │   ├── EventForecast.tsx           # Días del evento: modelos enfrentados + ensemble
+│   │   ├── DayCards.tsx                # Tarjetas grandes por día (vista principal)
+│   │   ├── EventForecast.tsx           # Detalle por modelo + ensemble (en la letra pequeña)
 │   │   └── format.ts                   # Unidades dobles (°C/°F, km/h/mph, mm/″) y semáforo
 │   └── inventory/
 │       ├── GarmentCard.tsx             # Card: hover → botones editar/eliminar

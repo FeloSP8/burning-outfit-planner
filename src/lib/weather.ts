@@ -881,7 +881,9 @@ export function rainSeverity(mm: number | null): Severity {
 }
 
 /** Los avisos accionables de un día concreto, ya en lenguaje de playa. */
-export function dayFlags(day: DailyPoint): { text: string; level: Severity }[] {
+export function dayFlags(
+  day: Pick<DailyPoint, "tMaxC" | "tMinC" | "precipMm" | "gustKmh" | "uvMax">
+): { text: string; level: Severity }[] {
   const flags: { text: string; level: Severity }[] = [];
 
   const gust = gustSeverity(day.gustKmh);
