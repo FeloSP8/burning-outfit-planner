@@ -115,18 +115,23 @@ export function weatherCode(code: number | null): { emoji: string; label: string
  * matices — ni de ver bien el color.
  */
 export const WIND_STYLE: Record<WindBandId, { chip: string; text: string; bar: string }> = {
-  flojo: {
+  calma: {
     chip: "bg-emerald-200/80 text-emerald-950",
     text: "text-emerald-800",
     bar: "bg-emerald-500",
   },
-  moderado: {
+  "polvo-suelto": {
     chip: "bg-lime-200/80 text-lime-950",
     text: "text-lime-800",
     bar: "bg-lime-500",
   },
+  molesto: {
+    chip: "bg-yellow-300/80 text-yellow-950",
+    text: "text-yellow-800",
+    bar: "bg-yellow-400",
+  },
   fuerte: {
-    chip: "bg-amber-300/80 text-amber-950",
+    chip: "bg-amber-400/80 text-amber-950",
     text: "text-amber-800",
     bar: "bg-amber-500",
   },

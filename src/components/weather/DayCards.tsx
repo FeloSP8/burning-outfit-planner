@@ -94,9 +94,9 @@ function WindGauge({ kmh, compact = false }: { kmh: number | null; compact?: boo
     // caigan alineadas y se puedan comparar de un barrido vertical.
     <div className={compact ? "flex items-center gap-2" : "flex flex-col gap-1"}>
       <p
-        className={`text-sm font-black tabular-nums ${compact ? "w-36 shrink-0" : ""} ${
-          style?.text ?? "text-[#a07040]"
-        }`}
+        className={`text-sm font-black tabular-nums ${
+          compact ? "min-w-40 shrink-0 whitespace-nowrap" : ""
+        } ${style?.text ?? "text-[#a07040]"}`}
       >
         💨 {fmtWind(kmh)}
         {!compact && <span className="ml-1 text-[11px] font-bold text-[#a07040]">en ráfaga</span>}
@@ -105,8 +105,8 @@ function WindGauge({ kmh, compact = false }: { kmh: number | null; compact?: boo
       <div className="flex items-center gap-2">
         {band && (
           <span
-            className={`shrink-0 rounded-lg px-2 py-0.5 text-center text-[11px] font-black uppercase tracking-wide ${
-              compact ? "w-24" : ""
+            className={`shrink-0 rounded-lg px-2 py-0.5 text-center font-black uppercase tracking-wide ${
+              compact ? "min-w-28 text-[10px] whitespace-nowrap" : "text-[11px]"
             } ${style!.chip}`}
           >
             {band.label}
@@ -116,13 +116,18 @@ function WindGauge({ kmh, compact = false }: { kmh: number | null; compact?: boo
           {WIND_BANDS.map((b, i) => (
             <span
               key={b.id}
-              className={`h-1.5 w-4 rounded-full ${
+              className={`h-1.5 w-3 rounded-full ${
                 i <= activeIndex ? WIND_STYLE[b.id].bar : "bg-[#c4906a]/25"
               }`}
             />
           ))}
         </span>
       </div>
+
+      {/* La frase es lo que de verdad responde "¿y eso cómo se vive?". */}
+      {!compact && band && (
+        <p className="text-[11px] font-medium leading-snug text-[#7a5030]">{band.hint}</p>
+      )}
     </div>
   );
 }

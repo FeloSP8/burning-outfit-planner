@@ -865,12 +865,32 @@ export async function getSynopticObservation(): Promise<StationObservation | nul
 // ─────────────────────────────────────────────────────────
 
 /**
- * Escala de viento en cinco tramos, para leer de un vistazo si el día es de
- * viento flojo, normal o de los que arrancan sombras. Los cortes son los
- * umbrales operativos del playa (15 / 25 / 40 / 50 mph); el primero es el
- * único cosmético: separa "no se nota" de "hay polvo suelto en el aire".
+ * Escala de viento en seis tramos, para leer de un vistazo si el día es de
+ * viento flojo, molesto o de los que arrancan sombras.
+ *
+ * Los tres cortes de arriba (40 / 64 / 80 km/h = 25 / 40 / 50 mph) son los
+ * umbrales operativos del playa: sombras que fallan, whiteout y cierre de
+ * puertas. Los dos de abajo salen del polvo, no de las estructuras:
+ *
+ * - La escala Beaufort sitúa "levanta polvo y papeles" en fuerza 4, es decir
+ *   20-28 km/h, y eso es en terreno normal con vegetación.
+ * - En lechos secos el umbral de emisión de PM10 está en velocidades de
+ *   fricción de ~0,30-0,55 m/s, y el extremo bajo corresponde a las
+ *   superficies *alteradas* — sin costra. Sobre un playa liso (z0 ~ 0,3-1 mm)
+ *   esos 0,30 m/s son unos 25-30 km/h a 10 m de altura.
+ * - BRC es el caso extremo de superficie alterada: 70.000 personas, bicis y
+ *   art cars pulverizando la costra durante una semana.
+ *
+ * O sea: con 30 km/h el polvo ya vuela de forma continua. Llamar "moderado" a
+ * eso sería engañoso, de ahí el tramo "Molesto".
  */
-export type WindBandId = "flojo" | "moderado" | "fuerte" | "muy-fuerte" | "extremo";
+export type WindBandId =
+  | "calma"
+  | "polvo-suelto"
+  | "molesto"
+  | "fuerte"
+  | "muy-fuerte"
+  | "extremo";
 
 export interface WindBand {
   id: WindBandId;
@@ -882,14 +902,51 @@ export interface WindBand {
 }
 
 export const WIND_BANDS: WindBand[] = [
-  { id: "flojo", label: "Flojo", hint: "Ni te enteras. Día de montar cosas.", minKmh: 0, maxKmh: 25 },
-  { id: "moderado", label: "Moderado", hint: "Polvo suelto en el aire, pero nada se rompe.", minKmh: 25, maxKmh: GUST.warn },
-  { id: "fuerte", label: "Fuerte", hint: "Empiezan a fallar sombras y carpas mal ancladas.", minKmh: GUST.warn, maxKmh: GUST.high },
-  { id: "muy-fuerte", label: "Muy fuerte", hint: "Whiteout de polvo, visibilidad por debajo de 1 milla.", minKmh: GUST.high, maxKmh: GUST.extreme },
-  { id: "extremo", label: "Extremo", hint: "Cierre de puertas y daños serios en campamento.", minKmh: GUST.extreme, maxKmh: Infinity },
+  {
+    id: "calma",
+    label: "Calma",
+    hint: "Ni te enteras. Día de montar cosas y de cocinar fuera.",
+    minKmh: 0,
+    maxKmh: 15,
+  },
+  {
+    id: "polvo-suelto",
+    label: "Polvo suelto",
+    hint: "El polvo fino empieza a levantarse a ratos. Goggles a mano.",
+    minKmh: 15,
+    maxKmh: 25,
+  },
+  {
+    id: "molesto",
+    label: "Molesto",
+    hint: "Polvo en el aire casi todo el rato: goggles puestos, mascarilla encima y cuesta cocinar.",
+    minKmh: 25,
+    maxKmh: GUST.warn,
+  },
+  {
+    id: "fuerte",
+    label: "Fuerte",
+    hint: "Empiezan a fallar sombras y carpas mal ancladas. El NWS ya emite avisos de polvo.",
+    minKmh: GUST.warn,
+    maxKmh: GUST.high,
+  },
+  {
+    id: "muy-fuerte",
+    label: "Muy fuerte",
+    hint: "Whiteout de polvo, visibilidad por debajo de 1 milla. No se circula.",
+    minKmh: GUST.high,
+    maxKmh: GUST.extreme,
+  },
+  {
+    id: "extremo",
+    label: "Extremo",
+    hint: "Cierre de puertas y daños serios en campamento.",
+    minKmh: GUST.extreme,
+    maxKmh: Infinity,
+  },
 ];
 
-/** En qué tramo cae una ráfaga. `null` si no hay dato. */
+/** En qué tramo cae una ráfaga. El valor del corte va siempre al tramo superior. */
 export function windBand(kmh: number | null): WindBand | null {
   if (kmh === null) return null;
   return WIND_BANDS.find((b) => kmh < b.maxKmh) ?? WIND_BANDS[WIND_BANDS.length - 1];
