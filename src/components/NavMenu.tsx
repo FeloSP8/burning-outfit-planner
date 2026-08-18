@@ -14,6 +14,7 @@ const LINKS = [
   { href: "/overview",  label: "Vista general" },
   { href: "/stats",     label: "Estadísticas" },
   { href: "/route",     label: "Ruta" },
+  { href: "/weather",   label: "El tiempo" },
 ];
 
 export function NavMenu({ userName }: { userName: string }) {

@@ -47,6 +47,16 @@ Aplicación web para planificar el vestuario de un festival en el desierto (Burn
 - Los looks se guardan en la tabla `StyleLook` y se pueden borrar (excepto el que esté en uso como foto de modelo)
 - Mismo selector de modelo que el probador (GPT Image 2 · Nano Banana 2 · Phoenix) y mismo modo mock con `AI_MOCK=true`
 
+### 🌤️ El tiempo (`/weather`)
+- Pronóstico para Black Rock City con la jerarquía de fuentes del meta-análisis: **NWS Reno (WFO REV)** como autoridad y avisos, **Open-Meteo** para el contraste multi-modelo y **observaciones reales** de las estaciones cercanas
+- **Avisos oficiales activos** (flash flood, dust storm, high wind, excessive heat) en cabecera, con las instrucciones íntegras
+- Bloque **"Sobre qué se pronostica"**: no hay ninguna estación en el playa, así que se enseñan las coordenadas exactas del nodo que responde por cada fuente (celda del NWS, rejilla de GFS+HRRR, de ECMWF IFS y de CAMS) con su desvío al Hombre calculado al vuelo, más la tabla de estaciones reales y sus distancias
+- **La semana del evento** día a día con GFS+HRRR y ECMWF enfrentados — sin promediarlos: cuando discrepan, la incertidumbre es la noticia — y la probabilidad real del **ensemble GFS** (31 miembros): % de miembros con lluvia >0,25″ y con ráfagas >40 mph
+- Semáforo de **umbrales accionables** por día: ráfagas 25/40/50 mph, lluvia 0,25″/0,5″, mínima <50°F, máxima >100°F, UV >8
+- **Banner de confianza**: a más de 14 días avisa de que ningún modelo tiene habilidad determinista, en vez de fingir precisión
+- Polvo y PM10 de **CAMS**, climatología de Gerlach y memoria del playa (2023, 2024, 2025)
+- Funciona **sin ninguna API key**. `SYNOPTIC_TOKEN` es opcional y solo añade el PWS de Gerlach (F0371), la observación más cercana al playa
+
 ### 🖼️ Vista General
 - Galería de todos los días y turnos del evento
 - Muestra la imagen del try-on cuando existe, o placeholder con enlace directo a generarla
@@ -81,6 +91,7 @@ src/
 │   ├── style/page.tsx                   # Estilismo — variantes de pelo y vello facial
 │   ├── inventory/page.tsx               # Inventario — prendas agrupadas por categoría
 │   ├── overview/page.tsx                # Vista general — galería de todos los outfits
+│   ├── weather/page.tsx                 # El tiempo — pronóstico, avisos y zonas de pronóstico
 │   ├── layout.tsx                       # Shell: nav, fuentes (Syne+Playfair), fondo arena
 │   ├── globals.css                      # Degradado arena, tokens CSS, scrollbar, selects
 │   └── api/
@@ -106,6 +117,10 @@ src/
 │   │   └── UserPhotoWidget.tsx         # Avatar circular + subida de foto de perfil
 │   ├── style/
 │   │   └── StyleStudio.tsx             # Estilismo: presets de pelo/barba + galería de looks
+│   ├── weather/
+│   │   ├── WeatherRegions.tsx          # Qué punto responde por BRC en cada fuente + distancias
+│   │   ├── EventForecast.tsx           # Días del evento: modelos enfrentados + ensemble
+│   │   └── format.ts                   # Unidades dobles (°C/°F, km/h/mph, mm/″) y semáforo
 │   └── inventory/
 │       ├── GarmentCard.tsx             # Card: hover → botones editar/eliminar
 │       ├── GarmentForm.tsx             # Formulario crear/editar (paste Ctrl+V incluido)
@@ -117,7 +132,9 @@ src/
 │   ├── leonardo.ts                     # Try-on y estilismo con Leonardo.Ai + collage + mock
 │   ├── style-presets.ts                # Catálogo de estilismos (peinado, tinte, barba)
 │   ├── inventoryPdf.tsx                # Documento PDF del inventario (@react-pdf/renderer)
-│   └── storage.ts                      # Guardar/leer imágenes en /public/uploads
+│   ├── storage.ts                      # Guardar/leer imágenes en /public/uploads
+│   ├── weather.ts                      # NWS + Open-Meteo + observaciones reales y umbrales
+│   └── weather-guide.ts                # Umbrales, climatología, memoria del playa y fuentes
 │
 └── types/
     └── index.ts                        # Tipos compartidos: Day, Shift, Outfit, Garment…
