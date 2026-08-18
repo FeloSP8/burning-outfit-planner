@@ -952,6 +952,107 @@ export function windBand(kmh: number | null): WindBand | null {
   return WIND_BANDS.find((b) => kmh < b.maxKmh) ?? WIND_BANDS[WIND_BANDS.length - 1];
 }
 
+/**
+ * Escala de lluvia, en mm acumulados en 24 h.
+ *
+ * En el playa la lluvia no se mide por lo que moja sino por lo que pega: el
+ * lecho es arcilla que se hincha al mojarse y se convierte en un barro que se
+ * agarra a botas, ruedas y cadenas. Por eso los tramos empiezan tan abajo:
+ *
+ * - Con la superficie mojada no se circula ni con 4x4 — el barro se pega en
+ *   capas y frena bicis y coches. No hace falta que se inunde.
+ * - La guía de travesía del Black Rock Desert dice que si ha llovido en las
+ *   últimas 72 h, no se cruza el playa. En 2023 el suelo tardó entre dos y
+ *   tres días en admitir tráfico otra vez.
+ * - Y aun así lo de 2023 fueron 13-25 mm: 2-3 meses de lluvia de golpe, pero
+ *   en absoluto una cifra grande. El daño lo hizo la arcilla, no el volumen.
+ *
+ * O sea: cualquier lluvia medible cambia el plan del día. Lo que cambia con
+ * la cantidad es cuánto dura el problema.
+ */
+export type RainBandId = "seco" | "chispas" | "pegajoso" | "barro" | "cierre";
+
+export interface RainBand {
+  id: RainBandId;
+  label: string;
+  hint: string;
+  minMm: number;
+  maxMm: number;
+}
+
+export const RAIN_BANDS: RainBand[] = [
+  {
+    id: "seco",
+    label: "Seco",
+    hint: "Nada de agua. Polvo y a lo tuyo.",
+    minMm: 0,
+    maxMm: 0.1,
+  },
+  {
+    id: "chispas",
+    label: "Chispas",
+    hint: "Cuatro gotas: asientan el polvo y dejan la superficie pegajosa un rato. Suele secar en horas.",
+    minMm: 0.1,
+    maxMm: 1,
+  },
+  {
+    id: "pegajoso",
+    label: "Pegajoso",
+    hint: "Barro superficial: las ruedas se embozan y andar cuesta. No muevas el coche hasta que seque.",
+    minMm: 1,
+    maxMm: RAIN.mud,
+  },
+  {
+    id: "barro",
+    label: "Barro",
+    hint: "El playa deja de ser transitable: ni bici ni coche, ni con 4x4. Puede tardar un día en secar.",
+    minMm: RAIN.mud,
+    maxMm: RAIN.closure,
+  },
+  {
+    id: "cierre",
+    label: "Cierre",
+    hint: "Escenario 2023: puertas cerradas, refugio en el sitio y éxodo retrasado varios días.",
+    minMm: RAIN.closure,
+    maxMm: Infinity,
+  },
+];
+
+/** En qué tramo cae una acumulación. El valor del corte va al tramo superior. */
+export function rainBand(mm: number | null): RainBand | null {
+  if (mm === null) return null;
+  return RAIN_BANDS.find((b) => mm < b.maxMm) ?? RAIN_BANDS[RAIN_BANDS.length - 1];
+}
+
+/**
+ * Cuánto pesa una probabilidad de lluvia aquí.
+ *
+ * En un sitio normal un 30% de probabilidad es "coge paraguas". Aquí es
+ * "puede que mañana no puedas mover el coche", así que se avisa desde mucho
+ * antes de lo que avisaría una app del tiempo cualquiera. La regla operativa
+ * del meta-análisis es preparar el wet playa survival con >0,25" previstos y
+ * más de un 40% de probabilidad.
+ */
+export type RainChanceId = "improbable" | "posible" | "probable" | "muy-probable";
+
+export interface RainChance {
+  id: RainChanceId;
+  label: string;
+  minPct: number;
+}
+
+export const RAIN_CHANCES: RainChance[] = [
+  { id: "improbable", label: "Improbable", minPct: 0 },
+  { id: "posible", label: "Posible", minPct: 10 },
+  { id: "probable", label: "Probable", minPct: 30 },
+  { id: "muy-probable", label: "Muy probable", minPct: 60 },
+];
+
+export function rainChance(pct: number | null): RainChance | null {
+  if (pct === null) return null;
+  return [...RAIN_CHANCES].reverse().find((c) => pct >= c.minPct) ?? RAIN_CHANCES[0];
+}
+
 export function gustSeverity(kmh: number | null): Severity {
   if (kmh === null) return "ok";
   if (kmh >= GUST.extreme) return "extreme";
@@ -970,7 +1071,7 @@ export function rainSeverity(mm: number | null): Severity {
 
 /** Los avisos accionables de un día concreto, ya en lenguaje de playa. */
 export function dayFlags(
-  day: Pick<DailyPoint, "tMaxC" | "tMinC" | "precipMm" | "gustKmh" | "uvMax">
+  day: Pick<DailyPoint, "tMaxC" | "tMinC" | "precipMm" | "precipProb" | "gustKmh" | "uvMax">
 ): { text: string; level: Severity }[] {
   const flags: { text: string; level: Severity }[] = [];
 
@@ -979,9 +1080,27 @@ export function dayFlags(
   else if (gust === "high") flags.push({ text: "Ráfagas >40 mph: whiteout de polvo, visibilidad <1 milla", level: "high" });
   else if (gust === "warn") flags.push({ text: "Ráfagas >25 mph: revisa anclajes de sombras y carpas", level: "warn" });
 
-  const rain = rainSeverity(day.precipMm);
-  if (rain === "extreme") flags.push({ text: "Lluvia >0,5\": escenario 2023 — barro, cierre y refugio en el sitio", level: "extreme" });
-  else if (rain === "high") flags.push({ text: "Lluvia >0,25\": el playa se vuelve barro pegajoso, ni bici ni coche", level: "high" });
+  // La lluvia se avisa desde la primera gota: en arcilla, lo que decide no es
+  // cuánta cae sino que caiga. La cantidad solo dice cuánto dura el problema.
+  const rain = rainBand(day.precipMm);
+  if (rain?.id === "cierre")
+    flags.push({ text: "Lluvia >0,5\": escenario 2023 — barro, cierre de puertas y refugio en el sitio", level: "extreme" });
+  else if (rain?.id === "barro")
+    flags.push({ text: "Lluvia >0,25\": el playa se vuelve barro pegajoso, ni bici ni coche", level: "high" });
+  else if (rain?.id === "pegajoso")
+    flags.push({ text: "Lluvia: barro superficial — las ruedas se embozan y el coche no se mueve hasta que seque", level: "warn" });
+  else if (rain?.id === "chispas")
+    flags.push({ text: "Chispas: asientan el polvo, pero dejan la superficie pegajosa un rato", level: "warn" });
+
+  // Un 30% de probabilidad en el playa no es "coge paraguas": es "puede que
+  // mañana no muevas el coche". Se avisa aunque los modelos no acumulen nada.
+  const chance = rainChance(day.precipProb);
+  if ((rain === null || rain.id === "seco" || rain.id === "chispas") && chance) {
+    if (chance.id === "muy-probable")
+      flags.push({ text: `${Math.round(day.precipProb!)} % de probabilidad de lluvia: prepara el plan de playa mojado`, level: "high" });
+    else if (chance.id === "probable")
+      flags.push({ text: `${Math.round(day.precipProb!)} % de probabilidad de lluvia: aquí cualquier chaparrón frena el día`, level: "warn" });
+  }
 
   if (day.tMaxC !== null && day.tMaxC >= TEMP.heat)
     flags.push({ text: "Máxima >100°F: golpe de calor — mínimo 1 galón de agua por persona y día", level: "high" });

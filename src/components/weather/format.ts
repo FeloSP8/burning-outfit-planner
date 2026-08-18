@@ -1,6 +1,16 @@
 /** Formateo y colores compartidos por las secciones de la página del tiempo. */
 
-import { cToF, kmhToMph, mmToInches, type Severity, type WindBand, type WindBandId } from "@/lib/weather";
+import {
+  cToF,
+  kmhToMph,
+  mmToInches,
+  type RainBand,
+  type RainBandId,
+  type RainChanceId,
+  type Severity,
+  type WindBand,
+  type WindBandId,
+} from "@/lib/weather";
 
 const es = (n: number, digits = 1) =>
   n.toLocaleString("es-ES", { maximumFractionDigits: digits });
@@ -160,4 +170,53 @@ export function windBandRange(band: WindBand): string {
   const topKmh = band.maxKmh - 1;
   const topMph = Math.ceil(kmhToMph(band.maxKmh)) - 1;
   return `${band.minKmh}-${topKmh} km/h · ${mph(band.minKmh)}-${topMph} mph`;
+}
+
+/**
+ * Código de color de la lluvia. El azul de "chispas" es a propósito: son agua,
+ * no peligro. A partir de ahí la rampa se calienta, porque lo que llega no es
+ * lluvia, es barro.
+ */
+export const RAIN_STYLE: Record<RainBandId, { chip: string; text: string; bar: string }> = {
+  seco: {
+    chip: "bg-[#c4906a]/20 text-[#7a5030]",
+    text: "text-[#7a5030]",
+    bar: "bg-[#c4906a]/50",
+  },
+  chispas: {
+    chip: "bg-sky-200/80 text-sky-950",
+    text: "text-sky-800",
+    bar: "bg-sky-500",
+  },
+  pegajoso: {
+    chip: "bg-amber-400/80 text-amber-950",
+    text: "text-amber-800",
+    bar: "bg-amber-500",
+  },
+  barro: {
+    chip: "bg-orange-400/80 text-orange-950",
+    text: "text-orange-800",
+    bar: "bg-orange-500",
+  },
+  cierre: {
+    chip: "bg-red-400/90 text-red-950",
+    text: "text-red-800",
+    bar: "bg-red-600",
+  },
+};
+
+/** Probabilidad de lluvia: se pinta desde el 10 %, que aquí ya es noticia. */
+export const CHANCE_STYLE: Record<RainChanceId, { chip: string; text: string }> = {
+  improbable: { chip: "bg-[#c4906a]/20 text-[#7a5030]", text: "text-[#a07040]" },
+  posible: { chip: "bg-sky-200/80 text-sky-950", text: "text-sky-800" },
+  probable: { chip: "bg-amber-400/80 text-amber-950", text: "text-amber-800" },
+  "muy-probable": { chip: "bg-red-400/90 text-red-950", text: "text-red-800" },
+};
+
+/** Rango de un tramo de lluvia, en mm y pulgadas, sin solapes. */
+export function rainBandRange(band: RainBand): string {
+  const inches = (mm: number) => (mm / 25.4).toFixed(2).replace(".", ",");
+  if (band.id === "seco") return "sin lluvia medible";
+  if (band.maxMm === Infinity) return `≥ ${band.minMm} mm · ≥ ${inches(band.minMm)}″`;
+  return `${String(band.minMm).replace(".", ",")}-${String(band.maxMm).replace(".", ",")} mm · hasta ${inches(band.maxMm)}″`;
 }

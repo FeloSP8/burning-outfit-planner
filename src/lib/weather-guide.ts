@@ -36,6 +36,27 @@ export const THRESHOLDS: Threshold[] = [
   },
   {
     variable: "Lluvia acumulada",
+    limit: "cualquier cantidad medible",
+    consequence:
+      "La arcilla se pega al instante: ruedas embozadas y el coche quieto hasta que seque. Aquí no hay \"solo cuatro gotas\".",
+    level: "warn",
+  },
+  {
+    variable: "Probabilidad de lluvia",
+    limit: "≥ 30 %",
+    consequence:
+      "En otro sitio es coger paraguas; aquí es que puede que mañana no muevas el coche. Con >0,25″ previstos y >40 %, prepara el plan de playa mojado.",
+    level: "warn",
+  },
+  {
+    variable: "Después de llover",
+    limit: "72 h",
+    consequence:
+      "La guía de travesía del Black Rock Desert desaconseja cruzar el playa si ha llovido en las últimas 72 h. En 2023 el suelo tardó 2-3 días en admitir tráfico.",
+    level: "high",
+  },
+  {
+    variable: "Lluvia acumulada",
     limit: "> 0,25″ · 6-7 mm",
     consequence: "La arcilla del lecho se expande: barro pegajoso, ni bicis ni coches.",
     level: "high",

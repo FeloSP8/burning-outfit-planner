@@ -10,15 +10,30 @@
  */
 
 import {
+  RAIN_BANDS,
+  RAIN_CHANCES,
   WIND_BANDS,
   dayFlags,
-  rainSeverity,
+  rainBand,
+  rainChance,
   windBand,
   type DailyPoint,
+  type Ensemble,
   type ModelForecast,
   type Severity,
 } from "@/lib/weather";
-import { SEV, WIND_STYLE, fmtDate, fmtRain, fmtWind, weatherCode, windBandRange } from "./format";
+import {
+  CHANCE_STYLE,
+  RAIN_STYLE,
+  SEV,
+  WIND_STYLE,
+  fmtDate,
+  fmtRain,
+  fmtWind,
+  rainBandRange,
+  weatherCode,
+  windBandRange,
+} from "./format";
 
 export interface DayConsensus {
   date: string;
@@ -29,6 +44,9 @@ export interface DayConsensus {
   gustKmh: number | null;
   uvMax: number | null;
   code: number | null;
+  /** Miembros del ensemble que dan lluvia medible, si el ensemble respondió. */
+  ensembleRainPct: number | null;
+  ensembleMembers: number | null;
   /** Los modelos no cuentan la misma historia para este día. */
   disagree: boolean;
   /** Peor bandera del día, si hay alguna. */
@@ -40,7 +58,11 @@ const avg = (xs: number[]) => (xs.length === 0 ? null : xs.reduce((a, b) => a + 
 const max = (xs: number[]) => (xs.length === 0 ? null : Math.max(...xs));
 
 /** Resume el día de todos los modelos en una sola lectura conservadora. */
-export function consensusFor(models: ModelForecast[], date: string): DayConsensus | null {
+export function consensusFor(
+  models: ModelForecast[],
+  date: string,
+  ensemble?: Ensemble | null
+): DayConsensus | null {
   const days = models
     .map((m) => m.days.find((d) => d.date === date))
     .filter((d): d is DailyPoint => d !== undefined);
@@ -52,6 +74,7 @@ export function consensusFor(models: ModelForecast[], date: string): DayConsensu
   const tMax = vals("tMaxC");
   const gusts = vals("gustKmh");
   const rains = vals("precipMm");
+  const ens = ensemble?.days.find((d) => d.date === date) ?? null;
 
   // Peor caso en lo que hace daño (ráfaga y lluvia), media en lo que solo
   // informa (temperatura).
@@ -60,14 +83,20 @@ export function consensusFor(models: ModelForecast[], date: string): DayConsensu
     tMaxC: avg(tMax),
     tMinC: avg(vals("tMinC")),
     precipMm: max(rains),
-    precipProb: max(vals("precipProb")),
+    // La probabilidad buena es la del ensemble — cuántos de sus 31 miembros
+    // mojan — y se usa tal cual: quedarse con el máximo entre ella y la de los
+    // deterministas inflaría el número sin añadir información. Los
+    // deterministas solo entran si el ensemble no ha respondido.
+    precipProb: ens ? ens.rainAnyPct : max(vals("precipProb")),
+    ensembleRainPct: ens?.rainAnyPct ?? null,
+    ensembleMembers: ens?.members ?? null,
     gustKmh: max(gusts),
     uvMax: max(vals("uvMax")),
     code: days[0].code,
     disagree:
       (tMax.length > 1 && Math.max(...tMax) - Math.min(...tMax) > 4) ||
       (gusts.length > 1 && Math.max(...gusts) - Math.min(...gusts) > 20) ||
-      (rains.length > 1 && rainSeverity(Math.max(...rains)) !== rainSeverity(Math.min(...rains))),
+      (rains.length > 1 && rainBand(Math.max(...rains))?.id !== rainBand(Math.min(...rains))?.id),
     worst: null,
     level: "ok",
   };
@@ -152,6 +181,139 @@ export function WindLegend() {
   );
 }
 
+/**
+ * Leyenda de la lluvia. Lleva su propia coletilla porque el reflejo de
+ * cualquiera es mirar el milímetro y encogerse de hombros: aquí importa más
+ * que caiga algo que cuánto caiga.
+ */
+export function RainLegend() {
+  return (
+    <div className="flex flex-col gap-2 rounded-2xl border-2 border-[#c4906a]/40 bg-[#fdf4e0] px-4 py-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-[11px] font-black uppercase tracking-widest text-[#a07040]">
+          💧 Lluvia
+        </span>
+        {RAIN_BANDS.filter((b) => b.id !== "seco").map((b) => (
+          <span key={b.id} className="flex items-center gap-1.5" title={b.hint}>
+            <span className={`h-2.5 w-2.5 rounded-full ${RAIN_STYLE[b.id].bar}`} />
+            <span className="text-[11px] font-bold text-[#2a1a08]">{b.label}</span>
+            <span className="text-[11px] font-semibold tabular-nums text-[#a07040]">
+              {rainBandRange(b)}
+            </span>
+          </span>
+        ))}
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2 border-t border-[#c4906a]/20 pt-2">
+        <span className="text-[11px] font-black uppercase tracking-widest text-[#a07040]">
+          Probabilidad
+        </span>
+        {RAIN_CHANCES.map((c) => (
+          <span
+            key={c.id}
+            className={`rounded-lg px-2 py-0.5 text-[11px] font-bold tabular-nums ${CHANCE_STYLE[c.id].chip}`}
+          >
+            {c.label} · ≥ {c.minPct} %
+          </span>
+        ))}
+        <span className="text-[11px] font-medium text-[#7a5030]">
+          Sale del ensemble cuando responde: cuántos de sus 31 miembros mojan.
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Medidor de lluvia. Va con la misma forma que el del viento, pero enseña dos
+ * cosas en vez de una: cuánta agua y con qué probabilidad. La probabilidad se
+ * pinta aunque la acumulación sea cero, porque en arcilla un chaparrón corto
+ * que no acumula nada ya deja el suelo pegajoso.
+ */
+function RainGauge({
+  mm,
+  prob,
+  ensemblePct,
+  members,
+  compact = false,
+}: {
+  mm: number | null;
+  prob: number | null;
+  ensemblePct?: number | null;
+  members?: number | null;
+  compact?: boolean;
+}) {
+  const band = rainBand(mm);
+  const style = band ? RAIN_STYLE[band.id] : null;
+  const activeIndex = band ? RAIN_BANDS.findIndex((b) => b.id === band.id) : -1;
+  const chance = rainChance(prob);
+  const chanceStyle = chance ? CHANCE_STYLE[chance.id] : null;
+
+  return (
+    <div className={compact ? "flex items-center gap-2" : "flex flex-col gap-1"}>
+      <p
+        className={`text-sm font-black tabular-nums ${
+          compact ? "min-w-36 shrink-0 whitespace-nowrap" : ""
+        } ${style?.text ?? "text-[#a07040]"}`}
+      >
+        💧 {fmtRain(mm)}
+      </p>
+
+      <div className="flex flex-wrap items-center gap-2">
+        {band && band.id !== "seco" && (
+          <span
+            className={`shrink-0 rounded-lg px-2 py-0.5 text-center font-black uppercase tracking-wide ${
+              compact ? "text-[10px] whitespace-nowrap" : "text-[11px]"
+            } ${style!.chip}`}
+          >
+            {band.label}
+          </span>
+        )}
+        {band && band.id !== "seco" && (
+          <span className="flex gap-0.5" aria-hidden>
+            {RAIN_BANDS.map((b, i) => (
+              <span
+                key={b.id}
+                className={`h-1.5 w-3 rounded-full ${
+                  i <= activeIndex ? RAIN_STYLE[b.id].bar : "bg-[#c4906a]/25"
+                }`}
+              />
+            ))}
+          </span>
+        )}
+        {chance && prob != null && (
+          <span
+            className={`shrink-0 rounded-lg px-2 py-0.5 font-bold tabular-nums ${
+              compact ? "text-[10px] whitespace-nowrap" : "text-[11px]"
+            } ${chanceStyle!.chip}`}
+            title={
+              ensemblePct != null && members
+                ? `${ensemblePct} % de los ${members} miembros del ensemble dan lluvia medible`
+                : undefined
+            }
+          >
+            {Math.round(prob)} % · {chance.label}
+          </span>
+        )}
+      </div>
+
+      {!compact && band && band.id !== "seco" && (
+        <p className="text-[11px] font-medium leading-snug text-[#7a5030]">{band.hint}</p>
+      )}
+
+      {/* El caso traicionero: los modelos no acumulan nada pero medio ensemble
+          moja. Sin esta frase, "0 mm" al lado de "70 %" parece un error. */}
+      {!compact && band?.id === "seco" && chance && chance.id !== "improbable" && prob != null && (
+        <p className="text-[11px] font-medium leading-snug text-[#7a5030]">
+          Sin acumulación prevista, pero {Math.round(prob)} % de probabilidad
+          {ensemblePct != null && members ? ` (${ensemblePct} % de ${members} miembros)` : ""}: aquí
+          basta un chaparrón corto para dejar el suelo pegajoso.
+        </p>
+      )}
+    </div>
+  );
+}
+
 /** Tarjeta grande: un vistazo y ya sabes cómo vestirte ese día. */
 function DayCard({ date, day, note }: { date: string; day: DayConsensus | null; note?: string }) {
   if (!day) {
@@ -168,7 +330,6 @@ function DayCard({ date, day, note }: { date: string; day: DayConsensus | null; 
   }
 
   const { emoji, label } = weatherCode(day.code);
-  const rain = rainSeverity(day.precipMm);
 
   return (
     <div className={`rounded-2xl border-2 bg-[#fdf4e0] px-4 py-4 ${SEV[day.level].border}`}>
@@ -189,17 +350,20 @@ function DayCard({ date, day, note }: { date: string; day: DayConsensus | null; 
 
       <div className="mt-3 flex flex-col gap-2 border-t border-[#c4906a]/25 pt-2">
         <WindGauge kmh={day.gustKmh} />
-        <p className={`text-sm font-black tabular-nums ${SEV[rain].text}`}>
-          💧 {fmtRain(day.precipMm)}
-          {day.precipProb != null && (
-            <span className="ml-1 text-[11px] font-bold text-[#a07040]">
-              {Math.round(day.precipProb)} % de probabilidad
-            </span>
-          )}
-        </p>
+        <div className="border-t border-[#c4906a]/25 pt-2">
+          <RainGauge
+            mm={day.precipMm}
+            prob={day.precipProb}
+            ensemblePct={day.ensembleRainPct}
+            members={day.ensembleMembers}
+          />
+        </div>
       </div>
 
-      {day.worst && (
+      {/* Si lo peor del día es la probabilidad de lluvia y no hay acumulación,
+          el medidor de arriba ya lo ha contado con más detalle: repetirlo en un
+          chip solo añade ruido. El borde de la tarjeta mantiene el aviso. */}
+      {day.worst && !(day.worst.text.includes("probabilidad de lluvia") && rainBand(day.precipMm)?.id === "seco") && (
         <p
           className={`mt-3 rounded-xl px-2.5 py-1.5 text-[11px] font-bold leading-snug ${SEV[day.worst.level].chip}`}
         >
@@ -219,10 +383,12 @@ function DayCard({ date, day, note }: { date: string; day: DayConsensus | null; 
 export function DayCardGrid({
   dates,
   models,
+  ensemble,
   emptyNote,
 }: {
   dates: string[];
   models: ModelForecast[];
+  ensemble?: Ensemble | null;
   emptyNote?: (date: string) => string;
 }) {
   return (
@@ -231,7 +397,7 @@ export function DayCardGrid({
         <DayCard
           key={date}
           date={date}
-          day={consensusFor(models, date)}
+          day={consensusFor(models, date, ensemble)}
           note={emptyNote?.(date)}
         />
       ))}
@@ -240,11 +406,19 @@ export function DayCardGrid({
 }
 
 /** Lista compacta para los días previos: una línea por día, de un vistazo. */
-export function DayList({ dates, models }: { dates: string[]; models: ModelForecast[] }) {
+export function DayList({
+  dates,
+  models,
+  ensemble,
+}: {
+  dates: string[];
+  models: ModelForecast[];
+  ensemble?: Ensemble | null;
+}) {
   return (
     <div className="overflow-hidden rounded-2xl border-2 border-[#c4906a]/40 bg-[#fdf4e0]">
       {dates.map((date, i) => {
-        const day = consensusFor(models, date);
+        const day = consensusFor(models, date, ensemble);
         const { emoji, label } = weatherCode(day?.code ?? null);
         return (
           <div
@@ -268,10 +442,8 @@ export function DayList({ dates, models }: { dates: string[]; models: ModelForec
             <span className="shrink-0">
               <WindGauge kmh={day?.gustKmh ?? null} compact />
             </span>
-            <span
-              className={`shrink-0 text-xs font-bold tabular-nums ${SEV[rainSeverity(day?.precipMm ?? null)].text}`}
-            >
-              💧 {fmtRain(day?.precipMm ?? null)}
+            <span className="shrink-0">
+              <RainGauge mm={day?.precipMm ?? null} prob={day?.precipProb ?? null} compact />
             </span>
           </div>
         );
