@@ -39,6 +39,8 @@ export interface DayConsensus {
   date: string;
   tMaxC: number | null;
   tMinC: number | null;
+  tFeelsMaxC: number | null;
+  tFeelsMinC: number | null;
   precipMm: number | null;
   precipProb: number | null;
   gustKmh: number | null;
@@ -82,6 +84,8 @@ export function consensusFor(
     date,
     tMaxC: avg(tMax),
     tMinC: avg(vals("tMinC")),
+    tFeelsMaxC: avg(vals("tFeelsMaxC")),
+    tFeelsMinC: avg(vals("tFeelsMinC")),
     precipMm: max(rains),
     // La probabilidad buena es la del ensemble — cuántos de sus 31 miembros
     // mojan — y se usa tal cual: quedarse con el máximo entre ella y la de los
@@ -236,31 +240,37 @@ function RainGauge({
   ensemblePct,
   members,
   compact = false,
+  city = false,
 }: {
   mm: number | null;
   prob: number | null;
   ensemblePct?: number | null;
   members?: number | null;
   compact?: boolean;
+  /** En ciudad la lluvia es lluvia: ni tramos de barro ni avisos de 4x4. */
+  city?: boolean;
 }) {
   const band = rainBand(mm);
+  // En ciudad se enseña la cifra y la probabilidad, y se callan los tramos:
+  // "Barro" o "Cierre" describen un lecho de arcilla, no una acera de SF.
   const style = band ? RAIN_STYLE[band.id] : null;
   const activeIndex = band ? RAIN_BANDS.findIndex((b) => b.id === band.id) : -1;
   const chance = rainChance(prob);
   const chanceStyle = chance ? CHANCE_STYLE[chance.id] : null;
+  const showBand = !city && band && band.id !== "seco";
 
   return (
     <div className={compact ? "flex items-center gap-2" : "flex flex-col gap-1"}>
       <p
         className={`text-sm font-black tabular-nums ${
           compact ? "min-w-36 shrink-0 whitespace-nowrap" : ""
-        } ${style?.text ?? "text-[#a07040]"}`}
+        } ${city ? (mm && mm >= 1 ? "text-sky-800" : "text-[#7a5030]") : (style?.text ?? "text-[#a07040]")}`}
       >
         💧 {fmtRain(mm)}
       </p>
 
       <div className="flex flex-wrap items-center gap-2">
-        {band && band.id !== "seco" && (
+        {showBand && (
           <span
             className={`shrink-0 rounded-lg px-2 py-0.5 text-center font-black uppercase tracking-wide ${
               compact ? "text-[10px] whitespace-nowrap" : "text-[11px]"
@@ -269,7 +279,7 @@ function RainGauge({
             {band.label}
           </span>
         )}
-        {band && band.id !== "seco" && (
+        {showBand && (
           <span className="flex gap-0.5" aria-hidden>
             {RAIN_BANDS.map((b, i) => (
               <span
@@ -297,13 +307,13 @@ function RainGauge({
         )}
       </div>
 
-      {!compact && band && band.id !== "seco" && (
-        <p className="text-[11px] font-medium leading-snug text-[#7a5030]">{band.hint}</p>
+      {!compact && showBand && (
+        <p className="text-[11px] font-medium leading-snug text-[#7a5030]">{band!.hint}</p>
       )}
 
       {/* El caso traicionero: los modelos no acumulan nada pero medio ensemble
           moja. Sin esta frase, "0 mm" al lado de "70 %" parece un error. */}
-      {!compact && band?.id === "seco" && chance && chance.id !== "improbable" && prob != null && (
+      {!compact && !city && band?.id === "seco" && chance && chance.id !== "improbable" && prob != null && (
         <p className="text-[11px] font-medium leading-snug text-[#7a5030]">
           Sin acumulación prevista, pero {Math.round(prob)} % de probabilidad
           {ensemblePct != null && members ? ` (${ensemblePct} % de ${members} miembros)` : ""}: aquí
@@ -376,6 +386,100 @@ function DayCard({ date, day, note }: { date: string; day: DayConsensus | null; 
           ⚖️ Los modelos discrepan: se enseña el peor caso.
         </p>
       )}
+    </div>
+  );
+}
+
+/**
+ * Tarjeta de ciudad, para los días de San Francisco.
+ *
+ * Aquí no manda la ráfaga sino la sensación térmica: en agosto la capa marina
+ * deja tardes de 15 °C a dos manzanas de otras de 24, y la queja universal del
+ * turista es haber ido en manga corta. Por eso la sensación va al lado del
+ * termómetro y el viento solo aparece cuando de verdad aprieta.
+ */
+function CityDayCard({ date, day }: { date: string; day: DayConsensus | null }) {
+  if (!day) {
+    return (
+      <div className="rounded-2xl border-2 border-dashed border-[#c4906a]/40 bg-[#f6e6c8]/50 px-4 py-3">
+        <p className="text-xs font-black uppercase tracking-wide text-[#a07040]">
+          {fmtDate(date)}
+        </p>
+        <p className="mt-2 text-[11px] font-semibold text-[#a07040]">
+          Todavía fuera del alcance de los modelos.
+        </p>
+      </div>
+    );
+  }
+
+  const { emoji, label } = weatherCode(day.code);
+  const band = windBand(day.gustKmh);
+  // El viento en SF solo se menciona cuando cambia cómo hay que vestirse.
+  const notableWind = band && ["fuerte", "muy-fuerte", "extremo"].includes(band.id);
+  // Si la sensación se separa más de 2 °C de la temperatura, es la cifra que
+  // importa: eso es el viento de la bahía o la niebla haciendo su trabajo.
+  const feelsGap =
+    day.tMaxC != null && day.tFeelsMaxC != null ? Math.abs(day.tMaxC - day.tFeelsMaxC) : 0;
+
+  return (
+    <div className="rounded-2xl border-2 border-[#c4906a]/40 bg-[#fdf4e0] px-4 py-3">
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-xs font-black uppercase tracking-wide text-[#7a2e08]">
+          {fmtDate(date)}
+        </p>
+        <span className="text-2xl leading-none">{emoji}</span>
+      </div>
+
+      <p className="mt-1 text-3xl font-black leading-none tabular-nums text-[#2a1a08]">
+        {day.tMaxC === null ? "—" : `${Math.round(day.tMaxC)}°`}
+        <span className="ml-2 text-xl font-bold text-[#a07040]">
+          {day.tMinC === null ? "" : `${Math.round(day.tMinC)}°`}
+        </span>
+      </p>
+      <p className="mt-0.5 text-[11px] font-bold text-[#7a5030]">{label}</p>
+
+      {day.tFeelsMaxC != null && (
+        <p
+          className={`mt-1.5 text-xs font-black tabular-nums ${
+            feelsGap >= 2 ? "text-sky-800" : "text-[#7a5030]"
+          }`}
+        >
+          🌡️ Sensación {Math.round(day.tFeelsMaxC)}°
+          {day.tFeelsMinC != null && ` / ${Math.round(day.tFeelsMinC)}°`}
+          {feelsGap >= 2 && (
+            <span className="ml-1 text-[10px] font-bold uppercase tracking-wide">
+              {day.tFeelsMaxC < day.tMaxC! ? "más frío de lo que marca" : "más bochorno"}
+            </span>
+          )}
+        </p>
+      )}
+
+      <div className="mt-2 border-t border-[#c4906a]/25 pt-2">
+        <RainGauge mm={day.precipMm} prob={day.precipProb} city />
+      </div>
+
+      {notableWind && (
+        <p className={`mt-2 text-[11px] font-bold ${WIND_STYLE[band.id].text}`}>
+          💨 {fmtWind(day.gustKmh)} — viento de bahía, corta más de lo que dice el termómetro
+        </p>
+      )}
+    </div>
+  );
+}
+
+/** Los días de ciudad. Mismo motor, otras prioridades. */
+export function CityDayGrid({
+  dates,
+  models,
+}: {
+  dates: string[];
+  models: ModelForecast[];
+}) {
+  return (
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      {dates.map((date) => (
+        <CityDayCard key={date} date={date} day={consensusFor(models, date)} />
+      ))}
     </div>
   );
 }

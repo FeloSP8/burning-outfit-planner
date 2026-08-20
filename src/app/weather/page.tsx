@@ -2,13 +2,14 @@ import { getCurrentUser } from "@/lib/auth";
 import {
   BRC,
   EVENT,
+  SF_STAY,
   daysBetween,
   forecastSkill,
   getWeatherBundle,
   playaToday,
 } from "@/lib/weather";
 import { CLIMATOLOGY, PLAYA_MEMORY, SOURCES, THRESHOLDS } from "@/lib/weather-guide";
-import { DayCardGrid, DayList, RainLegend, WindLegend } from "@/components/weather/DayCards";
+import { CityDayGrid, DayCardGrid, DayList, RainLegend, WindLegend } from "@/components/weather/DayCards";
 import { WeatherRegions } from "@/components/weather/WeatherRegions";
 import { EventForecast } from "@/components/weather/EventForecast";
 import { SEV, fmtCoords, fmtKm, fmtPlayaTime, fmtTemp, fmtWind } from "@/components/weather/format";
@@ -106,6 +107,8 @@ export default async function WeatherPage() {
   const skill = forecastSkill(daysToEvent);
   const eventDates = dateRange(EVENT.start, EVENT.end);
   const comingDates = nextDays(today, 7);
+  // Ciudad: los días concretos que se pasan en San Francisco.
+  const sfDates = [...SF_STAY.dates];
   const hasModels = bundle.models.length > 0;
   // Si el evento aún no entra en el horizonte de los modelos, la tira de
   // "próximos días" es lo único con datos: se enseña primero.
@@ -221,6 +224,26 @@ export default async function WeatherPage() {
       {/* Próximos días, cuando el evento ya tiene datos propios */}
       {eventCovered && comingBlock}
 
+      {/* San Francisco: los días de ciudad */}
+      {bundle.sf && (
+        <div>
+          <SectionTitle sub="Los dos días de ciudad, antes de coger el RV. Aquí lo que decide el día es la sensación térmica y la lluvia, no la ráfaga.">
+            San Francisco
+          </SectionTitle>
+
+          <div className="mb-3 rounded-2xl border-2 border-[#c4906a]/40 bg-[#f6e6c8]/60 px-4 py-3">
+            <p className="text-[11px] font-medium leading-relaxed text-[#7a5030]">
+              Verano en SF es al revés de lo que uno espera: la capa marina deja tardes de 15 °C
+              con niebla mientras el interior de la bahía va a 30. Y los microclimas son brutales
+              — el Sunset y el Mission se llevan varios grados a cinco kilómetros. Esto es el
+              centro (Union Square): pegado a la costa, más frío y más viento.
+            </p>
+          </div>
+
+          <CityDayGrid dates={sfDates} models={[bundle.sf]} />
+        </div>
+      )}
+
       {/* Todo lo demás, plegado */}
       <div className="flex flex-col gap-3">
         <p
@@ -240,6 +263,7 @@ export default async function WeatherPage() {
             nwsForecast={bundle.nwsForecast}
             models={bundle.models}
             air={bundle.air}
+            sf={bundle.sf}
           />
         </Details>
 

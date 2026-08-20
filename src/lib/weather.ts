@@ -37,6 +37,29 @@ export const BRC = {
 /** Ventana del evento — misma que usa por defecto el planificador. */
 export const EVENT = { start: "2026-08-30", end: "2026-09-07" } as const;
 
+/**
+ * San Francisco: los días de ciudad, antes de recoger el RV (29 ago) y
+ * después de devolverlo (5 sep).
+ *
+ * OJO con el punto: SF tiene los microclimas más bruscos de EE. UU. En una
+ * tarde de agosto el Sunset puede estar a 15 °C con niebla y el Mission a 24
+ * al sol, a cinco kilómetros. Estas coordenadas son el centro (Union Square),
+ * o sea el término medio: cerca de la costa hará más frío y más viento.
+ */
+export const SF = {
+  lat: 37.7749,
+  lon: -122.4194,
+  elevationM: 16,
+} as const;
+
+/**
+ * Los días de ciudad en San Francisco: 27 y 28 de agosto. El 29 se recoge el
+ * RV y empieza el viaje al desierto.
+ */
+export const SF_STAY = {
+  dates: ["2026-08-27", "2026-08-28"],
+} as const;
+
 /** api.weather.gov exige un User-Agent identificativo con contacto. */
 const NWS_HEADERS = {
   "User-Agent": "burning-outfit-planner (https://github.com/FeloSP8/burning-outfit-planner)",
@@ -167,6 +190,9 @@ export interface DailyPoint {
   date: string;
   tMaxC: number | null;
   tMinC: number | null;
+  /** Sensación térmica: la que manda en San Francisco, con viento y niebla. */
+  tFeelsMaxC: number | null;
+  tFeelsMinC: number | null;
   precipMm: number | null;
   precipProb: number | null;
   gustKmh: number | null;
@@ -296,7 +322,10 @@ interface OpenMeteoBase {
 }
 
 /** Punto de rejilla real que ha usado Open-Meteo (no es el que se le pide). */
-function gridFrom(body: OpenMeteoBase | null): GridPoint | null {
+function gridFrom(
+  body: OpenMeteoBase | null,
+  reference: { lat: number; lon: number } = BRC
+): GridPoint | null {
   const lat = num(body?.latitude);
   const lon = num(body?.longitude);
   if (lat === null || lon === null) return null;
@@ -305,14 +334,16 @@ function gridFrom(body: OpenMeteoBase | null): GridPoint | null {
     lat,
     lon,
     elevationM: num(body?.elevation),
-    distanceKm: haversineKm(BRC, point),
-    bearing: bearingLabel(BRC, point),
+    distanceKm: haversineKm(reference, point),
+    bearing: bearingLabel(reference, point),
   };
 }
 
 const DAILY_VARS = [
   "temperature_2m_max",
   "temperature_2m_min",
+  "apparent_temperature_max",
+  "apparent_temperature_min",
   "precipitation_sum",
   "precipitation_probability_max",
   "wind_speed_10m_max",
@@ -342,17 +373,18 @@ export const MODELS = [
 ] as const;
 
 export async function getModelForecast(
-  model: (typeof MODELS)[number]
+  model: { id: string; label: string; resolution: string },
+  place: { lat: number; lon: number } = BRC
 ): Promise<ModelForecast | null> {
   const url =
     "https://api.open-meteo.com/v1/forecast" +
-    `?latitude=${BRC.lat}&longitude=${BRC.lon}` +
+    `?latitude=${place.lat}&longitude=${place.lon}` +
     `&daily=${DAILY_VARS}` +
     "&timezone=America%2FLos_Angeles&forecast_days=16" +
     `&models=${model.id}`;
 
   const body = await getJson<OpenMeteoForecast>(url, REVALIDATE.forecast);
-  const grid = gridFrom(body);
+  const grid = gridFrom(body, place);
   const daily = body?.daily;
   if (!grid || !daily || !Array.isArray(daily.time)) return null;
 
@@ -363,6 +395,8 @@ export async function getModelForecast(
   const cols = {
     tMaxC: col("temperature_2m_max"),
     tMinC: col("temperature_2m_min"),
+    tFeelsMaxC: col("apparent_temperature_max"),
+    tFeelsMinC: col("apparent_temperature_min"),
     precipMm: col("precipitation_sum"),
     precipProb: col("precipitation_probability_max"),
     windKmh: col("wind_speed_10m_max"),
@@ -379,6 +413,8 @@ export async function getModelForecast(
       date,
       tMaxC: num(cols.tMaxC[i]),
       tMinC: num(cols.tMinC[i]),
+      tFeelsMaxC: num(cols.tFeelsMaxC[i]),
+      tFeelsMinC: num(cols.tFeelsMinC[i]),
       precipMm: num(cols.precipMm[i]),
       precipProb: num(cols.precipProb[i]),
       windKmh: num(cols.windKmh[i]),
@@ -390,6 +426,22 @@ export async function getModelForecast(
   if (days.length === 0) return null;
 
   return { id: model.id, label: model.label, resolution: model.resolution, grid, days };
+}
+
+/**
+ * Pronóstico de San Francisco. Aquí basta un modelo, y se elige GFS+HRRR
+ * porque a 3 km resuelve la capa marina — la niebla que decide si un día de
+ * agosto en SF son 15 °C o 24 °C — mucho mejor que un global de 25 km.
+ */
+export async function getCityForecast(): Promise<ModelForecast | null> {
+  return getModelForecast(
+    {
+      id: "gfs_seamless",
+      label: "GFS + HRRR",
+      resolution: "HRRR 3 km (48 h) → GFS 13 km",
+    },
+    SF
+  );
 }
 
 // ─────────────────────────────────────────────────────────
@@ -1167,18 +1219,21 @@ export interface WeatherBundle {
   observations: StationObservation[];
   /** true si Synoptic está configurado (y por tanto hay dato de Gerlach). */
   hasSynoptic: boolean;
+  /** Los días de ciudad, en San Francisco. */
+  sf: ModelForecast | null;
 }
 
 export async function getWeatherBundle(): Promise<WeatherBundle> {
   // El punto del NWS hay que resolverlo antes: de él salen la URL del
   // pronóstico y la lista de estaciones. El resto va en paralelo.
-  const [nwsPoint, models, air, ensemble, alerts, gerlach] = await Promise.all([
+  const [nwsPoint, models, air, ensemble, alerts, gerlach, sf] = await Promise.all([
     getNwsPoint(),
     Promise.all(MODELS.map((m) => getModelForecast(m))),
     getAirQuality(),
     getEnsemble(),
     getNwsAlerts(),
     getSynopticObservation(),
+    getCityForecast(),
   ]);
 
   const [nwsForecast, nwsObservations] = await Promise.all([
@@ -1195,5 +1250,6 @@ export async function getWeatherBundle(): Promise<WeatherBundle> {
     alerts,
     observations: [...(gerlach ? [gerlach] : []), ...nwsObservations],
     hasSynoptic: gerlach !== null,
+    sf,
   };
 }

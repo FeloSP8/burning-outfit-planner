@@ -11,6 +11,7 @@
 import {
   BRC,
   MODELS,
+  SF,
   referenceStations,
   type AirQuality,
   type GridPoint,
@@ -27,6 +28,7 @@ function RegionCard({
   grid,
   resolution,
   note,
+  reference = "al Hombre",
 }: {
   emoji: string;
   source: string;
@@ -34,6 +36,8 @@ function RegionCard({
   grid: GridPoint | null;
   resolution: string;
   note: string;
+  /** Respecto a qué se mide el desvío. Por defecto, el Hombre. */
+  reference?: string;
 }) {
   return (
     <div className="flex flex-col gap-2 rounded-2xl border-2 border-[#c4906a]/40 bg-[#fdf4e0] px-4 py-3">
@@ -63,7 +67,7 @@ function RegionCard({
         </div>
         <div>
           <p className="text-[10px] font-bold uppercase tracking-widest text-[#a07040]">
-            Desvío al Hombre
+            Desvío {reference}
           </p>
           <p className="text-xs font-bold tabular-nums text-[#2a1a08]">
             {grid ? `${fmtKm(grid.distanceKm)} al ${grid.bearing}` : "—"}
@@ -91,11 +95,13 @@ export function WeatherRegions({
   nwsForecast,
   models,
   air,
+  sf,
 }: {
   nwsPoint: NwsPoint | null;
   nwsForecast: NwsForecast | null;
   models: ModelForecast[];
   air: AirQuality | null;
+  sf?: ModelForecast | null;
 }) {
   const stations = referenceStations();
   const byId = new Map(models.map((m) => [m.id, m]));
@@ -113,7 +119,11 @@ export function WeatherRegions({
             el Hombre, {fmtCoords(BRC.lat, BRC.lon)}, {BRC.elevationM} m
           </span>{" "}
           — más las estaciones reales más cercanas, que están a decenas de kilómetros y fuera
-          del lecho seco.
+          del lecho seco. Los días de ciudad se piden aparte, sobre{" "}
+          <span className="font-bold tabular-nums">
+            San Francisco, {fmtCoords(SF.lat, SF.lon)}
+          </span>
+          .
         </p>
       </div>
 
@@ -155,6 +165,18 @@ export function WeatherRegions({
             />
           );
         })}
+
+        {sf && (
+          <RegionCard
+            emoji="🌉"
+            source="San Francisco · Open-Meteo GFS + HRRR"
+            resolution={sf.resolution}
+            area="Centro de San Francisco (Union Square)"
+            grid={sf.grid}
+            reference="al centro de SF"
+            note="SF tiene microclimas de varios grados en pocos kilómetros: este nodo representa el centro, no el Sunset ni el Mission. Se usa HRRR porque a 3 km resuelve la capa marina, que es lo que decide la tarde."
+          />
+        )}
 
         <RegionCard
           emoji="🌪️"
