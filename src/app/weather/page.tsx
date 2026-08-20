@@ -110,13 +110,13 @@ export default async function WeatherPage() {
   const eventDates = dateRange(EVENT.start, EVENT.end).filter((d) => d >= today);
   const sfDates = SF_STAY.dates.filter((d) => d >= today);
 
-  // La tira de "próximos días" cubre el hueco entre hoy y lo siguiente que
-  // tenga sección propia — San Francisco si aún está por llegar, el evento si
-  // ya se pasó la ciudad. Así ningún día sale dos veces en la página.
-  // Cuando ya no queda ni ciudad ni evento por delante (todo pasado), la tira
-  // vuelve a ser lo que dice su nombre: los próximos siete días.
-  const nextMilestone: string | null = sfDates[0] ?? eventDates[0] ?? null;
-  const comingDates = nextDays(today, 7).filter((d) => nextMilestone === null || d < nextMilestone);
+  // La tendencia va al final, y es del playa (no de dondequiera que se esté
+  // parado ese día): los días que quedan antes de que empiece el evento, para
+  // ver por dónde va el patrón mientras aún no hay tarjeta propia para ellos.
+  // Si el evento ya ha pasado del todo, vuelve a ser lo que dice su nombre:
+  // los próximos siete días.
+  const preEventDates = nextDays(today, 7).filter((d) => d < EVENT.start);
+  const trendDates = preEventDates.length > 0 ? preEventDates : eventDates.length === 0 ? nextDays(today, 7) : [];
 
   const hasModels = bundle.models.length > 0;
 
@@ -177,22 +177,6 @@ export default async function WeatherPage() {
         </div>
       )}
 
-      {/* Orden cronológico: primero lo de mañana, luego la ciudad, luego el playa */}
-      {hasModels && comingDates.length > 0 && (
-        <div>
-          <SectionTitle
-            sub={
-              nextMilestone
-                ? "El camino hasta el desierto: viaje, compras y montaje."
-                : "Lo que viene en el playa."
-            }
-          >
-            Próximos días
-          </SectionTitle>
-          <DayList dates={comingDates} models={bundle.models} ensemble={bundle.ensemble} />
-        </div>
-      )}
-
       {/* San Francisco: los días de ciudad, antes de coger el RV */}
       {bundle.sf && sfDates.length > 0 && (
         <div>
@@ -245,6 +229,24 @@ export default async function WeatherPage() {
               <RainLegend />
             </div>
           )}
+        </div>
+      )}
+
+      {/* La tendencia, al final: playa, antes del evento. Es la que responde
+          "¿por dónde va la cosa?" mientras aún no hay tarjeta propia para esos
+          días. */}
+      {hasModels && trendDates.length > 0 && (
+        <div>
+          <SectionTitle
+            sub={
+              eventDates.length > 0
+                ? "El desierto en los días antes de llegar: viaje, compras y montaje."
+                : "Lo que viene en el playa."
+            }
+          >
+            Tendencia previa
+          </SectionTitle>
+          <DayList dates={trendDates} models={bundle.models} ensemble={bundle.ensemble} />
         </div>
       )}
 
