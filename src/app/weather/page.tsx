@@ -105,29 +105,20 @@ export default async function WeatherPage() {
   const today = playaToday();
   const daysToEvent = daysBetween(today, EVENT.start);
   const skill = forecastSkill(daysToEvent);
-  const eventDates = dateRange(EVENT.start, EVENT.end);
-  const comingDates = nextDays(today, 7);
-  // Ciudad: los días concretos que se pasan en San Francisco.
-  const sfDates = [...SF_STAY.dates];
-  const hasModels = bundle.models.length > 0;
-  // Si el evento aún no entra en el horizonte de los modelos, la tira de
-  // "próximos días" es lo único con datos: se enseña primero.
-  const eventCovered = hasModels && bundle.models.some((m) => m.days.some((d) => d.date >= EVENT.start));
+  // Un día que ya ha pasado no es pronóstico, es historia: todas las secciones
+  // se recortan a partir de hoy y desaparecen solas cuando se vacían.
+  const eventDates = dateRange(EVENT.start, EVENT.end).filter((d) => d >= today);
+  const sfDates = SF_STAY.dates.filter((d) => d >= today);
 
-  const comingBlock = hasModels && (
-    <div>
-      <SectionTitle
-        sub={
-          eventCovered
-            ? "Para el viaje, las compras y el montaje."
-            : "Lo único que hoy tiene datos de verdad. Sirve para el viaje y las compras."
-        }
-      >
-        Próximos días
-      </SectionTitle>
-      <DayList dates={comingDates} models={bundle.models} ensemble={bundle.ensemble} />
-    </div>
-  );
+  // La tira de "próximos días" cubre el hueco entre hoy y lo siguiente que
+  // tenga sección propia — San Francisco si aún está por llegar, el evento si
+  // ya se pasó la ciudad. Así ningún día sale dos veces en la página.
+  // Cuando ya no queda ni ciudad ni evento por delante (todo pasado), la tira
+  // vuelve a ser lo que dice su nombre: los próximos siete días.
+  const nextMilestone: string | null = sfDates[0] ?? eventDates[0] ?? null;
+  const comingDates = nextDays(today, 7).filter((d) => nextMilestone === null || d < nextMilestone);
+
+  const hasModels = bundle.models.length > 0;
 
   return (
     <div className="flex flex-col gap-8">
@@ -186,48 +177,26 @@ export default async function WeatherPage() {
         </div>
       )}
 
-      {/* Si el evento aún no tiene datos, lo útil son los próximos días */}
-      {!eventCovered && comingBlock}
-
-      {/* EL PRONÓSTICO — lo primero y lo más grande */}
-      <div>
-        <SectionTitle sub="Máxima y mínima, ráfaga máxima y lluvia acumulada. Un vistazo por día.">
-          La semana del evento
-        </SectionTitle>
-
-        {!hasModels ? (
-          <SourceDown what="El pronóstico" />
-        ) : (
-          <>
-            <div className="flex flex-col gap-2">
-              <WindLegend />
-              <RainLegend />
-            </div>
-            <div className="mt-3">
-              <DayCardGrid
-                dates={eventDates}
-                models={bundle.models}
-                ensemble={bundle.ensemble}
-                emptyNote={(date) =>
-                  `Faltan ${daysBetween(today, date)} días. Ningún modelo llega tan lejos todavía.`
-                }
-              />
-            </div>
-          </>
-        )}
-
-        <p className="mt-3 text-[11px] font-medium leading-relaxed text-[#a07040]">
-          <span className="font-bold">{skill.title}.</span> {skill.body}
-        </p>
-      </div>
-
-      {/* Próximos días, cuando el evento ya tiene datos propios */}
-      {eventCovered && comingBlock}
-
-      {/* San Francisco: los días de ciudad */}
-      {bundle.sf && (
+      {/* Orden cronológico: primero lo de mañana, luego la ciudad, luego el playa */}
+      {hasModels && comingDates.length > 0 && (
         <div>
-          <SectionTitle sub="Los dos días de ciudad, antes de coger el RV. Aquí lo que decide el día es la sensación térmica y la lluvia, no la ráfaga.">
+          <SectionTitle
+            sub={
+              nextMilestone
+                ? "El camino hasta el desierto: viaje, compras y montaje."
+                : "Lo que viene en el playa."
+            }
+          >
+            Próximos días
+          </SectionTitle>
+          <DayList dates={comingDates} models={bundle.models} ensemble={bundle.ensemble} />
+        </div>
+      )}
+
+      {/* San Francisco: los días de ciudad, antes de coger el RV */}
+      {bundle.sf && sfDates.length > 0 && (
+        <div>
+          <SectionTitle sub="Los días de ciudad, antes de coger el RV. Aquí lo que decide el día es la sensación térmica y la lluvia, no la ráfaga.">
             San Francisco
           </SectionTitle>
 
@@ -241,6 +210,41 @@ export default async function WeatherPage() {
           </div>
 
           <CityDayGrid dates={sfDates} models={[bundle.sf]} />
+        </div>
+      )}
+
+      {/* El playa, día a día */}
+      {eventDates.length > 0 && (
+        <div>
+          <SectionTitle sub="Máxima y mínima, ráfaga máxima y lluvia acumulada. Un vistazo por día.">
+            La semana del evento
+          </SectionTitle>
+
+          {!hasModels ? (
+            <SourceDown what="El pronóstico" />
+          ) : (
+            <DayCardGrid
+              dates={eventDates}
+              models={bundle.models}
+              ensemble={bundle.ensemble}
+              emptyNote={(date) =>
+                `Faltan ${daysBetween(today, date)} días. Ningún modelo llega tan lejos todavía.`
+              }
+            />
+          )}
+
+          <p className="mt-3 text-[11px] font-medium leading-relaxed text-[#a07040]">
+            <span className="font-bold">{skill.title}.</span> {skill.body}
+          </p>
+
+          {/* La leyenda va debajo: se consulta cuando un color extraña, no antes
+              de haber visto un solo día. */}
+          {hasModels && (
+            <div className="mt-4 flex flex-col gap-2">
+              <WindLegend />
+              <RainLegend />
+            </div>
+          )}
         </div>
       )}
 

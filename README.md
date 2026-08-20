@@ -48,6 +48,8 @@ Aplicación web para planificar el vestuario de un festival en el desierto (Burn
 - Mismo selector de modelo que el probador (GPT Image 2 · Nano Banana 2 · Phoenix) y mismo modo mock con `AI_MOCK=true`
 
 ### 🌤️ El tiempo (`/weather`)
+- **Orden cronológico del viaje**: Próximos días → San Francisco (27-28 ago) → La semana del evento. Cada sección se recorta a partir de hoy —los días pasados desaparecen solos— y ninguna repite un día de otra: la tira de "próximos días" se corta justo antes del siguiente hito con sección propia
+- Las **leyendas de color van debajo del pronóstico**, no encima: se consultan cuando un color extraña, no antes de haber visto un solo día
 - **El pronóstico primero**: la semana del evento en tarjetas grandes, una por día — máxima y mínima, ráfaga máxima y lluvia acumulada — más una tira compacta de los próximos días para el viaje y las compras
 - Los dos modelos (GFS+HRRR y ECMWF) se resumen en **una sola lectura conservadora**: media en temperatura, **peor caso en ráfaga y lluvia**, y el día se marca como "los modelos discrepan" cuando no cuentan la misma historia
 - **San Francisco** en su propia sección, para los días de ciudad (27 y 28 de agosto, configurables en `SF_STAY`): ahí manda la **sensación térmica** —la capa marina deja tardes de 15 °C mientras el interior de la bahía va a 30— y la lluvia, y el viento solo se menciona cuando de verdad corta. Las tarjetas de ciudad se callan la jerga del playa: "Barro" o "Cierre" describen un lecho de arcilla, no una acera de SF
