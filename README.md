@@ -47,6 +47,16 @@ Aplicación web para planificar el vestuario de un festival en el desierto (Burn
 - Los looks se guardan en la tabla `StyleLook` y se pueden borrar (excepto el que esté en uso como foto de modelo)
 - Mismo selector de modelo que el probador (GPT Image 2 · Nano Banana 2 · Phoenix) y mismo modo mock con `AI_MOCK=true`
 
+### 🎧 Agenda de DJs (`/agenda`)
+- **Line-ups por día** transcritos de los carteles de los campamentos: Playground · Arrival Stage y Dune Lounge (2 & C) y Opulent Temple (10 & Esplanade). 92 sets, 88 artistas, de lunes 31 a sábado 5
+- Cada set se marca con **★ Voy** y entra en tu agenda. Es compartido: debajo de cada set salen los demás del grupo que también van ("👥 también Ana")
+- **Aviso de solapes**: si dos sets elegidos se pisan, los dos lo dicen y el resumen lleva la cuenta. El cálculo cruza días —un set de las 06:00 del miércoles compite con la fiesta de amanecer del jueves— porque las ventanas se miden en minutos absolutos, no por fecha del cartel
+- Los carteles no publican todos igual: Opulent Temple da la hora exacta de cada set y Playground solo la de arranque de la fiesta y el orden. Lo que no se sabe **no se inventa** — esos sets salen como `1º, 2º, 3º…` y sus solapes se avisan como probables, no seguros
+- **La madrugada va donde toca**: un set de las 02:45 dentro de la fiesta del lunes se pinta bajo el lunes (así lo lee el cartel) pero marcado como `mar`, y para los solapes cuenta como martes
+- **Vista "Solo mi agenda"**: el día en orden cronológico mezclando escenarios, que es como se recorre de verdad la ciudad
+- **Buscador** por DJ, fiesta o escenario, sin acentos (`polke` encuentra a Natascha Polké) y con los resultados agrupados por día
+- El catálogo vive en `src/lib/dj-lineups.ts`. Cuando salga un cartel nuevo se añade ahí — **sin tocar los ids ya publicados**, que son los que guarda `DjPick` en base de datos
+
 ### 🌤️ El tiempo (`/weather`)
 - **Orden del viaje**: San Francisco (27-28 ago) → La semana del evento (29 ago — 7 sep, arranca el día de recoger el RV) → Tendencia previa. Cada sección se recorta a partir de hoy —los días pasados desaparecen solos— y la tendencia se apaga sola en cuanto entra el 29, cuando ya no queda ningún día "antes de llegar"
 - Las **leyendas de color van debajo del pronóstico**, no encima: se consultan cuando un color extraña, no antes de haber visto un solo día
@@ -98,6 +108,7 @@ src/
 │   ├── inventory/page.tsx               # Inventario — prendas agrupadas por categoría
 │   ├── overview/page.tsx                # Vista general — galería de todos los outfits
 │   ├── weather/page.tsx                 # El tiempo — pronóstico diario + metodología plegada
+│   ├── agenda/page.tsx                  # Agenda de DJs — line-ups por día y selección personal
 │   ├── layout.tsx                       # Shell: nav, fuentes (Syne+Playfair), fondo arena
 │   ├── globals.css                      # Degradado arena, tokens CSS, scrollbar, selects
 │   └── api/
@@ -110,6 +121,7 @@ src/
 │       ├── outfits/[id]/items/route.ts  # POST asignar prenda  ·  DELETE quitar
 │       ├── upload/route.ts              # POST subir imagen → { url }  (max 5 MB)
 │       ├── inventory-pdf/route.ts       # GET generar PDF del inventario completo
+│       ├── dj-picks/route.ts            # GET selecciones del grupo  ·  POST toggle de un set
 │       ├── style-looks/route.ts         # GET looks de estilismo del usuario
 │       ├── style-looks/[id]/route.ts    # DELETE borrar un look (y su imagen)
 │       ├── ai/try-on/route.ts           # POST try-on con Leonardo.Ai GPT Image 2
@@ -123,6 +135,8 @@ src/
 │   │   └── UserPhotoWidget.tsx         # Avatar circular + subida de foto de perfil
 │   ├── style/
 │   │   └── StyleStudio.tsx             # Estilismo: presets de pelo/barba + galería de looks
+│   ├── agenda/
+│   │   └── AgendaClient.tsx            # Días, buscador, line-up por fiesta y avisos de solape
 │   ├── weather/
 │   │   ├── WeatherRegions.tsx          # Qué punto responde por BRC en cada fuente + distancias
 │   │   ├── DayCards.tsx                # Tarjetas grandes por día (vista principal)
@@ -140,6 +154,9 @@ src/
 │   ├── style-presets.ts                # Catálogo de estilismos (peinado, tinte, barba)
 │   ├── inventoryPdf.tsx                # Documento PDF del inventario (@react-pdf/renderer)
 │   ├── storage.ts                      # Guardar/leer imágenes en /public/uploads
+│   ├── dj-lineups.ts                   # Catálogo de line-ups transcrito de los carteles
+│   ├── dj-agenda.ts                    # Horas, ventanas de cada fiesta y detección de solapes
+│   ├── dj-picks.ts                     # Lectura de las selecciones del grupo (server-only)
 │   ├── weather.ts                      # NWS + Open-Meteo + observaciones reales y umbrales
 │   └── weather-guide.ts                # Umbrales, climatología, memoria del playa y fuentes
 │
@@ -168,6 +185,8 @@ User (1) ──< Day (1) ──< Shift  (type: TARDE|NOCHE)
 Outfit (1) ──────────────< TryOnResult  (imageUrl generada por Leonardo.Ai)
 
 User   (1) ──────────────< StyleLook    (variante de la foto: peinado, tinte, barba)
+
+User   (1) ──────────────< DjPick       (setId → set del catálogo de src/lib/dj-lineups.ts)
 ```
 
 **Reglas de negocio:**
@@ -179,6 +198,8 @@ User   (1) ──────────────< StyleLook    (variante de
 - La card Noche muestra aviso si no tiene `COAT` asignado
 - `StyleLook.sourcePhoto` guarda la foto de partida, así que la foto original sigue siendo recuperable aunque se marque un look como foto de modelo
 - No se puede borrar el `StyleLook` que sea la foto de modelo actual (`User.photoUrl`)
+- `DjPick` unique `[userId, setId]` — un usuario elige un set una sola vez; la API hace toggle
+- `DjPick.setId` **no es una FK**: los line-ups son un catálogo en código, no filas. Un id que ya no exista en `src/lib/dj-lineups.ts` se ignora al pintar la agenda en vez de romperla
 
 ---
 

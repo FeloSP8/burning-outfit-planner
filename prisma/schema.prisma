@@ -18,6 +18,7 @@ model User {
   checklistItems ChecklistItem[]
   checklistChecks ChecklistCheck[]
   styleLooks     StyleLook[]
+  djPicks        DjPick[]
   createdAt      DateTime        @default(now())
 }
 
@@ -148,4 +149,19 @@ model ChecklistCheck {
 
   @@unique([itemId, userId])
   @@index([itemId])
+}
+
+// Un set del cartel de música que un usuario quiere ver.
+// `setId` es el id del catálogo estático de `src/lib/dj-lineups.ts`, no una FK:
+// los line-ups vienen de carteles, no de la base de datos. Cambiar un id allí
+// deja huérfanas las selecciones de ese set (se ignoran al pintar la agenda).
+model DjPick {
+  id        String   @id @default(cuid())
+  setId     String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, setId])
+  @@index([setId])
 }

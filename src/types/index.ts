@@ -18,6 +18,12 @@ export interface ChecklistItemData {
   iChecked: boolean;         // INDIVIDUAL: ¿yo lo tengo?
 }
 
+/**
+ * Selecciones de música del grupo: id del set en el catálogo de
+ * `src/lib/dj-lineups.ts` → nombres de quienes quieren verlo.
+ */
+export type DjPicksBySet = Record<string, string[]>;
+
 export interface Garment {
   id: string;
   name: string;

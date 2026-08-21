@@ -9,6 +9,7 @@ const LINKS = [
   { href: "/wall",      label: "Muro" },
   { href: "/checklist", label: "Checklist" },
   { href: "/planner",   label: "Planificador" },
+  { href: "/agenda",    label: "Agenda DJs" },
   { href: "/inventory", label: "Inventario" },
   { href: "/style",     label: "Estilismo" },
   { href: "/overview",  label: "Vista general" },
