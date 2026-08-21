@@ -38,6 +38,15 @@ export const BRC = {
 export const EVENT = { start: "2026-08-30", end: "2026-09-07" } as const;
 
 /**
+ * El pronóstico de "la semana del evento" arranca un día antes del evento en
+ * sí: el 29 de agosto es cuando se recoge el RV y se conduce hasta el playa
+ * (ver `ROUTE_META.pickup` en route-data.ts), así que ya interesa saber qué
+ * tiempo va a hacer. El "faltan X días" de la confianza del pronóstico sigue
+ * midiendo contra `EVENT.start`, que es la fecha real del evento.
+ */
+export const FORECAST_START = "2026-08-29";
+
+/**
  * San Francisco: los días de ciudad, antes de recoger el RV (29 ago) y
  * después de devolverlo (5 sep).
  *

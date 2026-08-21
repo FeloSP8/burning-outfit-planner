@@ -2,6 +2,7 @@ import { getCurrentUser } from "@/lib/auth";
 import {
   BRC,
   EVENT,
+  FORECAST_START,
   SF_STAY,
   daysBetween,
   forecastSkill,
@@ -107,15 +108,18 @@ export default async function WeatherPage() {
   const skill = forecastSkill(daysToEvent);
   // Un día que ya ha pasado no es pronóstico, es historia: todas las secciones
   // se recortan a partir de hoy y desaparecen solas cuando se vacían.
-  const eventDates = dateRange(EVENT.start, EVENT.end).filter((d) => d >= today);
+  // El pronóstico arranca en FORECAST_START (29 ago, día de recoger el RV),
+  // un día antes del inicio oficial del evento: para entonces ya interesa
+  // saber qué tiempo va a hacer.
+  const eventDates = dateRange(FORECAST_START, EVENT.end).filter((d) => d >= today);
   const sfDates = SF_STAY.dates.filter((d) => d >= today);
 
   // La tendencia va al final, y es del playa (no de dondequiera que se esté
-  // parado ese día): los días que quedan antes de que empiece el evento, para
-  // ver por dónde va el patrón mientras aún no hay tarjeta propia para ellos.
-  // Si el evento ya ha pasado del todo, vuelve a ser lo que dice su nombre:
-  // los próximos siete días.
-  const preEventDates = nextDays(today, 7).filter((d) => d < EVENT.start);
+  // parado ese día): los días que quedan antes de que arranque el pronóstico
+  // del evento, para ver por dónde va el patrón mientras aún no hay tarjeta
+  // propia para ellos. Si el evento ya ha pasado del todo, vuelve a ser lo
+  // que dice su nombre: los próximos siete días.
+  const preEventDates = nextDays(today, 7).filter((d) => d < FORECAST_START);
   const trendDates = preEventDates.length > 0 ? preEventDates : eventDates.length === 0 ? nextDays(today, 7) : [];
 
   const hasModels = bundle.models.length > 0;
