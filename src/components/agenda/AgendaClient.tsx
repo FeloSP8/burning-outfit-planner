@@ -9,9 +9,12 @@ import {
   clashesFor,
   dayAfterLabel,
   findClashes,
+  fromMinutes,
+  isEstimated,
   matchesQuery,
   partiesOn,
   partyRange,
+  setWindow,
   shortWeekday,
   toEntry,
   venueLabel,
@@ -21,8 +24,6 @@ import {
 } from "@/lib/dj-agenda";
 import type { DjSet, Party } from "@/lib/dj-lineups";
 import type { DjPicksBySet } from "@/types";
-
-const ORDINALS = ["1º", "2º", "3º", "4º", "5º", "6º", "7º", "8º", "9º", "10º"];
 
 const venueOf = (party: Party) => VENUE_BY_ID[party.venueId];
 
@@ -262,6 +263,11 @@ function PartyCard({
           </p>
           <p className="text-[11px] font-semibold text-[#a07040]">
             {venueLabel(venue)} · {venue.location} · {partyRange(party)}
+            {isEstimated(party) && (
+              <span className="ml-1.5 whitespace-nowrap rounded-md bg-[#c4906a]/25 px-1.5 py-0.5 text-[10px] font-bold text-[#7a4a20]">
+                ⏱ horas estimadas
+              </span>
+            )}
           </p>
         </div>
       </header>
@@ -271,12 +277,11 @@ function PartyCard({
       )}
 
       <div className="border-t border-black/5 bg-[#fdf4e0]/70">
-        {party.sets.map((set, i) => (
+        {party.sets.map((set) => (
           <SetRow
             key={set.id}
             set={set}
             party={party}
-            order={i}
             picked={mine.has(set.id)}
             who={picks[set.id] ?? []}
             currentUserName={currentUserName}
@@ -293,7 +298,6 @@ function PartyCard({
 function SetRow({
   set,
   party,
-  order,
   picked,
   who,
   currentUserName,
@@ -303,7 +307,6 @@ function SetRow({
 }: {
   set: DjSet;
   party: Party;
-  order: number;
   picked: boolean;
   who: string[];
   currentUserName: string;
@@ -314,8 +317,10 @@ function SetRow({
 }) {
   const venue = venueOf(party);
   const others = who.filter((n) => n !== currentUserName);
-  // Un set de madrugada se pinta con el día al que pertenece de verdad.
-  const afterMidnight = !!set.start && set.start < party.start;
+  const window = setWindow(party, set);
+  // Un set de madrugada se pinta con el día al que pertenece de verdad. Vale
+  // igual para las horas estimadas: una noche de siete sets llega a las 05:00.
+  const afterMidnight = window.start >= 24 * 60;
 
   return (
     <div
@@ -323,22 +328,37 @@ function SetRow({
         picked ? "bg-[#c84a10]/10" : ""
       }`}
     >
-      <span className="w-16 shrink-0 pt-0.5 text-xs font-black tabular-nums text-[#7a2e08]">
-        {set.start ?? <span className="font-bold text-[#a07040]">{ORDINALS[order] ?? `${order + 1}º`}</span>}
-        {afterMidnight && (
-          <span className="block text-[10px] font-bold uppercase text-[#a07040]">
-            {dayAfterLabel(party.date)}
+      {/* La hora estimada va apagada y con su etiqueta debajo. Nada de "~"
+          delante del número: en Syne se lee como un guion y acaba pareciendo
+          parte de la hora. */}
+      <span
+        className={`w-[4.75rem] shrink-0 pt-0.5 text-xs font-black tabular-nums ${
+          window.estimated ? "text-[#a07040]" : "text-[#7a2e08]"
+        }`}
+        title={window.estimated ? "Hora estimada: el cartel solo publica el orden" : undefined}
+      >
+        {window.estimated ? fromMinutes(window.start) : set.start}
+        {(afterMidnight || window.estimated) && (
+          <span className="block text-[10px] font-bold uppercase leading-tight text-[#a07040]">
+            {[afterMidnight ? dayAfterLabel(party.date) : null, window.estimated ? "aprox." : null]
+              .filter(Boolean)
+              .join(" · ")}
           </span>
         )}
       </span>
 
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-bold leading-tight text-[#2a1a08]">
-          {set.label}
-          {set.live && <Tag className="bg-[#c84a10] text-[#fdf4e0]">LIVE</Tag>}
-          {set.headliner && <Tag className="bg-[#f5c518] text-[#4a2a08]">✳ CABEZA DE CARTEL</Tag>}
-          {set.note && <Tag className="bg-[#c4906a]/25 text-[#7a4a20]">{set.note}</Tag>}
-        </p>
+        <p className="text-sm font-bold leading-tight text-[#2a1a08]">{set.label}</p>
+
+        {/* Las etiquetas en su propia fila: en línea con el nombre, "CABEZA DE
+            CARTEL" no cabía en un móvil y se metía debajo del botón. */}
+        {(set.live || set.headliner || set.note) && (
+          <span className="mt-1 flex flex-wrap items-center gap-1">
+            {set.live && <Tag className="bg-[#c84a10] text-[#fdf4e0]">LIVE</Tag>}
+            {set.headliner && <Tag className="bg-[#f5c518] text-[#4a2a08]">✳ CABEZA DE CARTEL</Tag>}
+            {set.note && <Tag className="bg-[#c4906a]/25 text-[#7a4a20]">{set.note}</Tag>}
+          </span>
+        )}
 
         {showVenue && (
           <p className="text-[11px] font-semibold text-[#a07040]">
@@ -386,7 +406,7 @@ function SetRow({
 
 function Tag({ children, className }: { children: React.ReactNode; className: string }) {
   return (
-    <span className={`ml-2 whitespace-nowrap rounded-md px-1.5 py-0.5 text-[10px] font-black align-middle ${className}`}>
+    <span className={`whitespace-nowrap rounded-md px-1.5 py-0.5 text-[10px] font-black ${className}`}>
       {children}
     </span>
   );
@@ -422,7 +442,6 @@ function MyDay({
           key={entry.set.id}
           set={entry.set}
           party={entry.party}
-          order={entry.party.sets.indexOf(entry.set)}
           picked
           who={picks[entry.set.id] ?? []}
           currentUserName={currentUserName}
@@ -477,7 +496,6 @@ function SearchResults({
                 key={ref.set.id}
                 set={ref.set}
                 party={ref.party}
-                order={ref.party.sets.indexOf(ref.set)}
                 picked={mine.has(ref.set.id)}
                 who={picks[ref.set.id] ?? []}
                 currentUserName={currentUserName}

@@ -15,11 +15,19 @@ import { EVENT_DAYS, PARTIES, VENUES, type DjSet, type EventDay, type Party, typ
 const MINUTES_PER_DAY = 24 * 60;
 
 /**
- * Duración que se supone a una fiesta cuyo cartel no da hora de cierre (los dos
- * escenarios de Playground). Solo se usa para avisar de posibles solapes; nunca
- * se enseña como si fuera una hora real.
+ * Duración por defecto de un set cuando el cartel no da horas: dos horas.
+ * Es lo que dura un set normal y es la base de la estimación.
  */
-const ASSUMED_PARTY_MINUTES = 4 * 60;
+export const ESTIMATED_SET_MINUTES = 2 * 60;
+
+/**
+ * Hora a la que se da por apagada una fiesta de noche, en minutos desde la
+ * medianoche del día en que empieza: las 6 de la mañana siguiente.
+ *
+ * Sin esto, una noche de siete sets a dos horas cada uno acabaría a mediodía.
+ * Con el tope, los sets se reparten el hueco disponible hasta las 6.
+ */
+const NIGHT_END = MINUTES_PER_DAY + 6 * 60;
 
 export const VENUE_BY_ID: Record<string, Venue> = Object.fromEntries(VENUES.map((v) => [v.id, v]));
 export const PARTY_BY_ID: Record<string, Party> = Object.fromEntries(PARTIES.map((p) => [p.id, p]));
@@ -73,22 +81,63 @@ export interface Window {
   end: number;
   /** `false` cuando el final es una suposición y no una hora del cartel. */
   exact: boolean;
+  /** La hora entera es estimación nuestra: el cartel no la publica. */
+  estimated: boolean;
+}
+
+/**
+ * Cuánto se le supone a cada set de una fiesta sin horas publicadas.
+ *
+ * Dos horas, salvo que no quepan: en una noche los sets se reparten a partes
+ * iguales lo que va del arranque a las 6 de la mañana, redondeando a cuartos
+ * de hora hacia abajo para no pasarse. Siete sets desde las 22:00 salen a una
+ * hora cada uno; seis desde las 21:00, a hora y media.
+ *
+ * Las fiestas de día, atardecer y amanecer no tienen ese tope —no acaban de
+ * madrugada—, así que se quedan en las dos horas.
+ */
+export function estimatedSlotMinutes(party: Party): number {
+  const untimed = party.sets.filter((s) => !s.start).length;
+  if (untimed === 0 || party.kind !== "night") return ESTIMATED_SET_MINUTES;
+
+  const available = NIGHT_END - toMinutes(party.start);
+  const fair = Math.floor(available / untimed / 15) * 15;
+  return Math.max(15, Math.min(ESTIMATED_SET_MINUTES, fair));
+}
+
+/** ¿Las horas de esta fiesta son estimación nuestra? */
+export function isEstimated(party: Party): boolean {
+  return party.sets.some((s) => !s.start);
 }
 
 /** Ventana de la fiesta entera. */
 export function partyWindow(party: Party): Window {
   const start = toMinutes(party.start);
-  if (!party.end) return { start, end: start + ASSUMED_PARTY_MINUTES, exact: false };
-  return { start, end: withinParty(party, party.end), exact: true };
+  if (party.end) return { start, end: withinParty(party, party.end), exact: true, estimated: false };
+
+  // Sin hora de cierre: se cierra donde acabe el último set estimado.
+  const slot = estimatedSlotMinutes(party);
+  return { start, end: start + party.sets.length * slot, exact: false, estimated: true };
 }
 
 /**
  * Ventana de un set. Con hora en el cartel va de su inicio al del siguiente
- * (o al cierre de la fiesta). Sin hora —Playground solo publica el orden— se
- * queda con la ventana de la fiesta entera, marcada como inexacta.
+ * (o al cierre de la fiesta).
+ *
+ * Sin hora —Playground y Symbio solo publican el orden— se estima: los sets
+ * se colocan uno detrás de otro desde que abre la fiesta, con la duración que
+ * dicte `estimatedSlotMinutes`. Antes ocupaban la fiesta entera, lo que hacía
+ * chocar cualquier par de sets de dos escenarios abiertos a la vez.
+ *
+ * Asume que dentro de una misma fiesta o todos los sets llevan hora o ninguno,
+ * que es como vienen todos los carteles del catálogo.
  */
 export function setWindow(party: Party, set: DjSet): Window {
-  if (!set.start) return { ...partyWindow(party), exact: false };
+  if (!set.start) {
+    const slot = estimatedSlotMinutes(party);
+    const start = toMinutes(party.start) + party.sets.indexOf(set) * slot;
+    return { start, end: start + slot, exact: false, estimated: true };
+  }
 
   const start = withinParty(party, set.start);
   const laterStarts = party.sets
@@ -97,7 +146,12 @@ export function setWindow(party: Party, set: DjSet): Window {
     .filter((m) => m > start);
   const partyEnd = partyWindow(party);
   const end = laterStarts.length > 0 ? Math.min(...laterStarts) : partyEnd.end;
-  return { start, end, exact: partyEnd.exact || laterStarts.length > 0 };
+  return {
+    start,
+    end,
+    exact: partyEnd.exact || laterStarts.length > 0,
+    estimated: false,
+  };
 }
 
 /** Minutos desde la época, para comparar sets de días distintos. */
@@ -157,7 +211,7 @@ export function findClashes(entries: AgendaEntry[]): Clash[] {
       const b = sorted[j];
       if (a.party.id === b.party.id) continue;
       if (b.absStart >= a.absEnd) break; // ordenados por inicio: ya no hay más solapes con `a`
-      out.push({ a, b, certain: a.window.exact && b.window.exact && !!a.set.start && !!b.set.start });
+      out.push({ a, b, certain: !a.window.estimated && !b.window.estimated && a.window.exact && b.window.exact });
     }
   }
   return out;
@@ -170,9 +224,10 @@ export function clashesFor(setId: string, clashes: Clash[]): AgendaEntry[] {
     .map((c) => (c.a.set.id === setId ? c.b : c.a));
 }
 
-/** Rango legible de una fiesta: "21:00 → 03:45" o "desde las 22:00". */
+/** Rango legible: "21:00 → 03:45", o "21:00 → 05:00 aprox." si el cierre es estimado. */
 export function partyRange(party: Party): string {
-  return party.end ? `${party.start} → ${party.end}` : `desde las ${party.start}`;
+  if (party.end) return `${party.start} → ${party.end}`;
+  return `${party.start} → ${fromMinutes(partyWindow(party).end)} aprox.`;
 }
 
 /** Nombre completo del escenario: "Playground · Arrival Stage". */

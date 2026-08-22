@@ -40,6 +40,14 @@ export default async function AgendaPage() {
         salen con cuentagotas y algunos solo publican el orden de los sets, no la hora. Cuando
         aparezca uno nuevo se añade a <span className="font-bold">src/lib/dj-lineups.ts</span>.
       </p>
+
+      <p className="text-[11px] font-medium leading-relaxed text-[#a07040]">
+        <span className="font-bold">Las horas marcadas “aprox.” son estimación, no cartel.</span> Playground y
+        Symbio publican el orden de los sets pero no la hora de cada uno, así que se reparten: dos
+        horas por set, salvo en las noches, donde se reparten a partes iguales lo que va del
+        arranque a las 6 de la mañana. Sirven para ordenar el día y para avisar de solapes; el
+        orden sí es el del cartel, la hora exacta no.
+      </p>
     </div>
   );
 }
