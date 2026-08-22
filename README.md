@@ -48,7 +48,7 @@ Aplicación web para planificar el vestuario de un festival en el desierto (Burn
 - Mismo selector de modelo que el probador (GPT Image 2 · Nano Banana 2 · Phoenix) y mismo modo mock con `AI_MOCK=true`
 
 ### 🎧 Agenda de DJs (`/agenda`)
-- **Line-ups por día** transcritos de los carteles de los campamentos: Playground · Arrival Stage y Dune Lounge (2 & C) y Opulent Temple (10 & Esplanade). 92 sets, 88 artistas, de lunes 31 a sábado 5
+- **Line-ups por día** transcritos de los carteles de los campamentos: Playground · Arrival Stage y Dune Lounge (2 & C), Opulent Temple (10 & Esplanade) y Symbio (2:30 & F). 108 sets, 98 artistas, de lunes 31 a sábado 5
 - Cada set se marca con **★ Voy** y entra en tu agenda. Es compartido: debajo de cada set salen los demás del grupo que también van ("👥 también Ana")
 - **Aviso de solapes**: si dos sets elegidos se pisan, los dos lo dicen y el resumen lleva la cuenta. El cálculo cruza días —un set de las 06:00 del miércoles compite con la fiesta de amanecer del jueves— porque las ventanas se miden en minutos absolutos, no por fecha del cartel
 - Los carteles no publican todos igual: Opulent Temple da la hora exacta de cada set y Playground solo la de arranque de la fiesta y el orden. Lo que no se sabe **no se inventa** — esos sets salen como `1º, 2º, 3º…` y sus solapes se avisan como probables, no seguros

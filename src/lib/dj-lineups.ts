@@ -7,6 +7,7 @@
  *   • Playground — Arrival Stage (2 & C)
  *   • Playground — Dune Lounge  (2 & C)
  *   • Opulent Temple            (10 & Esplanade)
+ *   • Symbio                    (2:30 & F)
  *
  * OJO con los ids: `DjPick.setId` los guarda en base de datos. Cambiar un id
  * existente equivale a borrar la selección de todo el mundo para ese set.
@@ -135,6 +136,18 @@ export const VENUES: Venue[] = [
       border: "border-rose-200",
       chip: "bg-rose-100 text-rose-900",
       text: "text-rose-900",
+    },
+  },
+  {
+    id: "symbio",
+    name: "Symbio",
+    location: "2:30 & F",
+    emoji: "🌴",
+    theme: {
+      card: "bg-amber-50/70",
+      border: "border-amber-300",
+      chip: "bg-amber-100 text-amber-900",
+      text: "text-amber-900",
     },
   },
 ];
@@ -431,6 +444,56 @@ export const PARTIES: Party[] = [
       { id: "pg-dune-fri-lost-desert", label: "Lost Desert", artists: ["Lost Desert"], start: null },
       { id: "pg-dune-fri-annicka",     label: "Annicka",     artists: ["Annicka"],     start: null },
       { id: "pg-dune-fri-sam-shure",   label: "Sam Shure",   artists: ["Sam Shure"],   start: null },
+    ],
+  },
+  // ────────────────────────────── Symbio ──────────────────────────────
+  // Fiestas de mañana: arrancan a las 9:00 y el cartel no da hora de cierre
+  // ni hora por set, solo el orden.
+  {
+    id: "sym-tue",
+    venueId: "symbio",
+    date: "2026-09-01",
+    name: "Symbio",
+    kind: "day",
+    start: "09:00",
+    sets: [
+      { id: "sym-tue-franky-rizardo",  label: "Franky Rizardo",   artists: ["Franky Rizardo"],   start: null },
+      { id: "sym-tue-vanjee",          label: "Vanjee",           artists: ["Vanjee"],           start: null },
+      { id: "sym-tue-mason-collective",label: "Mason Collective", artists: ["Mason Collective"], start: null },
+      { id: "sym-tue-monobase",        label: "Monobase",         artists: ["Monobase"],         start: null },
+      { id: "sym-tue-shimon",          label: "Shimon",           artists: ["Shimon"],           start: null },
+      { id: "sym-tue-nadav-vee",       label: "Nadav Vee",        artists: ["Nadav Vee"],        start: null },
+    ],
+  },
+  {
+    id: "sym-thu",
+    venueId: "symbio",
+    date: "2026-09-03",
+    name: "Symbio",
+    kind: "day",
+    start: "09:00",
+    sets: [
+      { id: "sym-thu-kaz-james",       label: "Kaz James",       artists: ["Kaz James"],       start: null },
+      { id: "sym-thu-nico-bernardini", label: "Nico Bernardini", artists: ["Nico Bernardini"], start: null },
+      { id: "sym-thu-lp-giobbi",       label: "LP Giobbi",       artists: ["LP Giobbi"],       start: null },
+      { id: "sym-thu-luch",            label: "Luch",            artists: ["Luch"],            start: null },
+      { id: "sym-thu-grace-arribas",   label: "Grace Arribas",   artists: ["Grace Arribas"],   start: null },
+      { id: "sym-thu-mike-whitmore",   label: "Mike Whitmore",   artists: ["Mike Whitmore"],   start: null },
+    ],
+  },
+  {
+    id: "sym-sat",
+    venueId: "symbio",
+    date: "2026-09-05",
+    name: "Sixty Palms",
+    kind: "day",
+    start: "09:00",
+    note: "El cartel firma el sábado con Sixty Palms.",
+    sets: [
+      { id: "sym-sat-nico-vanjee", label: "Nico B2B Vanjee", artists: ["Nico Bernardini", "Vanjee"], start: null, note: "disco set" },
+      { id: "sym-sat-omri",        label: "Omri.",           artists: ["Omri."],                     start: null },
+      { id: "sym-sat-bender",      label: "Bender",          artists: ["Bender"],                    start: null },
+      { id: "sym-sat-luis",        label: "Luis",            artists: ["Luis"],                      start: null },
     ],
   },
 ];
