@@ -213,3 +213,9 @@ export function dayAfterLabel(date: string): string {
   const next = new Date(Date.parse(`${date}T12:00:00Z`) + MINUTES_PER_DAY * 60_000);
   return next.toLocaleDateString("es-ES", { weekday: "short", timeZone: "UTC" }).replace(".", "");
 }
+
+/** "2026-09-03" → "jue". Para nombrar el día de un set sin repetir la fecha entera. */
+export function shortWeekday(date: string): string {
+  const day = EVENT_DAYS.find((d) => d.date === date);
+  return day ? day.weekday.slice(0, 3).toLowerCase() : date;
+}

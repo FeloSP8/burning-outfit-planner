@@ -12,6 +12,7 @@ import {
   matchesQuery,
   partiesOn,
   partyRange,
+  shortWeekday,
   toEntry,
   venueLabel,
   type AgendaEntry,
@@ -56,8 +57,8 @@ export function AgendaClient({
   // Los solapes se buscan en todo el evento, no día a día: un set de las 06:00
   // del miércoles compite con la fiesta de amanecer del jueves.
   const clashes = useMemo(() => findClashes(myEntries), [myEntries]);
-  const clashingIds = useMemo(
-    () => new Set(clashes.flatMap((c) => [c.a.set.id, c.b.set.id])),
+  const clashDays = useMemo(
+    () => new Set(clashes.flatMap((c) => [c.a.party.date, c.b.party.date])),
     [clashes]
   );
 
@@ -112,9 +113,21 @@ export function AgendaClient({
         <Stat value={mine.size} label={mine.size === 1 ? "set elegido" : "sets elegidos"} />
         <Stat value={daysWithPlan.size} label={daysWithPlan.size === 1 ? "día con plan" : "días con plan"} />
         {clashes.length > 0 && (
-          <span className="rounded-xl border-2 border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-900">
+          // Botón, no etiqueta: el contador es de toda la agenda pero las marcas
+          // van en la tarjeta de cada día, así que sin esto avisa de algo que no
+          // se ve por ninguna parte hasta dar con el día correcto.
+          <button
+            type="button"
+            onClick={() => {
+              setQuery("");
+              const first = DAYS_WITH_LINEUP.find((d) => clashDays.has(d.date));
+              if (first) setDay(first.date);
+            }}
+            className="rounded-xl border-2 border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-900 transition-colors hover:bg-amber-100"
+          >
             ⚠️ {clashes.length} {clashes.length === 1 ? "solape" : "solapes"} en tu agenda
-          </span>
+            <span className="ml-1 font-black">›</span>
+          </button>
         )}
       </div>
 
@@ -148,7 +161,7 @@ export function AgendaClient({
           picks={picks}
           mine={mine}
           currentUserName={currentUserName}
-          clashingIds={clashingIds}
+          clashes={clashes}
           onToggle={toggle}
         />
       ) : (
@@ -173,6 +186,7 @@ export function AgendaClient({
                   <span className={`block text-[11px] font-bold ${active ? "text-[#fdf4e0]/80" : "text-[#a07040]"}`}>
                     {d.short}
                     {count > 0 && ` · ${count} ★`}
+                    {clashDays.has(d.date) && " ⚠️"}
                   </span>
                 </button>
               );
@@ -196,7 +210,7 @@ export function AgendaClient({
                   picks={picks}
                   mine={mine}
                   currentUserName={currentUserName}
-                  clashingIds={clashingIds}
+                  clashes={clashes}
                   onToggle={toggle}
                 />
               ))}
@@ -222,14 +236,14 @@ function PartyCard({
   picks,
   mine,
   currentUserName,
-  clashingIds,
+  clashes,
   onToggle,
 }: {
   party: Party;
   picks: DjPicksBySet;
   mine: Set<string>;
   currentUserName: string;
-  clashingIds: Set<string>;
+  clashes: Clash[];
   onToggle: (setId: string) => void;
 }) {
   const venue = venueOf(party);
@@ -266,7 +280,7 @@ function PartyCard({
             picked={mine.has(set.id)}
             who={picks[set.id] ?? []}
             currentUserName={currentUserName}
-            clashing={mine.has(set.id) && clashingIds.has(set.id)}
+            conflicts={mine.has(set.id) ? clashesFor(set.id, clashes) : []}
             onToggle={onToggle}
           />
         ))}
@@ -283,7 +297,7 @@ function SetRow({
   picked,
   who,
   currentUserName,
-  clashing,
+  conflicts,
   onToggle,
   showVenue = false,
 }: {
@@ -293,7 +307,8 @@ function SetRow({
   picked: boolean;
   who: string[];
   currentUserName: string;
-  clashing: boolean;
+  /** Sets de tu agenda con los que este se pisa. Vacío si no hay conflicto. */
+  conflicts: AgendaEntry[];
   onToggle: (setId: string) => void;
   showVenue?: boolean;
 }) {
@@ -335,8 +350,20 @@ function SetRow({
           <p className="text-[11px] font-semibold text-[#a07040]">👥 también {others.join(", ")}</p>
         )}
 
-        {clashing && (
-          <p className="text-[11px] font-bold text-amber-800">⚠️ Se pisa con otro set de tu agenda</p>
+        {conflicts.length > 0 && (
+          // Nombrar el set y su día: el otro puede estar en la tarjeta de otro
+          // día, y "se pisa con otro set" no dice dónde buscarlo.
+          <p className="text-[11px] font-bold leading-relaxed text-amber-800">
+            ⚠️ Se pisa con{" "}
+            {conflicts
+              .map((c) =>
+                c.party.date === party.date
+                  ? c.set.label
+                  : `${c.set.label} (${shortWeekday(c.party.date)})`
+              )
+              .join(", ")}
+            {conflicts.some((c) => !c.set.start || !set.start) && " · el cartel no da horas exactas"}
+          </p>
         )}
       </div>
 
@@ -390,30 +417,20 @@ function MyDay({
 
   return (
     <div className="overflow-hidden rounded-2xl border-2 border-[#c4906a]/40 bg-[#fdf4e0]">
-      {entries.map((entry) => {
-        const conflicts = clashesFor(entry.set.id, clashes);
-        return (
-          <div key={entry.set.id} className="border-t border-[#c4906a]/15 first:border-t-0">
-            <SetRow
-              set={entry.set}
-              party={entry.party}
-              order={entry.party.sets.indexOf(entry.set)}
-              picked
-              who={picks[entry.set.id] ?? []}
-              currentUserName={currentUserName}
-              clashing={false}
-              onToggle={onToggle}
-              showVenue
-            />
-            {conflicts.length > 0 && (
-              <p className="px-4 pb-2.5 pl-[4.75rem] text-[11px] font-bold leading-relaxed text-amber-800">
-                ⚠️ Se pisa con {conflicts.map((c) => c.set.label).join(", ")}
-                {conflicts.every((c) => !c.set.start || !entry.set.start) && " (el cartel no da horas exactas)"}
-              </p>
-            )}
-          </div>
-        );
-      })}
+      {entries.map((entry) => (
+        <SetRow
+          key={entry.set.id}
+          set={entry.set}
+          party={entry.party}
+          order={entry.party.sets.indexOf(entry.set)}
+          picked
+          who={picks[entry.set.id] ?? []}
+          currentUserName={currentUserName}
+          conflicts={clashesFor(entry.set.id, clashes)}
+          onToggle={onToggle}
+          showVenue
+        />
+      ))}
     </div>
   );
 }
@@ -425,7 +442,7 @@ function SearchResults({
   picks,
   mine,
   currentUserName,
-  clashingIds,
+  clashes,
   onToggle,
 }: {
   results: SetRef[];
@@ -433,7 +450,7 @@ function SearchResults({
   picks: DjPicksBySet;
   mine: Set<string>;
   currentUserName: string;
-  clashingIds: Set<string>;
+  clashes: Clash[];
   onToggle: (setId: string) => void;
 }) {
   if (results.length === 0) {
@@ -464,7 +481,7 @@ function SearchResults({
                 picked={mine.has(ref.set.id)}
                 who={picks[ref.set.id] ?? []}
                 currentUserName={currentUserName}
-                clashing={mine.has(ref.set.id) && clashingIds.has(ref.set.id)}
+                conflicts={mine.has(ref.set.id) ? clashesFor(ref.set.id, clashes) : []}
                 onToggle={onToggle}
                 showVenue
               />
