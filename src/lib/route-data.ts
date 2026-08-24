@@ -53,7 +53,7 @@ export const ROUTE_META = {
     place: "misma sede",
   },
   totalDistance: "~595 km",
-  totalDriving: "~7 h 30 min",
+  totalDriving: "7 h 21 min",
 } as const;
 
 export const ROUTE_STOPS: RouteStop[] = [
@@ -68,14 +68,6 @@ export const ROUTE_STOPS: RouteStop[] = [
   },
   {
     order: 2,
-    name: "Costco Wholesale",
-    address: "350 Newpark Mall Rd, Newark, CA 94560",
-    coords: [37.52669, -121.99946],
-    purpose: "Comida, agua, bebidas a granel",
-    emoji: "🛒",
-  },
-  {
-    order: 3,
     name: "The Home Depot",
     address: "43900 Ice House Terrace, Fremont, CA 94538",
     coords: [37.51104, -121.94582],
@@ -83,12 +75,23 @@ export const ROUTE_STOPS: RouteStop[] = [
     emoji: "🔨",
   },
   {
-    order: 4,
+    order: 3,
     name: "Walmart",
     address: "44009 Osgood Rd, Fremont, CA 94539",
     coords: [37.51135, -121.94322],
     purpose: "Complemento: hielo, textil, portabicis, misceláneo",
     emoji: "🧊",
+  },
+  {
+    // El Costco ya no es el de Newark (350 Newpark Mall Rd): ese obligaba a
+    // volver atrás nada más salir. Este cae en la I-680 subiendo hacia la
+    // I-80, así que la compra grande se hace de paso y no de rodeo.
+    order: 4,
+    name: "Costco Wholesale",
+    address: "7200 Johnson Dr, Pleasanton, CA 94588",
+    coords: [37.695759, -121.917744],
+    purpose: "Comida, agua, bebidas a granel",
+    emoji: "🛒",
   },
   {
     order: 5,
@@ -116,19 +119,27 @@ export const ROUTE_STOPS: RouteStop[] = [
   },
 ];
 
+/**
+ * Tramos tal y como los da Google Maps para esta ruta, convertidos de millas.
+ *
+ * El total son las 370 millas / 7 h 21 min que Maps calcula para el recorrido
+ * entero con el tráfico del momento. Sumar los tramos uno a uno da unos 40
+ * minutos menos: son dos cálculos distintos de Google, no un error de cuentas.
+ */
 export const ROUTE_LEGS: RouteLeg[] = [
   {
-    label: "1 → 4 · cluster Newark/Fremont",
-    distance: "~15 km",
-    duration: "30–40 min + compras",
+    label: "1 → 3 · cluster Fremont (Home Depot + Walmart)",
+    distance: "~7 km",
+    duration: "16 min + compras",
   },
-  { label: "4 → 5 · Fremont → Reno", distance: "~380 km", duration: "4 h 30 – 5 h" },
-  { label: "5 → 6 · Reno → Fernley", distance: "~50 km", duration: "40 min" },
-  { label: "6 → 7 · Fernley → BRC (NV-447)", distance: "~150 km", duration: "2 h" },
+  { label: "3 → 4 · Fremont → Pleasanton (Costco)", distance: "~27 km", duration: "22 min" },
+  { label: "4 → 5 · Pleasanton → Reno", distance: "~362 km", duration: "3 h 36 min" },
+  { label: "5 → 6 · Reno → Fernley", distance: "~50 km", duration: "33 min" },
+  { label: "6 → 7 · Fernley → BRC (NV-447)", distance: "~149 km", duration: "1 h 51 min" },
   {
     label: "Total Newark → BRC",
     distance: "~595 km",
-    duration: "~7 h 30 min de volante",
+    duration: "7 h 21 min de volante",
     isTotal: true,
   },
 ];
