@@ -412,4 +412,28 @@ export const ARTIST_INFO: Record<string, ArtistInfo> = {
     genre: "House",
     instagram: "ariannasunshine_",
   },
+  Mooglie: {
+    genre: "House",
+    instagram: "mooglie",
+  },
+  Kream: {
+    genre: "House · dance",
+    instagram: "wearekream",
+  },
+  Riche: {
+    genre: "House · groove",
+    instagram: "riche",
+  },
+  Gawdat: {
+    genre: "Tech house · disco",
+    instagram: "gawdat.official",
+  },
+  Luch: {
+    // Daniel Grossman. La cuenta no se puede confirmar entre los homónimos.
+    genre: "House",
+  },
+  "Don Gentry": {
+    genre: "House",
+    instagram: "d1creator",
+  },
 };
