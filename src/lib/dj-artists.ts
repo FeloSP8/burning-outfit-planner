@@ -124,9 +124,6 @@ export const ARTIST_INFO: Record<string, ArtistInfo> = {
   "Major Lazer": {
     genre: "Dancehall · reggae · dub",
   },
-  Rebolledo: {
-    genre: "House · cosmic disco",
-  },
   "Jan Blomqvist": {
     genre: "Melodic techno · directo",
   },
@@ -333,5 +330,33 @@ export const ARTIST_INFO: Record<string, ArtistInfo> = {
   Kazami: {
     genre: "House",
     instagram: "kazamimusic",
+  },
+  "AMÉMÉ": {
+    genre: "Afro house",
+    instagram: "amemedj",
+  },
+  Rebolledo: {
+    genre: "House · cosmic disco",
+    instagram: "rebolledo_____",
+  },
+  Joezi: {
+    genre: "Afro house",
+    instagram: "joezi_z",
+  },
+  "Thiccboi Drewski": {
+    genre: "House · bass",
+    instagram: "thiccboidrewski",
+  },
+  Casmalia: {
+    genre: "House · bass",
+    instagram: "casmaliamusic",
+  },
+  "DJ Icon": {
+    genre: "House · residente de Opulent Temple",
+    instagram: "djicon",
+  },
+  "Madison Orange": {
+    genre: "House · hoop dancing con LED",
+    instagram: "madisonorange",
   },
 };
