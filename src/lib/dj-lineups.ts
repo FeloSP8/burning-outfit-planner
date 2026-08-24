@@ -246,6 +246,18 @@ export const VENUES: Venue[] = [
       text: "text-teal-900",
     },
   },
+  {
+    id: "bipolar-express",
+    name: "Bipolar Express",
+    location: "art car · aparca donde toque",
+    emoji: "🚂",
+    theme: {
+      card: "bg-cyan-50/80",
+      border: "border-cyan-300",
+      chip: "bg-cyan-100 text-cyan-900",
+      text: "text-cyan-900",
+    },
+  },
 ];
 
 export const PARTIES: Party[] = [
@@ -1086,6 +1098,113 @@ export const PARTIES: Party[] = [
       { id: "rh-sat-am-lost-desert",  label: "Lost Desert",   artists: ["Lost Desert"],   start: null },
       { id: "rh-sat-am-rod-jr",       label: "Rod Jr.",       artists: ["Rod Jr."],       start: null },
       { id: "rh-sat-am-pippi-ciez",   label: "Pippi Ciez",    artists: ["Pippi Ciez"],    start: null },
+    ],
+  },
+
+  // ───────────────────────── Bipolar Express ─────────────────────────
+  //
+  // El cartel del art car no publica ni una hora: solo el orden de cada
+  // salida y el sol de amanecer. Los horarios de aquí son estimaciones.
+  //
+  // Dos de sus bloques ya estaban en el catálogo y no se repiten: el del
+  // miércoles ("Favela x Nova Heaven") es `nova-wed` y el del viernes
+  // ("Long Feng") es `lon-fri`. Ambos ya acreditan al Bipolar Express.
+  {
+    id: "bip-mon",
+    venueId: "bipolar-express",
+    date: "2026-08-31",
+    name: "Bipolar Express",
+    kind: "night",
+    start: "23:00",
+    note: "El cartel no da horas. Se asume salida a las 23:00, como el resto de art cars, y el reparto lleva a Marten Lou al amanecer, que es donde lo pone el sol del cartel.",
+    sets: [
+      { id: "bip-mon-ro-admiral",   label: "Ro Rousseau + Admiral Fantastica", artists: ["Ro Rousseau", "Admiral Fantastica"], start: null, live: true, note: "hybrid live" },
+      { id: "bip-mon-hoshi",        label: "Hoshi",                            artists: ["Hoshi"],                             start: null },
+      { id: "bip-mon-unders",       label: "Unders",                           artists: ["Unders"],                            start: null },
+      { id: "bip-mon-igor",         label: "Igor Marijuan",                    artists: ["Igor Marijuan"],                     start: null },
+      { id: "bip-mon-holder",       label: "Holder",                           artists: ["Holder"],                            start: null },
+      { id: "bip-mon-marten-lou",   label: "Marten Lou",                       artists: ["Marten Lou"],                        start: null, sun: "amanecer" },
+    ],
+  },
+  {
+    id: "bip-tue",
+    venueId: "bipolar-express",
+    date: "2026-09-01",
+    name: "Apotheneum Tie-Up",
+    kind: "night",
+    start: "21:00",
+    where: "Apotheneum",
+    note: "Tie-up con el Apotheneum. Sin horas en el cartel: se asume la misma salida de las 21:00 que la otra noche de Apotheneum del catálogo.",
+    sets: [
+      { id: "bip-tue-double-touch", label: "Double Touch", artists: ["Double Touch"], start: null, live: true },
+      { id: "bip-tue-natipitch",    label: "Natipitch",    artists: ["Natipitch"],    start: null },
+    ],
+  },
+  {
+    id: "bip-wed",
+    venueId: "bipolar-express",
+    date: "2026-09-02",
+    name: "Salida de amanecer",
+    kind: "sunrise",
+    start: "06:00",
+    setMinutes: 90,
+    note: "Sin horas en el cartel. El sol marca el ritual de apertura, así que la salida se cuadra a las 06:00 para que caiga en el amanecer.",
+    sets: [
+      { id: "bip-wed-ritual",  label: "Ritual of Eternal Return", artists: [],                start: null, sun: "amanecer", note: "ceremonia" },
+      { id: "bip-wed-seth",    label: "Seth Schwarz",             artists: ["Seth Schwarz"],  start: null, live: true },
+      { id: "bip-wed-hedda",   label: "Hedda Stenberg",           artists: ["Hedda Stenberg"],start: null },
+    ],
+  },
+  {
+    id: "bip-thu-am",
+    venueId: "bipolar-express",
+    date: "2026-09-03",
+    name: "Black Rock Philharmonic",
+    kind: "sunrise",
+    start: "06:00",
+    setMinutes: 90,
+    note: "Sin horas en el cartel. Abre la orquesta con el set clásico al amanecer y sigue el set electrónico.",
+    sets: [
+      { id: "bip-thu-am-brp-clasico", label: "Black Rock Philharmonic",                artists: ["Black Rock Philharmonic"],                  start: null, live: true, sun: "amanecer", note: "set clásico" },
+      { id: "bip-thu-am-pulse",       label: "Pulse · Meir Briskman + Black Rock Philharmonic", artists: ["Meir Briskman", "Black Rock Philharmonic"], start: null, live: true, note: "set electrónico" },
+      { id: "bip-thu-am-avi-snow",    label: "Avi Snow",                               artists: ["Avi Snow"],                                 start: null },
+    ],
+  },
+  {
+    id: "bip-thu-maxa",
+    venueId: "bipolar-express",
+    date: "2026-09-03",
+    name: "MAXA Tie-Up",
+    kind: "sunrise",
+    start: "03:00",
+    setMinutes: 60,
+    where: "MAXA",
+    note: "Tie-up con MAXA, sin horas en el cartel: se asume la salida de las 03:00 del otro tie-up de MAXA y sets de una hora, que es lo que lleva a Miguelle & Tons al amanecer.",
+    sets: [
+      { id: "bip-thu-maxa-philou",   label: "Philou",                              artists: ["Philou"],                                start: null, note: "en el cartel, P.H.I.L.O.U." },
+      { id: "bip-thu-maxa-mishell",  label: "Mishell",                             artists: ["Mishell"],                               start: null },
+      { id: "bip-thu-maxa-luch",     label: "Luch",                                artists: ["Luch"],                                  start: null },
+      { id: "bip-thu-maxa-miguelle", label: "Miguelle & Tons",                     artists: ["Miguelle", "Tons"],                      start: null, sun: "amanecer" },
+      { id: "bip-thu-maxa-ahmed",    label: "Ahmed Spins",                         artists: ["Ahmed Spins"],                           start: null },
+      { id: "bip-thu-maxa-nacho",    label: "Nacho Isa B2B Kotoe B2B Madmotormiquel", artists: ["Nacho Isa", "Kotoe", "Madmotormiquel"], start: null },
+    ],
+  },
+  {
+    id: "bip-sat",
+    venueId: "bipolar-express",
+    date: "2026-09-05",
+    name: "Bipolar Express · Man Burn",
+    kind: "night",
+    start: "23:00",
+    note: "El cartel no da horas. Se asume salida a las 23:00 y el cierre de Joezi B2B Arymé cae en el amanecer, que es donde lo pone el sol del cartel.",
+    sets: [
+      { id: "bip-sat-dovedov",  label: "Dovedov",                              artists: ["Dovedov"],                    start: null },
+      { id: "bip-sat-jam",      label: "Bipolar Express Jam",                  artists: [],                             start: null, live: true, note: "jam de la tripulación" },
+      { id: "bip-sat-nasty",    label: "Nasty Business · Off in Lala x Hypemann", artists: ["Off in Lala", "Hypemann"], start: null },
+      { id: "bip-sat-roxx",     label: "Roxx B2B Tripps",                      artists: ["Roxx", "Tripps"],             start: null },
+      { id: "bip-sat-phoenix",  label: "Phoenix M",                            artists: ["Phoenix M"],                  start: null },
+      { id: "bip-sat-rafael",   label: "Rafael",                               artists: ["Rafael"],                     start: null },
+      { id: "bip-sat-joezi",    label: "Joezi B2B Arymé",                      artists: ["Joezi", "Arymé"],             start: null, sun: "amanecer" },
     ],
   },
 ];

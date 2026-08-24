@@ -39,7 +39,17 @@ const venueOf = (party: Party) => VENUE_BY_ID[party.venueId];
  */
 function whereLabel(party: Party): string {
   const label = venueLabel(venueOf(party));
-  return label === party.name ? label : `${label} · ${party.name}`;
+  return nameCarriesVenue(party, label) ? party.name : `${label} · ${party.name}`;
+}
+
+/**
+ * ¿El nombre de la fiesta ya nombra al escenario?
+ *
+ * "Longfeng · Dragon Awakening" o "Bipolar Express · Man Burn" no necesitan que
+ * les pongan el escenario otra vez delante.
+ */
+function nameCarriesVenue(party: Party, label: string): boolean {
+  return party.name === label || party.name.startsWith(`${label} · `);
 }
 
 export function AgendaClient({
@@ -358,7 +368,7 @@ function PartyCard({
             </span>
           </p>
           <p className="text-[11px] font-semibold text-[#a07040]">
-            {venueLabel(venue) !== party.name && `${venueLabel(venue)} · `}
+            {!nameCarriesVenue(party, venueLabel(venue)) && `${venueLabel(venue)} · `}
             {party.where ?? venue.location} · {partyRange(party)}
             {isEstimated(party) && (
               <span className="ml-1.5 whitespace-nowrap rounded-md bg-[#c4906a]/25 px-1.5 py-0.5 text-[10px] font-bold text-[#7a4a20]">
