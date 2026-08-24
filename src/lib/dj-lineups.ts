@@ -558,16 +558,17 @@ export const PARTIES: Party[] = [
   },
 
   // ─────────────────────────── Favela ArtCar ───────────────────────────
-  // El cartel no da ni una hora salvo la ceremonia del viernes. Las horas de
-  // arranque son supuestas (salidas de noche a las 22:00, y el sábado a las
-  // 21:00 con el Hombre); pendientes de confirmar con el campamento.
+  // El cartel no publica ni una hora salvo la ceremonia del viernes, pero el
+  // campamento confirma que el art car sale a las 23:00 todos los días. Esa
+  // hora es buena; el reparto de cada set dentro de la noche sigue siendo
+  // estimación.
   {
     id: "fav-tue",
     venueId: "favela",
     date: "2026-09-01",
     name: "First Favela ArtCar Outing",
     kind: "night",
-    start: "22:00",
+    start: "23:00",
     sets: [
       { id: "fav-tue-mary-du-serena", label: "Mary Mesk B2B Du Serena", artists: ["Mary Mesk", "Du Serena"], start: null },
       { id: "fav-tue-ines-rau",       label: "Ines Rau",                artists: ["Ines Rau"],               start: null },
@@ -582,7 +583,7 @@ export const PARTIES: Party[] = [
     date: "2026-09-02",
     name: "Favela + Nova Heaven + Bipolar Express",
     kind: "night",
-    start: "22:00",
+    start: "23:00",
     note: "Tres art cars juntos, según el cartel.",
     sets: [
       { id: "fav-wed-mary-du-serena",  label: "Mary Mesk B2B Du Serena",    artists: ["Mary Mesk", "Du Serena"],       start: null },
@@ -599,7 +600,7 @@ export const PARTIES: Party[] = [
     date: "2026-09-03",
     name: "Favela Baile",
     kind: "night",
-    start: "22:00",
+    start: "23:00",
     sets: [
       { id: "fav-thu-xinobi",         label: "Xinobi",           artists: ["Xinobi"],           start: null },
       { id: "fav-thu-parra-for-cuva", label: "Parra for Cuva",   artists: ["Parra for Cuva"],   start: null, live: true },
@@ -614,9 +615,9 @@ export const PARTIES: Party[] = [
     date: "2026-09-04",
     name: "Ascension · Memorian Celebration",
     kind: "night",
-    start: "22:00",
+    start: "23:00",
     end: "08:00",
-    note: "Con Nova Heaven. La ceremonia de las 6:29 es la salida del sol; el resto de horas son estimación.",
+    note: "Con Nova Heaven. La ceremonia de las 6:29 es la salida del sol; el reparto del resto es estimación.",
     sets: [
       { id: "fav-fri-you-and-i",      label: "YØU&I",                  artists: ["YØU&I"],                    start: null },
       { id: "fav-fri-nevos",          label: "Nevos",                  artists: ["Nevos"],                    start: null },
@@ -633,7 +634,7 @@ export const PARTIES: Party[] = [
     date: "2026-09-05",
     name: "Man Burn",
     kind: "night",
-    start: "21:00",
+    start: "23:00",
     sets: [
       { id: "fav-sat-orbit", label: "Orbit", artists: ["Orbit"], start: null, live: true },
     ],
