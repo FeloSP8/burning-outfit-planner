@@ -26,8 +26,15 @@ export interface RouteLeg {
   isTotal?: boolean;
 }
 
-/** Enlace canónico a la ruta guardada en Google Maps. */
-export const ROUTE_SHARE_URL = "https://maps.app.goo.gl/2BEPzAZXgF9P5Woe9";
+/**
+ * Enlace canónico a la ruta guardada en Google Maps.
+ *
+ * Solo alimenta el botón "Ver ruta completa". El mapa, las paradas y la tabla
+ * de tramos se construyen aparte desde las coordenadas de `ROUTE_STOPS`, así
+ * que si esta ruta guardada cambia de paradas hay que actualizarlas también o
+ * el botón y la página contarán cosas distintas.
+ */
+export const ROUTE_SHARE_URL = "https://maps.app.goo.gl/awViKdPTZSKEajxA6";
 
 export const ROUTE_META = {
   title: "Newark → Black Rock City",
