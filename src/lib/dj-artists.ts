@@ -114,6 +114,7 @@ export const ARTIST_INFO: Record<string, ArtistInfo> = {
   },
   Miluhska: {
     genre: "House con acento latino",
+    instagram: "miluhska",
   },
   Madota: {
     genre: "Tech house",
@@ -394,5 +395,21 @@ export const ARTIST_INFO: Record<string, ArtistInfo> = {
   LIDIYA: {
     genre: "Melodic house · indie dance",
     instagram: "lidiya.music",
+  },
+  "Hedda Stenberg": {
+    genre: "Melodic house",
+    instagram: "heddastenberg",
+  },
+  "Oliver Marshak": {
+    genre: "House",
+    instagram: "olivermarshak",
+  },
+  "Luciano Scalioni": {
+    genre: "House · tech house",
+    instagram: "luciano_scalioni",
+  },
+  "Arianna Sunshine": {
+    genre: "House",
+    instagram: "ariannasunshine_",
   },
 };
