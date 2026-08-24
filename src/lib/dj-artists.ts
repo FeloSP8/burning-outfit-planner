@@ -120,6 +120,7 @@ export const ARTIST_INFO: Record<string, ArtistInfo> = {
   },
   Alok: {
     genre: "Underground · chuggers",
+    video: { url: "https://www.youtube.com/watch?v=kttWNVHJKDo", label: "Something Else · Tomorrowland Winter 2026" },
   },
   "Miguelle": {
     genre: "House rítmico con acento latino",
@@ -143,6 +144,7 @@ export const ARTIST_INFO: Record<string, ArtistInfo> = {
   },
   "Jan Blomqvist": {
     genre: "Melodic techno · directo",
+    video: { url: "https://www.youtube.com/watch?v=-vVtOVUHVzE", label: "Mayan Warrior, Burning Man 2024" },
   },
   "Jo.Ke": {
     genre: "Electrónica en directo",
@@ -227,6 +229,7 @@ export const ARTIST_INFO: Record<string, ArtistInfo> = {
   "Sam Shure": {
     genre: "Melodic house · techno",
     instagram: "sam_shure",
+    video: { url: "https://www.youtube.com/watch?v=HiMSQ4Zd4Ho", label: "Ritter Butzke 2024" },
   },
   "Francis Mercier": {
     genre: "Afro house",
