@@ -72,26 +72,32 @@ export const ARTIST_INFO: Record<string, ArtistInfo> = {
   "Parra for Cuva": {
     genre: "Electrónica melódica · downtempo",
     instagram: "parra_for_cuva",
+    video: { url: "https://www.youtube.com/watch?v=UolMU0sN6Uc", label: "Volcán Arenal, Costa Rica 2026" },
   },
   Monolink: {
     genre: "Melodic house · directo con guitarra y voz",
     instagram: "monolinkmusic",
+    video: { url: "https://www.youtube.com/watch?v=_XiAmTl7oTM", label: "Fusion 2026 · set híbrido" },
   },
   "Lee Burridge": {
     genre: "Melodic · organic house",
     instagram: "djleeburridge",
+    video: { url: "https://www.youtube.com/watch?v=izypyqBBDPw", label: "All Day I Dream · The Lab NYC" },
   },
   "John Summit": {
     genre: "Tech house · house",
     instagram: "johnsummit",
+    video: { url: "https://www.youtube.com/watch?v=26IFqDrW6ZA", label: "Lollapalooza Chicago 2026" },
   },
   "Danny Tenaglia": {
     genre: "House · techno · tribal",
     instagram: "dannytenagliaofficial",
+    video: { url: "https://www.youtube.com/watch?v=-ep50fB1HFc", label: "Boiler Room Miami" },
   },
   "Infected Mushroom": {
     genre: "Psytrance",
     instagram: "infectedmushroom",
+    video: { url: "https://www.youtube.com/watch?v=aEfsexE1TgY", label: "Psytrance set, Seúl 2025" },
   },
   Gordo: {
     genre: "House · tech house · sonido latino",
@@ -203,6 +209,7 @@ export const ARTIST_INFO: Record<string, ArtistInfo> = {
   "Nora En Pure": {
     genre: "Deep house · indie dance",
     instagram: "noraenpure",
+    video: { url: "https://www.youtube.com/watch?v=nikX4PBk8Ks", label: "Progresja, Varsovia 2026" },
   },
   "Natascha Polké": {
     genre: "Electrónica en directo · voz",
