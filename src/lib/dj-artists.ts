@@ -8,11 +8,44 @@
  * con la ficha a medias— sale igual en la lista, sin el dato que falte.
  *
  * La clave es el nombre exacto del catálogo de `src/lib/dj-lineups.ts`.
- *
- * Los géneros salen de cómo se describen ellos y su prensa. Unos cuantos vienen
- * del propio texto de curaduría de Robot Heart, que describe el sonido de casi
- * veinte de los artistas del cartel con nombre y apellido.
  */
+
+/**
+ * Vocabulario cerrado de géneros.
+ *
+ * Es una unión de TypeScript a propósito: la primera versión de esto eran
+ * cadenas libres y acabó con 65 términos distintos para 104 artistas —
+ * "House" y "house", "Melodic" y "Melodic house", y descripciones que no eran
+ * géneros mezcladas con los que sí. Tipado, un término nuevo o mal escrito no
+ * compila, y agrupar por estilo tiene sentido.
+ *
+ * Lo que no es un género pero merece contarse —que Seth Schwarz toca el
+ * violín, que Syd Gris fundó Opulent Temple— va en `about`.
+ */
+export const GENRES = [
+  "House",
+  "Tech house",
+  "Melodic house",
+  "Organic house",
+  "Deep house",
+  "Afro house",
+  "Progressive house",
+  "Minimal house",
+  "Techno",
+  "Melodic techno",
+  "Psytrance",
+  "Trance",
+  "Indie dance",
+  "Disco",
+  "Bass",
+  "Downtempo",
+  "Dancehall",
+  "Pop electrónico",
+  "Directo",
+  "Sonido latino",
+] as const;
+
+export type Genre = (typeof GENRES)[number];
 
 export interface ArtistVideo {
   url: string;
@@ -21,8 +54,10 @@ export interface ArtistVideo {
 }
 
 export interface ArtistInfo {
-  /** Género, tal y como lo describen sus fichas y su prensa. */
-  genre?: string;
+  /** Géneros del vocabulario cerrado, del principal al secundario. */
+  genres?: Genre[];
+  /** Una línea de contexto: quién es, qué toca en directo, qué fundó. */
+  about?: string;
   /** Usuario de Instagram, sin la arroba. */
   instagram?: string;
   /** Un set en vídeo, lo más reciente que haya. */
@@ -31,437 +66,496 @@ export interface ArtistInfo {
 
 export const ARTIST_INFO: Record<string, ArtistInfo> = {
   "Vintage Culture": {
-    genre: "House · tech house · melodic house",
+    genres: ["House", "Tech house", "Melodic house"],
     instagram: "vintageculture",
     video: { url: "https://www.youtube.com/watch?v=xXRjglkAmq8", label: "Ultra Miami 2026" },
   },
   Vanjee: {
-    genre: "House · electrónica",
+    genres: ["House"],
     instagram: "vanjeemusic",
     video: { url: "https://www.youtube.com/watch?v=ogh7wwR3hyc", label: "Sunrise set · Club Space Miami" },
   },
   Doozie: {
-    genre: "House · tech house",
+    genres: ["House", "Tech house"],
     instagram: "doozie",
     video: { url: "https://www.youtube.com/watch?v=p2NUdsmKqrk", label: "DNA Art Car, Camboriú 2026" },
   },
   "LP Giobbi": {
-    genre: "House · piano en directo",
+    genres: ["House", "Directo"],
+    about: "Toca el piano en directo sobre sus sets; formada en jazz en Berkeley",
     instagram: "lpgiobbi",
     video: { url: "https://www.youtube.com/watch?v=-eOa77e_uJg", label: "Tomorrowland 2026" },
   },
   "Omri.": {
-    genre: "Afro house · melodic house",
+    genres: ["Afro house", "Melodic house"],
     video: { url: "https://www.youtube.com/watch?v=OSqNr4qXgNQ", label: "Green Valley, Carnaval Brasil 2026" },
   },
   "Marten Lou": {
-    genre: "Melodic house",
+    genres: ["Melodic house"],
     instagram: "martenlou",
     video: { url: "https://www.youtube.com/watch?v=wZEhpiIPZhg", label: "MAAT Lisboa 2026" },
   },
   "Mahmut Orhan": {
-    genre: "Melodic house · deep house",
+    genres: ["Melodic house", "Deep house"],
     instagram: "mahmutorhan",
     video: { url: "https://www.youtube.com/watch?v=ZlueBnl69VM", label: "Coachella 2026" },
   },
   "Michael Bibi": {
-    genre: "Tech house · house",
+    genres: ["Tech house", "House"],
     instagram: "michael_bibi_",
     video: { url: "https://www.youtube.com/watch?v=g_umzDckot8", label: "Pacha NYC 2026" },
   },
   "Parra for Cuva": {
-    genre: "Electrónica melódica · downtempo",
+    genres: ["Downtempo", "Directo"],
+    about: "Piano clásico y jazz de origen, formado en Berlín",
     instagram: "parra_for_cuva",
     video: { url: "https://www.youtube.com/watch?v=UolMU0sN6Uc", label: "Volcán Arenal, Costa Rica 2026" },
   },
   Monolink: {
-    genre: "Melodic house · directo con guitarra y voz",
+    genres: ["Melodic house", "Directo"],
+    about: "Canta y toca la guitarra dentro del set",
     instagram: "monolinkmusic",
     video: { url: "https://www.youtube.com/watch?v=_XiAmTl7oTM", label: "Fusion 2026 · set híbrido" },
   },
   "Lee Burridge": {
-    genre: "Melodic · organic house",
+    genres: ["Melodic house", "Organic house"],
+    about: "Fundador de All Day I Dream",
     instagram: "djleeburridge",
     video: { url: "https://www.youtube.com/watch?v=izypyqBBDPw", label: "All Day I Dream · The Lab NYC" },
   },
   "John Summit": {
-    genre: "Tech house · house",
+    genres: ["Tech house", "House"],
     instagram: "johnsummit",
     video: { url: "https://www.youtube.com/watch?v=26IFqDrW6ZA", label: "Lollapalooza Chicago 2026" },
   },
   "Danny Tenaglia": {
-    genre: "House · techno · tribal",
+    genres: ["House", "Techno"],
+    about: "Sonido tribal; cincuenta años de carrera y debut en el playa",
     instagram: "dannytenagliaofficial",
     video: { url: "https://www.youtube.com/watch?v=-ep50fB1HFc", label: "Boiler Room Miami" },
   },
   "Infected Mushroom": {
-    genre: "Psytrance",
+    genres: ["Psytrance", "Directo"],
+    about: "Dúo israelí; hacen show en directo y también DJ set",
     instagram: "infectedmushroom",
     video: { url: "https://www.youtube.com/watch?v=aEfsexE1TgY", label: "Psytrance set, Seúl 2025" },
   },
   Gordo: {
-    genre: "House · tech house · sonido latino",
+    genres: ["House", "Tech house", "Sonido latino"],
     instagram: "gordoszn",
     video: { url: "https://www.youtube.com/watch?v=Kd-F37pCcB8", label: "Kokun 2026" },
   },
   Carlita: {
-    genre: "Melodic house · organic house",
+    genres: ["Melodic house", "Organic house"],
+    about: "Turco-italiana, multiinstrumentista",
     instagram: "carlita",
     video: { url: "https://www.youtube.com/watch?v=vFcpKlb5i_w", label: "Scorpios Mykonos 2026" },
   },
   "Deer Jade": {
-    genre: "Melodic house · techno",
+    genres: ["Melodic house", "Techno"],
+    about: "Suizo-francesa; edita en Innervisions, Diynamic y Kompakt",
     instagram: "deerjade",
     video: { url: "https://www.youtube.com/watch?v=-xQuhzez19I", label: "Hangar · The Gardens of Babylon" },
   },
-  // Los que siguen tienen el género descrito en el texto de Robot Heart.
   Orbit: {
-    genre: "Electrónica orgánica · instrumentos acústicos",
+    genres: ["Organic house", "Directo"],
+    about: "Instrumentos acústicos y producción electrónica suave",
   },
   Alok: {
-    genre: "Underground · chuggers",
+    genres: ["Melodic techno"],
+    about: "Como Something Else: su lado underground, chuggers de tensión lenta",
     video: { url: "https://www.youtube.com/watch?v=kttWNVHJKDo", label: "Something Else · Tomorrowland Winter 2026" },
   },
-  "Miguelle": {
-    genre: "House rítmico con acento latino",
+  Miguelle: {
+    genres: ["House", "Sonido latino"],
   },
   Tons: {
-    genre: "House rítmico con acento latino",
+    genres: ["House", "Sonido latino"],
   },
   Miluhska: {
-    genre: "House con acento latino",
+    genres: ["House", "Sonido latino"],
     instagram: "miluhska",
   },
   Madota: {
-    genre: "Tech house",
+    genres: ["Tech house"],
   },
   "Aline Brooklyn": {
-    genre: "House con funk y electro",
+    genres: ["House"],
+    about: "Groove con toques de funk y electro; mitad de Aline Umber",
   },
   "Major Lazer": {
-    genre: "Dancehall · reggae · dub",
+    genres: ["Dancehall"],
+    about: "En el playa traen un set de reggae y dub",
     video: { url: "https://www.youtube.com/watch?v=eifPgda7oKc", label: "Coachella 2026" },
   },
   "Jan Blomqvist": {
-    genre: "Melodic techno · directo",
+    genres: ["Melodic techno", "Directo"],
     video: { url: "https://www.youtube.com/watch?v=-vVtOVUHVzE", label: "Mayan Warrior, Burning Man 2024" },
   },
   "Jo.Ke": {
-    genre: "Electrónica en directo",
+    genres: ["Organic house", "Directo"],
+    about: "Estrena proyecto en directo, evolución de Feathered Sun",
   },
   "June Robin": {
-    genre: "Voz",
+    genres: ["Directo"],
+    about: "Voz",
   },
   "Max Styler": {
-    genre: "Tech house",
+    genres: ["Tech house"],
     video: { url: "https://www.youtube.com/watch?v=Ckd37fqkEoo", label: "Yuma Tent, Coachella 2026" },
   },
   "Franky Rizardo": {
-    genre: "House · after hours",
+    genres: ["House"],
+    about: "Sonido de after hours",
     video: { url: "https://www.youtube.com/watch?v=CCumCaZRvkI", label: "Coachella 2026" },
   },
   Arodes: {
-    genre: "Melodic house",
+    genres: ["Melodic house"],
+    about: "Español, Adrián Rodríguez",
     instagram: "arodes_ofc",
     video: { url: "https://www.youtube.com/watch?v=iMO30ETV1w8", label: "Coachella 2026" },
   },
   Darco: {
-    genre: "Melodic house · organic house",
+    genres: ["Melodic house", "Organic house"],
+    about: "Israelí, Dar Cohen",
     instagram: "____darco____",
   },
   Rafael: {
-    genre: "Tech house",
+    genres: ["Tech house"],
+    about: "Suyo es el remix de My City's On Fire",
     instagram: "rafael___music",
   },
   Anna: {
-    genre: "Techno",
+    genres: ["Techno"],
+    about: "Brasileña, Ana Miranda",
     instagram: "djannaofficial",
     video: { url: "https://www.youtube.com/watch?v=VnHG__953oE", label: "Day Zero, Brasil 2026" },
   },
   Beltran: {
-    genre: "House",
+    genres: ["House"],
+    about: "Brasileño",
     instagram: "beltran",
     video: { url: "https://www.youtube.com/watch?v=YBEd7zgZChA", label: "HÖR Berlín 2026" },
   },
   Bender: {
-    genre: "Melodic house",
+    genres: ["Melodic house"],
     instagram: "bendermusic",
   },
   "Clüb de Combat": {
-    genre: "Tech house · house",
+    genres: ["Tech house", "House"],
     instagram: "club_decombat",
   },
   "Double Touch": {
-    genre: "Organic house en directo · teclados y batería",
+    genres: ["Organic house", "Directo"],
+    about: "Van-Anh Nguyen a los teclados y Mark Olsen a la batería",
     instagram: "doubletouchofficial",
   },
   Kimonos: {
-    genre: "House",
+    genres: ["House"],
     instagram: "kimonos.music",
   },
   "Maxi Meraki": {
-    genre: "Melodic house",
+    genres: ["Melodic house"],
     instagram: "maximeraki",
     video: { url: "https://www.youtube.com/watch?v=2tVL-GRQnq8", label: "ARCANA Argentina" },
   },
   Xinobi: {
-    genre: "House · nu-disco",
+    genres: ["House", "Disco"],
+    about: "Portugués; cofundador de Discotexas",
     instagram: "xinobi",
     video: { url: "https://www.youtube.com/watch?v=NgTSKQAKQRo", label: "Musicbox Lisboa" },
   },
   "Ahmed Spins": {
-    genre: "Afro house",
+    genres: ["Afro house"],
+    about: "Primer DJ marroquí de house en tocar en Coachella",
     instagram: "ahmedspins",
   },
   "Nora En Pure": {
-    genre: "Deep house · indie dance",
+    genres: ["Deep house", "Indie dance"],
     instagram: "noraenpure",
     video: { url: "https://www.youtube.com/watch?v=nikX4PBk8Ks", label: "Progresja, Varsovia 2026" },
   },
   "Natascha Polké": {
-    genre: "Electrónica en directo · voz",
+    genres: ["Directo"],
+    about: "Suiza; canta, produce y toca en directo",
     instagram: "nataschapolke.ch",
   },
   "Lost Desert": {
-    genre: "Melodic · organic house",
+    genres: ["Melodic house", "Organic house"],
+    about: "De la casa de All Day I Dream",
     instagram: "lostdesertmusic",
   },
   "Sam Shure": {
-    genre: "Melodic house · techno",
+    genres: ["Melodic house", "Melodic techno"],
     instagram: "sam_shure",
     video: { url: "https://www.youtube.com/watch?v=HiMSQ4Zd4Ho", label: "Ritter Butzke 2024" },
   },
   "Francis Mercier": {
-    genre: "Afro house",
+    genres: ["Afro house"],
+    about: "Haitiano; jefe del sello Deep Root Tribe",
     instagram: "francismercier",
   },
   "Roy Rosenfeld": {
-    genre: "Melodic house · techno",
+    genres: ["Melodic house", "Melodic techno"],
+    about: "Israelí; Lost Miracle",
     instagram: "royrosenfeld_ofc",
   },
   "Kaz James": {
-    genre: "House",
+    genres: ["House"],
+    about: "Australiano",
     instagram: "kazjames",
   },
   "Mason Collective": {
-    genre: "Tech house",
+    genres: ["Tech house"],
+    about: "Trío de Manchester",
     instagram: "masoncollective",
   },
   Enamour: {
-    genre: "Melodic house · techno",
+    genres: ["Melodic house", "Melodic techno"],
     instagram: "enamourmusic",
   },
   "Captain Hook": {
-    genre: "Psytrance",
+    genres: ["Psytrance"],
     instagram: "djcaptainhook",
   },
   "Nadav Vee": {
-    genre: "Melodic house",
+    genres: ["Melodic house"],
     instagram: "nadavvee",
   },
   "Nico Bernardini": {
-    genre: "House",
+    genres: ["House"],
+    about: "Italiano",
     instagram: "nicobernardiniofc",
   },
   "Grace Arribas": {
-    genre: "House · tech house",
+    genres: ["House", "Tech house"],
+    about: "De Florida",
     instagram: "grace.arribas",
   },
   "Sebastian Konrad": {
-    genre: "Melodic house · techno",
+    genres: ["Melodic house", "Melodic techno"],
+    about: "Suizo; residente en Nordstern Basel",
     instagram: "sebastian.konrad",
   },
   "Syd Gris": {
-    genre: "House · techno",
+    genres: ["House", "Techno"],
+    about: "Fundador del propio Opulent Temple, donde pincha",
     instagram: "syd_gris",
   },
   Annicka: {
-    genre: "Minimal house",
+    genres: ["Minimal house"],
     instagram: "foreverannicka",
   },
   Calussa: {
-    genre: "House",
+    genres: ["House"],
     instagram: "calussa",
   },
   "Josh Gigante": {
-    genre: "Melodic house · techno",
+    genres: ["Melodic house", "Melodic techno"],
+    about: "Edita en Afterlife y Diynamic",
     instagram: "joshgigante",
   },
   "Julia Sandstorm": {
-    genre: "House",
+    genres: ["House"],
+    about: "Sueca",
     instagram: "juliasandstorm",
   },
   Diplo: {
-    genre: "House · dancehall · electrónica",
+    genres: ["House", "Dancehall"],
+    about: "Mitad de Major Lazer",
     instagram: "diplo",
     video: { url: "https://www.youtube.com/watch?v=eiPQwmlOLQQ", label: "Stagecoach 2026" },
   },
   SLANDER: {
-    genre: "Bass music · dubstep melódico",
+    genres: ["Bass"],
+    about: "Dúo de Los Ángeles",
     instagram: "slanderofficial",
   },
   "Spencer Brown": {
-    genre: "Progressive house",
+    genres: ["Progressive house"],
+    about: "De San Francisco",
     instagram: "spencerbrownofficial",
   },
   Goldfish: {
-    genre: "Electrónica en directo · saxo y contrabajo",
+    genres: ["House", "Directo"],
+    about: "Saxo y contrabajo en directo; dúo sudafricano",
     instagram: "goldfishlive",
   },
   "Fleetmac Wood": {
-    genre: "Remixes y fiesta dedicada a Fleetwood Mac",
+    genres: ["House"],
+    about: "No es un DJ: es una fiesta de remezclas de Fleetwood Mac",
     instagram: "fleetmac_wood",
   },
   "Mike Posner": {
-    genre: "Pop electrónico",
+    genres: ["Pop electrónico"],
     instagram: "mikeposner",
   },
   "Maddy O'Neal": {
-    genre: "Electrónica · bass",
+    genres: ["Bass"],
     instagram: "maddy_oneal",
   },
   Rampue: {
-    genre: "Electrónica en directo",
+    genres: ["Indie dance", "Directo"],
+    about: "Directo electrónico desde Berlín",
     instagram: "rampue",
   },
   "Tom & Collins": {
-    genre: "Tech house · sonido latino",
+    genres: ["Tech house", "Sonido latino"],
     instagram: "tomandcollins",
   },
   "Seth Schwarz": {
-    genre: "Electrónica en directo · violín",
+    genres: ["Organic house", "Directo"],
+    about: "Toca el violín dentro del set",
     instagram: "seth_schwarz",
   },
   Monobase: {
-    genre: "House",
+    genres: ["House"],
     instagram: "monobase",
   },
   Mishell: {
-    genre: "House",
+    genres: ["House"],
     instagram: "_mishell_____",
   },
   "London Grammar": {
-    genre: "Indie · electrónica (DJ set)",
+    genres: ["Pop electrónico"],
+    about: "DJ set del trío británico",
     instagram: "londongrammar",
   },
   "Igor Marijuan": {
-    genre: "House · Ibiza",
+    genres: ["House"],
+    about: "Veterano de la escena de Ibiza",
     instagram: "igormarijuan",
   },
   "Obie Fernandez": {
-    genre: "Progressive · trance",
+    genres: ["Progressive house", "Trance"],
+    about: "Edita en Armada y Black Hole",
     instagram: "obiefernandez",
   },
   Emanate: {
-    genre: "House · techno",
+    genres: ["House", "Techno"],
     instagram: "emanatesound",
   },
   Kazami: {
-    genre: "House",
+    genres: ["House"],
     instagram: "kazamimusic",
   },
-  "AMÉMÉ": {
-    genre: "Afro house",
+  AMÉMÉ: {
+    genres: ["Afro house"],
+    about: "Beninesa-nigeriana; fundadora de One Tribe NYC",
     instagram: "amemedj",
   },
   Rebolledo: {
-    genre: "House · cosmic disco",
+    genres: ["House", "Disco"],
+    about: "Cosmic disco; creador de Time",
     instagram: "rebolledo_____",
   },
   Joezi: {
-    genre: "Afro house",
+    genres: ["Afro house"],
     instagram: "joezi_z",
   },
   "Thiccboi Drewski": {
-    genre: "House · bass",
+    genres: ["House", "Bass"],
+    about: "De Brooklyn",
     instagram: "thiccboidrewski",
   },
   Casmalia: {
-    genre: "House · bass",
+    genres: ["House", "Bass"],
+    about: "Instructora de Ableton",
     instagram: "casmaliamusic",
   },
   "DJ Icon": {
-    genre: "House · residente de Opulent Temple",
+    genres: ["House"],
+    about: "Residente de Opulent Temple",
     instagram: "djicon",
   },
   "Madison Orange": {
-    genre: "House · hoop dancing con LED",
+    genres: ["House"],
+    about: "Pincha haciendo hoop dancing con LED",
     instagram: "madisonorange",
   },
   "Wrecked Machines": {
-    genre: "Psytrance",
+    genres: ["Psytrance"],
     instagram: "wrecked_machines",
   },
   Vermont: {
-    genre: "Psytrance",
+    genres: ["Psytrance"],
+    about: "Rafael Ferrari",
     instagram: "vermontmusic",
   },
   Holmar: {
-    genre: "Acid · electrónica",
+    genres: ["Techno"],
+    about: "También conocido como Acid Tourist; islandés",
     instagram: "holmarmusik",
   },
   "Ashley Fitelson": {
-    genre: "House",
+    genres: ["House"],
     instagram: "ashleyfitelson",
   },
   "Ashley Ames": {
-    genre: "House",
+    genres: ["House"],
     instagram: "ashleyamesmusic",
   },
   "Mary Mesk": {
-    genre: "House · producción y composición",
+    genres: ["House"],
+    about: "Además produce y compone",
     instagram: "marymeskmusic",
   },
   "Techno Tupac": {
-    genre: "Techno",
+    genres: ["Techno"],
     instagram: "techno_tupac",
   },
   GALLiVANTER: {
-    genre: "House",
+    genres: ["House"],
     instagram: "gallivanter__dj",
   },
   LIDIYA: {
-    genre: "Melodic house · indie dance",
+    genres: ["Melodic house", "Indie dance"],
+    about: "De San Francisco; parte de Titanic's End",
     instagram: "lidiya.music",
   },
   "Hedda Stenberg": {
-    genre: "Melodic house",
+    genres: ["Melodic house"],
     instagram: "heddastenberg",
   },
   "Oliver Marshak": {
-    genre: "House",
+    genres: ["House"],
+    about: "Entre Los Ángeles e Ibiza",
     instagram: "olivermarshak",
   },
   "Luciano Scalioni": {
-    genre: "House · tech house",
+    genres: ["House", "Tech house"],
     instagram: "luciano_scalioni",
   },
   "Arianna Sunshine": {
-    genre: "House",
+    genres: ["House"],
+    about: "Australiana",
     instagram: "ariannasunshine_",
   },
   Mooglie: {
-    genre: "House",
+    genres: ["House"],
     instagram: "mooglie",
   },
   Kream: {
-    genre: "House · dance",
+    genres: ["House"],
+    about: "Dúo noruego de hermanos",
     instagram: "wearekream",
   },
   Riche: {
-    genre: "House · groove",
+    genres: ["House"],
+    about: "Se define como dirty, bouncy, groovy",
     instagram: "riche",
   },
   Gawdat: {
-    genre: "Tech house · disco",
+    genres: ["Tech house", "Disco"],
+    about: "Uno de The Egyptian Brothers; cofundador de Dancin Music",
     instagram: "gawdat.official",
   },
   Luch: {
-    // Daniel Grossman. La cuenta no se puede confirmar entre los homónimos.
-    genre: "House",
+    genres: ["House"],
+    about: "Daniel Grossman",
   },
   "Don Gentry": {
-    genre: "House",
+    genres: ["House"],
     instagram: "d1creator",
   },
 };

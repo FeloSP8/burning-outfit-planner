@@ -5,6 +5,7 @@ import {
   ALL_SETS,
   ALL_ARTISTS,
   ARTIST_INDEX,
+  GENRE_INDEX,
   VENUE_BY_ID,
   DAYS_WITH_LINEUP,
   KIND_LABEL,
@@ -26,7 +27,7 @@ import {
   type SetRef,
 } from "@/lib/dj-agenda";
 import type { DjSet, Party } from "@/lib/dj-lineups";
-import { ARTIST_INFO } from "@/lib/dj-artists";
+import { ARTIST_INFO, type Genre } from "@/lib/dj-artists";
 import type { DjPicksBySet } from "@/types";
 
 const venueOf = (party: Party) => VENUE_BY_ID[party.venueId];
@@ -61,7 +62,8 @@ export function AgendaClient({
   );
   const [onlyMine, setOnlyMine] = useState(false);
   const [query, setQuery] = useState("");
-  const [view, setView] = useState<"dia" | "dj">("dia");
+  const [view, setView] = useState<"dia" | "dj" | "estilo">("dia");
+  const [genre, setGenre] = useState<Genre | null>(null);
 
   const mine = useMemo(
     () => new Set(Object.entries(picks).filter(([, who]) => who.includes(currentUserName)).map(([id]) => id)),
@@ -178,8 +180,9 @@ export function AgendaClient({
       {/* Por día o por DJ: dos formas de mirar lo mismo */}
       <div className="flex gap-1.5">
         {([
-          ["dia", "🗓️ Por día"],
-          ["dj", "🎧 Por DJ"],
+          ["dia", "🗓️ Día"],
+          ["dj", "🎧 DJ"],
+          ["estilo", "🎚️ Estilo"],
         ] as const).map(([id, label]) => (
           <button
             key={id}
@@ -203,7 +206,9 @@ export function AgendaClient({
           type="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder={view === "dj" ? "Buscar DJ…" : "Buscar DJ, fiesta o escenario…"}
+          placeholder={
+            view === "dj" ? "Buscar DJ…" : view === "estilo" ? "Buscar DJ dentro del estilo…" : "Buscar DJ, fiesta o escenario…"
+          }
           className="flex-1 rounded-xl border-2 border-[#c4906a]/40 bg-[#fdf4e0] px-3 py-2 text-sm font-semibold text-[#2a1a08] placeholder:font-medium placeholder:text-[#a07040] focus:border-[#c84a10] focus:outline-none"
         />
         {view === "dia" && (
@@ -222,7 +227,20 @@ export function AgendaClient({
         )}
       </div>
 
-      {view === "dj" ? (
+      {view === "estilo" ? (
+        <GenreList
+          selected={genre}
+          onSelect={setGenre}
+          query={query}
+          favorites={favorites}
+          onToggleFavorite={toggleFavorite}
+          picks={picks}
+          mine={mine}
+          currentUserName={currentUserName}
+          clashes={clashes}
+          onToggle={toggle}
+        />
+      ) : view === "dj" ? (
         <ArtistList
           query={query}
           favorites={favorites}
@@ -803,36 +821,156 @@ function ArtistRow({
  */
 function ArtistCard({ artist }: { artist: string }) {
   const info = ARTIST_INFO[artist];
-  if (!info || (!info.genre && !info.instagram && !info.video)) return null;
+  if (!info) return null;
+
+  const hasAny = info.genres?.length || info.about || info.instagram || info.video;
+  if (!hasAny) return null;
 
   return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 border-b border-[#c4906a]/15 px-4 py-2.5">
-      {info.genre && (
-        <span className="rounded-md bg-[#c4906a]/25 px-1.5 py-0.5 text-[11px] font-bold text-[#7a4a20]">
-          {info.genre}
-        </span>
+    <div className="flex flex-col gap-1.5 border-b border-[#c4906a]/15 px-4 py-2.5">
+      {(info.genres?.length || info.instagram || info.video) && (
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+          {info.genres?.map((g) => (
+            <span
+              key={g}
+              className="rounded-md bg-[#c4906a]/25 px-1.5 py-0.5 text-[11px] font-bold text-[#7a4a20]"
+            >
+              {g}
+            </span>
+          ))}
+
+          {info.instagram && (
+            <a
+              href={`https://instagram.com/${info.instagram}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[11px] font-bold text-[#c84a10] underline underline-offset-2"
+            >
+              📷 @{info.instagram}
+            </a>
+          )}
+
+          {info.video && (
+            <a
+              href={info.video.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[11px] font-bold text-[#c84a10] underline underline-offset-2"
+            >
+              ▶️ {info.video.label}
+            </a>
+          )}
+        </div>
       )}
 
-      {info.instagram && (
-        <a
-          href={`https://instagram.com/${info.instagram}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-[11px] font-bold text-[#c84a10] underline underline-offset-2"
-        >
-          📷 @{info.instagram}
-        </a>
+      {info.about && (
+        <p className="text-[11px] font-medium leading-relaxed text-[#7a5030]">{info.about}</p>
       )}
+    </div>
+  );
+}
 
-      {info.video && (
-        <a
-          href={info.video.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-[11px] font-bold text-[#c84a10] underline underline-offset-2"
-        >
-          ▶️ {info.video.label}
-        </a>
+/**
+ * Los estilos del cartel. Se elige uno y salen los DJs que lo pinchan; al
+ * tocar cualquiera se despliega cuándo y dónde, igual que en la vista por DJ.
+ *
+ * Un artista sale en todos sus estilos: Vintage Culture está en House, en
+ * tech house y en melodic house, porque las tres cosas son verdad.
+ */
+function GenreList({
+  selected,
+  onSelect,
+  query,
+  favorites,
+  onToggleFavorite,
+  picks,
+  mine,
+  currentUserName,
+  clashes,
+  onToggle,
+}: {
+  selected: Genre | null;
+  onSelect: (g: Genre | null) => void;
+  query: string;
+  favorites: Set<string>;
+  onToggleFavorite: (artist: string) => void;
+  picks: DjPicksBySet;
+  mine: Set<string>;
+  currentUserName: string;
+  clashes: Clash[];
+  onToggle: (setId: string) => void;
+}) {
+  const [open, setOpen] = useState<Set<string>>(new Set());
+
+  function toggleOpen(artist: string) {
+    setOpen((prev) => {
+      const next = new Set(prev);
+      if (!next.delete(artist)) next.add(artist);
+      return next;
+    });
+  }
+
+  // Dentro del estilo elegido, el buscador filtra por nombre.
+  const artists = useMemo(() => {
+    if (!selected) return [];
+    const q = normalize(query);
+    const all = GENRE_INDEX.get(selected) ?? [];
+    return q ? all.filter((a) => normalize(a).includes(q)) : all;
+  }, [selected, query]);
+
+  return (
+    <div className="flex flex-col gap-4">
+      {/* Los estilos, con cuántos DJs tiene cada uno */}
+      <div className="flex flex-wrap gap-1.5">
+        {[...GENRE_INDEX.entries()].map(([g, list]) => {
+          const active = g === selected;
+          const mios = list.filter((a) => favorites.has(a)).length;
+          return (
+            <button
+              key={g}
+              type="button"
+              onClick={() => onSelect(active ? null : g)}
+              aria-pressed={active}
+              className={`rounded-xl border-2 px-2.5 py-1.5 text-xs font-bold transition-colors ${
+                active
+                  ? "border-[#c84a10] bg-[#c84a10] text-[#fdf4e0]"
+                  : "border-[#c4906a]/40 bg-[#fdf4e0] text-[#7a4a20] hover:border-[#c84a10]/50"
+              }`}
+            >
+              {g}
+              <span className={`ml-1.5 font-black ${active ? "text-[#fdf4e0]/70" : "text-[#a07040]"}`}>
+                {list.length}
+              </span>
+              {mios > 0 && <span className="ml-1 text-[#c84a10]">{active ? "" : "♥"}</span>}
+            </button>
+          );
+        })}
+      </div>
+
+      {!selected ? (
+        <Empty>Elige un estilo y salen los DJs que lo pinchan, con sus horas y sus escenarios.</Empty>
+      ) : artists.length === 0 ? (
+        <Empty>
+          Ningún DJ de <span className="font-black">{selected}</span> se llama así: “{query.trim()}”.
+        </Empty>
+      ) : (
+        <div className="overflow-hidden rounded-2xl border-2 border-[#c4906a]/40 bg-[#fdf4e0]">
+          {artists.map((artist) => (
+            <ArtistRow
+              key={artist}
+              artist={artist}
+              favorite={favorites.has(artist)}
+              onToggleFavorite={onToggleFavorite}
+              isOpen={open.has(artist)}
+              onToggleOpen={toggleOpen}
+              picks={picks}
+              mine={mine}
+              currentUserName={currentUserName}
+              clashes={clashes}
+              onToggle={onToggle}
+            />
+          ))}
+        </div>
       )}
     </div>
   );

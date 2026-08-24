@@ -11,6 +11,7 @@
  */
 
 import { EVENT_DAYS, PARTIES, VENUES, type DjSet, type EventDay, type Party, type Venue } from "@/lib/dj-lineups";
+import { ARTIST_INFO, GENRES, type Genre } from "@/lib/dj-artists";
 
 const MINUTES_PER_DAY = 24 * 60;
 
@@ -74,6 +75,20 @@ export const ARTIST_INDEX: Map<string, SetRef[]> = (() => {
       if (list) list.push(ref);
       else out.set(artist, [ref]);
     }
+  }
+  return out;
+})();
+
+/**
+ * `género → artistas que lo pinchan`, en el orden del vocabulario y con los
+ * artistas alfabéticos. Solo salen los géneros que tiene alguien: un estilo
+ * vacío en la lista es ruido.
+ */
+export const GENRE_INDEX: Map<Genre, string[]> = (() => {
+  const out = new Map<Genre, string[]>();
+  for (const genre of GENRES) {
+    const artists = ALL_ARTISTS.filter((a) => ARTIST_INFO[a]?.genres?.includes(genre));
+    if (artists.length > 0) out.set(genre, artists);
   }
   return out;
 })();
