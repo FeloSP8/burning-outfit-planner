@@ -306,4 +306,32 @@ export const ARTIST_INFO: Record<string, ArtistInfo> = {
     genre: "Electrónica en directo · violín",
     instagram: "seth_schwarz",
   },
+  Monobase: {
+    genre: "House",
+    instagram: "monobase",
+  },
+  Mishell: {
+    genre: "House",
+    instagram: "_mishell_____",
+  },
+  "London Grammar": {
+    genre: "Indie · electrónica (DJ set)",
+    instagram: "londongrammar",
+  },
+  "Igor Marijuan": {
+    genre: "House · Ibiza",
+    instagram: "igormarijuan",
+  },
+  "Obie Fernandez": {
+    genre: "Progressive · trance",
+    instagram: "obiefernandez",
+  },
+  Emanate: {
+    genre: "House · techno",
+    instagram: "emanatesound",
+  },
+  Kazami: {
+    genre: "House",
+    instagram: "kazamimusic",
+  },
 };
