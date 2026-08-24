@@ -359,4 +359,40 @@ export const ARTIST_INFO: Record<string, ArtistInfo> = {
     genre: "House · hoop dancing con LED",
     instagram: "madisonorange",
   },
+  "Wrecked Machines": {
+    genre: "Psytrance",
+    instagram: "wrecked_machines",
+  },
+  Vermont: {
+    genre: "Psytrance",
+    instagram: "vermontmusic",
+  },
+  Holmar: {
+    genre: "Acid · electrónica",
+    instagram: "holmarmusik",
+  },
+  "Ashley Fitelson": {
+    genre: "House",
+    instagram: "ashleyfitelson",
+  },
+  "Ashley Ames": {
+    genre: "House",
+    instagram: "ashleyamesmusic",
+  },
+  "Mary Mesk": {
+    genre: "House · producción y composición",
+    instagram: "marymeskmusic",
+  },
+  "Techno Tupac": {
+    genre: "Techno",
+    instagram: "techno_tupac",
+  },
+  GALLiVANTER: {
+    genre: "House",
+    instagram: "gallivanter__dj",
+  },
+  LIDIYA: {
+    genre: "Melodic house · indie dance",
+    instagram: "lidiya.music",
+  },
 };
