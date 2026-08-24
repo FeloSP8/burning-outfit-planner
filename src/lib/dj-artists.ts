@@ -278,4 +278,32 @@ export const ARTIST_INFO: Record<string, ArtistInfo> = {
     genre: "Progressive house",
     instagram: "spencerbrownofficial",
   },
+  Goldfish: {
+    genre: "Electrónica en directo · saxo y contrabajo",
+    instagram: "goldfishlive",
+  },
+  "Fleetmac Wood": {
+    genre: "Remixes y fiesta dedicada a Fleetwood Mac",
+    instagram: "fleetmac_wood",
+  },
+  "Mike Posner": {
+    genre: "Pop electrónico",
+    instagram: "mikeposner",
+  },
+  "Maddy O'Neal": {
+    genre: "Electrónica · bass",
+    instagram: "maddy_oneal",
+  },
+  Rampue: {
+    genre: "Electrónica en directo",
+    instagram: "rampue",
+  },
+  "Tom & Collins": {
+    genre: "Tech house · sonido latino",
+    instagram: "tomandcollins",
+  },
+  "Seth Schwarz": {
+    genre: "Electrónica en directo · violín",
+    instagram: "seth_schwarz",
+  },
 };
