@@ -139,6 +139,7 @@ export const ARTIST_INFO: Record<string, ArtistInfo> = {
   },
   "Major Lazer": {
     genre: "Dancehall · reggae · dub",
+    video: { url: "https://www.youtube.com/watch?v=eifPgda7oKc", label: "Coachella 2026" },
   },
   "Jan Blomqvist": {
     genre: "Melodic techno · directo",
@@ -173,10 +174,12 @@ export const ARTIST_INFO: Record<string, ArtistInfo> = {
   Anna: {
     genre: "Techno",
     instagram: "djannaofficial",
+    video: { url: "https://www.youtube.com/watch?v=VnHG__953oE", label: "Day Zero, Brasil 2026" },
   },
   Beltran: {
     genre: "House",
     instagram: "beltran",
+    video: { url: "https://www.youtube.com/watch?v=YBEd7zgZChA", label: "HÖR Berlín 2026" },
   },
   Bender: {
     genre: "Melodic house",
@@ -197,10 +200,12 @@ export const ARTIST_INFO: Record<string, ArtistInfo> = {
   "Maxi Meraki": {
     genre: "Melodic house",
     instagram: "maximeraki",
+    video: { url: "https://www.youtube.com/watch?v=2tVL-GRQnq8", label: "ARCANA Argentina" },
   },
   Xinobi: {
     genre: "House · nu-disco",
     instagram: "xinobi",
+    video: { url: "https://www.youtube.com/watch?v=NgTSKQAKQRo", label: "Musicbox Lisboa" },
   },
   "Ahmed Spins": {
     genre: "Afro house",
@@ -286,6 +291,7 @@ export const ARTIST_INFO: Record<string, ArtistInfo> = {
   Diplo: {
     genre: "House · dancehall · electrónica",
     instagram: "diplo",
+    video: { url: "https://www.youtube.com/watch?v=eiPQwmlOLQQ", label: "Stagecoach 2026" },
   },
   SLANDER: {
     genre: "Bass music · dubstep melódico",
