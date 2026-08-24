@@ -94,9 +94,13 @@ export interface Window {
  * hora cada uno; seis desde las 21:00, a hora y media.
  *
  * Las fiestas de día, atardecer y amanecer no tienen ese tope —no acaban de
- * madrugada—, así que se quedan en las dos horas.
+ * madrugada—, así que se quedan en las dos horas, salvo que la fiesta traiga
+ * su propio `setMinutes`.
  */
 export function estimatedSlotMinutes(party: Party): number {
+  // Una fiesta puede llevar su propia duración cuando la regla no le encaja.
+  if (party.setMinutes) return party.setMinutes;
+
   const untimed = party.sets.filter((s) => !s.start).length;
   if (untimed === 0 || party.kind !== "night") return ESTIMATED_SET_MINUTES;
 

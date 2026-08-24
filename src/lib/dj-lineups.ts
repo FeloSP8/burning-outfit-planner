@@ -70,6 +70,13 @@ export interface Party {
   end?: string;
   /** Aclaración cuando el cartel no es legible del todo. */
   note?: string;
+  /**
+   * Cuánto dura cada set cuando el cartel no da horas, en minutos, para las
+   * fiestas donde la regla general (`estimatedSlotMinutes`) se queda lejos.
+   * Symbio la usa: a dos horas por set, sus seis nombres estiraban la mañana
+   * hasta las nueve de la noche.
+   */
+  setMinutes?: number;
   sets: DjSet[];
 }
 
@@ -482,6 +489,7 @@ export const PARTIES: Party[] = [
     name: "Symbio",
     kind: "day",
     start: "09:00",
+    setMinutes: 90,
     sets: [
       { id: "sym-tue-franky-rizardo",  label: "Franky Rizardo",   artists: ["Franky Rizardo"],   start: null },
       { id: "sym-tue-vanjee",          label: "Vanjee",           artists: ["Vanjee"],           start: null },
@@ -498,6 +506,7 @@ export const PARTIES: Party[] = [
     name: "Symbio",
     kind: "day",
     start: "09:00",
+    setMinutes: 90,
     sets: [
       { id: "sym-thu-kaz-james",       label: "Kaz James",       artists: ["Kaz James"],       start: null },
       { id: "sym-thu-nico-bernardini", label: "Nico Bernardini", artists: ["Nico Bernardini"], start: null },
@@ -515,6 +524,7 @@ export const PARTIES: Party[] = [
     kind: "day",
     start: "09:00",
     note: "El cartel firma el sábado con Sixty Palms.",
+    setMinutes: 90,
     sets: [
       { id: "sym-sat-nico-vanjee", label: "Nico B2B Vanjee", artists: ["Nico Bernardini", "Vanjee"], start: null, note: "disco set" },
       { id: "sym-sat-omri",        label: "Omri.",           artists: ["Omri."],                     start: null },
