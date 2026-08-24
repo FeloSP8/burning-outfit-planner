@@ -222,4 +222,32 @@ export const ARTIST_INFO: Record<string, ArtistInfo> = {
     genre: "Tech house",
     instagram: "masoncollective",
   },
+  Enamour: {
+    genre: "Melodic house · techno",
+    instagram: "enamourmusic",
+  },
+  "Captain Hook": {
+    genre: "Psytrance",
+    instagram: "djcaptainhook",
+  },
+  "Nadav Vee": {
+    genre: "Melodic house",
+    instagram: "nadavvee",
+  },
+  "Nico Bernardini": {
+    genre: "House",
+    instagram: "nicobernardiniofc",
+  },
+  "Grace Arribas": {
+    genre: "House · tech house",
+    instagram: "grace.arribas",
+  },
+  "Sebastian Konrad": {
+    genre: "Melodic house · techno",
+    instagram: "sebastian.konrad",
+  },
+  "Syd Gris": {
+    genre: "House · techno",
+    instagram: "syd_gris",
+  },
 };
