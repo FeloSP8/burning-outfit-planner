@@ -121,37 +121,68 @@ export function partyWindow(party: Party): Window {
 }
 
 /**
- * Ventana de un set. Con hora en el cartel va de su inicio al del siguiente
- * (o al cierre de la fiesta).
+ * Coloca en el reloj todos los sets de una fiesta, de una vez.
  *
- * Sin hora —Playground y Symbio solo publican el orden— se estima: los sets
- * se colocan uno detrás de otro desde que abre la fiesta, con la duración que
- * dicte `estimatedSlotMinutes`. Antes ocupaban la fiesta entera, lo que hacía
- * chocar cualquier par de sets de dos escenarios abiertos a la vez.
+ * Los que traen hora del cartel mandan y no se tocan. Los que no, se reparten
+ * a partes iguales el hueco que va de una hora fija a la siguiente — o del
+ * arranque al cierre, cuando la fiesta entera viene sin horas, que es el caso
+ * de Playground, Symbio y Favela.
  *
- * Asume que dentro de una misma fiesta o todos los sets llevan hora o ninguno,
- * que es como vienen todos los carteles del catálogo.
+ * Los carteles mezclan las dos cosas: el de Favela del viernes son cinco sets
+ * sin hora, la ceremonia de las 06:29 y un cierre, también sin hora. Repartir
+ * por tramos es lo que coloca ese cierre después de la ceremonia y no antes.
  */
-export function setWindow(party: Party, set: DjSet): Window {
-  if (!set.start) {
-    const slot = estimatedSlotMinutes(party);
-    const start = toMinutes(party.start) + party.sets.indexOf(set) * slot;
-    return { start, end: start + slot, exact: false, estimated: true };
+function layoutParty(party: Party): Map<string, Window> {
+  const pw = partyWindow(party);
+  const n = party.sets.length;
+  const anchorAt = (i: number): number | null =>
+    party.sets[i].start ? withinParty(party, party.sets[i].start!) : null;
+
+  // Los cortes son los sets con hora fija; el primer tramo arranca en el 0
+  // aunque no la lleve, porque empieza cuando abre la fiesta.
+  const cuts = Array.from({ length: n }, (_, i) => i).filter((i) => anchorAt(i) !== null);
+  if (cuts[0] !== 0) cuts.unshift(0);
+
+  const starts = new Array<number>(n);
+  for (let c = 0; c < cuts.length; c++) {
+    const from = cuts[c];
+    const to = c + 1 < cuts.length ? cuts[c + 1] : n;
+    const t0 = anchorAt(from) ?? pw.start;
+    const t1 = c + 1 < cuts.length ? anchorAt(cuts[c + 1])! : pw.end;
+    const slot = (t1 - t0) / (to - from);
+    for (let k = from; k < to; k++) {
+      // El primero del tramo cae en la hora exacta; los estimados se redondean
+      // a cinco minutos para no enseñar un "23:42".
+      starts[k] = k === from ? t0 : Math.round((t0 + (k - from) * slot) / 5) * 5;
+    }
   }
 
-  const start = withinParty(party, set.start);
-  const laterStarts = party.sets
-    .filter((s) => s.start)
-    .map((s) => withinParty(party, s.start!))
-    .filter((m) => m > start);
-  const partyEnd = partyWindow(party);
-  const end = laterStarts.length > 0 ? Math.min(...laterStarts) : partyEnd.end;
-  return {
-    start,
-    end,
-    exact: partyEnd.exact || laterStarts.length > 0,
-    estimated: false,
-  };
+  const out = new Map<string, Window>();
+  for (let i = 0; i < n; i++) {
+    const estimated = !party.sets[i].start;
+    // Cada set dura hasta que empieza el siguiente; el último, hasta el cierre.
+    const nextEstimated = i + 1 < n ? !party.sets[i + 1].start : !pw.exact;
+    out.set(party.sets[i].id, {
+      start: starts[i],
+      end: i + 1 < n ? starts[i + 1] : pw.end,
+      exact: !estimated && !nextEstimated,
+      estimated,
+    });
+  }
+  return out;
+}
+
+/** Los repartos son estables: se calculan una vez por fiesta. */
+const LAYOUTS = new Map<string, Map<string, Window>>();
+
+/** Ventana de un set: del cartel si la publica, estimada si no. */
+export function setWindow(party: Party, set: DjSet): Window {
+  let layout = LAYOUTS.get(party.id);
+  if (!layout) {
+    layout = layoutParty(party);
+    LAYOUTS.set(party.id, layout);
+  }
+  return layout.get(set.id)!;
 }
 
 /** Minutos desde la época, para comparar sets de días distintos. */

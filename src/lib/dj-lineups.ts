@@ -8,6 +8,8 @@
  *   • Playground — Dune Lounge  (2 & C)
  *   • Opulent Temple            (10 & Esplanade)
  *   • Symbio                    (2:30 & F)
+ *   • The Melon Motel           (2:00 & I)
+ *   • Favela ArtCar             (art car, sin sitio fijo)
  *
  * OJO con los ids: `DjPick.setId` los guarda en base de datos. Cambiar un id
  * existente equivale a borrar la selección de todo el mundo para ese set.
@@ -148,6 +150,30 @@ export const VENUES: Venue[] = [
       border: "border-amber-300",
       chip: "bg-amber-100 text-amber-900",
       text: "text-amber-900",
+    },
+  },
+  {
+    id: "melon-motel",
+    name: "The Melon Motel",
+    location: "2:00 & I",
+    emoji: "🍉",
+    theme: {
+      card: "bg-emerald-50/70",
+      border: "border-emerald-300",
+      chip: "bg-emerald-100 text-emerald-900",
+      text: "text-emerald-900",
+    },
+  },
+  {
+    id: "favela",
+    name: "Favela ArtCar",
+    location: "art car · sin sitio fijo",
+    emoji: "💀",
+    theme: {
+      card: "bg-slate-100/80",
+      border: "border-slate-400",
+      chip: "bg-slate-200 text-slate-900",
+      text: "text-slate-900",
     },
   },
 ];
@@ -494,6 +520,122 @@ export const PARTIES: Party[] = [
       { id: "sym-sat-omri",        label: "Omri.",           artists: ["Omri."],                     start: null },
       { id: "sym-sat-bender",      label: "Bender",          artists: ["Bender"],                    start: null },
       { id: "sym-sat-luis",        label: "Luis",            artists: ["Luis"],                      start: null },
+    ],
+  },
+  // ──────────────────────────── Melon Motel ────────────────────────────
+  {
+    id: "mel-tue",
+    venueId: "melon-motel",
+    date: "2026-09-01",
+    name: "Tuesday Night",
+    kind: "night",
+    start: "20:00",
+    end: "08:00",
+    sets: [
+      { id: "mel-tue-mooglie",        label: "Mooglie",              artists: ["Mooglie"],                start: "20:00" },
+      { id: "mel-tue-lizzie-angelica",label: "Liz(zie) B2B Angelica",artists: ["Liz(zie)", "Angelica"],   start: "21:00" },
+      { id: "mel-tue-purple",         label: "Purple",               artists: ["Purple"],                 start: "22:30" },
+      { id: "mel-tue-doozie",         label: "Doozie",               artists: ["Doozie"],                 start: "00:00" },
+      { id: "mel-tue-vintage-culture",label: "Vintage Culture",      artists: ["Vintage Culture"],        start: "01:00" },
+      { id: "mel-tue-omri-friends",   label: "Omri. & Friends",      artists: ["Omri."],                  start: "03:00", note: "hasta las 8" },
+    ],
+  },
+  {
+    id: "mel-thu",
+    venueId: "melon-motel",
+    date: "2026-09-03",
+    name: "Playa Animals",
+    kind: "sunrise",
+    start: "07:00",
+    sets: [
+      { id: "mel-thu-vanjee",   label: "Vanjee",   artists: ["Vanjee"],   start: null },
+      { id: "mel-thu-gordo",    label: "Gordo",    artists: ["Gordo"],    start: null },
+      { id: "mel-thu-kimonos",  label: "Kimonos",  artists: ["Kimonos"],  start: null },
+      { id: "mel-thu-darco",    label: "Darco",    artists: ["Darco"],    start: null },
+      { id: "mel-thu-monobase", label: "Monobase", artists: ["Monobase"], start: null },
+      { id: "mel-thu-nevos",    label: "Nevos",    artists: ["Nevos"],    start: null },
+    ],
+  },
+
+  // ─────────────────────────── Favela ArtCar ───────────────────────────
+  // El cartel no da ni una hora salvo la ceremonia del viernes. Las horas de
+  // arranque son supuestas (salidas de noche a las 22:00, y el sábado a las
+  // 21:00 con el Hombre); pendientes de confirmar con el campamento.
+  {
+    id: "fav-tue",
+    venueId: "favela",
+    date: "2026-09-01",
+    name: "First Favela ArtCar Outing",
+    kind: "night",
+    start: "22:00",
+    sets: [
+      { id: "fav-tue-mary-du-serena", label: "Mary Mesk B2B Du Serena", artists: ["Mary Mesk", "Du Serena"], start: null },
+      { id: "fav-tue-ines-rau",       label: "Ines Rau",                artists: ["Ines Rau"],               start: null },
+      { id: "fav-tue-ruback",         label: "Ruback",                  artists: ["Ruback"],                 start: null },
+      { id: "fav-tue-gabe",           label: "Gabe",                    artists: ["Gabe"],                   start: null },
+      { id: "fav-tue-greggio",        label: "Greggio",                 artists: ["Greggio"],                start: null },
+    ],
+  },
+  {
+    id: "fav-wed",
+    venueId: "favela",
+    date: "2026-09-02",
+    name: "Favela + Nova Heaven + Bipolar Express",
+    kind: "night",
+    start: "22:00",
+    note: "Tres art cars juntos, según el cartel.",
+    sets: [
+      { id: "fav-wed-mary-du-serena",  label: "Mary Mesk B2B Du Serena",    artists: ["Mary Mesk", "Du Serena"],       start: null },
+      { id: "fav-wed-doozie",          label: "Doozie",                     artists: ["Doozie"],                       start: null },
+      { id: "fav-wed-vintage-omri",    label: "Vintage Culture B2B Omri.",  artists: ["Vintage Culture", "Omri."],     start: null },
+      { id: "fav-wed-anna",            label: "Anna",                       artists: ["Anna"],                         start: null },
+      { id: "fav-wed-infected-mushroom",label: "Infected Mushroom",         artists: ["Infected Mushroom"],            start: null },
+      { id: "fav-wed-wrecked-vermont", label: "Wrecked Machines B2B Vermont",artists: ["Wrecked Machines", "Vermont"], start: null },
+    ],
+  },
+  {
+    id: "fav-thu",
+    venueId: "favela",
+    date: "2026-09-03",
+    name: "Favela Baile",
+    kind: "night",
+    start: "22:00",
+    sets: [
+      { id: "fav-thu-xinobi",         label: "Xinobi",           artists: ["Xinobi"],           start: null },
+      { id: "fav-thu-parra-for-cuva", label: "Parra for Cuva",   artists: ["Parra for Cuva"],   start: null, live: true },
+      { id: "fav-thu-jackson-anna",   label: "Jackson B2B Anna", artists: ["Jackson", "Anna"],  start: null },
+      { id: "fav-thu-joezi",          label: "Joezi",            artists: ["Joezi"],            start: null },
+      { id: "fav-thu-rod-brito",      label: "Rod Brito",        artists: ["Rod Brito"],        start: null },
+    ],
+  },
+  {
+    id: "fav-fri",
+    venueId: "favela",
+    date: "2026-09-04",
+    name: "Ascension · Memorian Celebration",
+    kind: "night",
+    start: "22:00",
+    end: "08:00",
+    note: "Con Nova Heaven. La ceremonia de las 6:29 es la salida del sol; el resto de horas son estimación.",
+    sets: [
+      { id: "fav-fri-you-and-i",      label: "YØU&I",                  artists: ["YØU&I"],                    start: null },
+      { id: "fav-fri-nevos",          label: "Nevos",                  artists: ["Nevos"],                    start: null },
+      { id: "fav-fri-club-de-combat", label: "Clüb de Combat",         artists: ["Clüb de Combat"],           start: null },
+      { id: "fav-fri-kimonos",        label: "Kimonos",                artists: ["Kimonos"],                  start: null },
+      { id: "fav-fri-rafael",         label: "Rafael",                 artists: ["Rafael"],                   start: null },
+      { id: "fav-fri-ceremonia",      label: "Ceremonia de las 6:29",  artists: [],                           start: "06:29", note: "amanecer" },
+      { id: "fav-fri-sasi-captain",   label: "Sasi B2B Captain Hook",  artists: ["Sasi", "Captain Hook"],     start: null },
+    ],
+  },
+  {
+    id: "fav-sat",
+    venueId: "favela",
+    date: "2026-09-05",
+    name: "Man Burn",
+    kind: "night",
+    start: "21:00",
+    sets: [
+      { id: "fav-sat-orbit", label: "Orbit", artists: ["Orbit"], start: null, live: true },
     ],
   },
 ];
