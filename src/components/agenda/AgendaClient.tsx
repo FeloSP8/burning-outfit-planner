@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react";
 import {
   ALL_SETS,
+  ALL_ARTISTS,
+  ARTIST_INDEX,
   VENUE_BY_ID,
   DAYS_WITH_LINEUP,
   KIND_LABEL,
@@ -12,6 +14,7 @@ import {
   fromMinutes,
   isEstimated,
   matchesQuery,
+  normalize,
   partiesOn,
   partyRange,
   setWindow,
@@ -26,6 +29,16 @@ import type { DjSet, Party } from "@/lib/dj-lineups";
 import type { DjPicksBySet } from "@/types";
 
 const venueOf = (party: Party) => VENUE_BY_ID[party.venueId];
+
+/**
+ * "Playground · Arrival Stage · Afrika", pero solo "Huofeng" cuando la fiesta
+ * se llama igual que el escenario, que es lo normal en los sitios de una sola
+ * fiesta por noche.
+ */
+function whereLabel(party: Party): string {
+  const label = venueLabel(venueOf(party));
+  return label === party.name ? label : `${label} · ${party.name}`;
+}
 
 export function AgendaClient({
   initialPicks,
@@ -43,6 +56,7 @@ export function AgendaClient({
   );
   const [onlyMine, setOnlyMine] = useState(false);
   const [query, setQuery] = useState("");
+  const [view, setView] = useState<"dia" | "dj">("dia");
 
   const mine = useMemo(
     () => new Set(Object.entries(picks).filter(([, who]) => who.includes(currentUserName)).map(([id]) => id)),
@@ -132,15 +146,38 @@ export function AgendaClient({
         )}
       </div>
 
+      {/* Por día o por DJ: dos formas de mirar lo mismo */}
+      <div className="flex gap-1.5">
+        {([
+          ["dia", "🗓️ Por día"],
+          ["dj", "🎧 Por DJ"],
+        ] as const).map(([id, label]) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => setView(id)}
+            aria-pressed={view === id}
+            className={`flex-1 rounded-xl border-2 px-3 py-2 text-sm font-black transition-colors ${
+              view === id
+                ? "border-[#c84a10] bg-[#c84a10] text-[#fdf4e0]"
+                : "border-[#c4906a]/40 bg-[#fdf4e0] text-[#7a4a20] hover:border-[#c84a10]/50"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
       {/* Buscador + vista */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
         <input
           type="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Buscar DJ, fiesta o escenario…"
+          placeholder={view === "dj" ? "Buscar DJ…" : "Buscar DJ, fiesta o escenario…"}
           className="flex-1 rounded-xl border-2 border-[#c4906a]/40 bg-[#fdf4e0] px-3 py-2 text-sm font-semibold text-[#2a1a08] placeholder:font-medium placeholder:text-[#a07040] focus:border-[#c84a10] focus:outline-none"
         />
+        {view === "dia" && (
         <button
           type="button"
           onClick={() => setOnlyMine((v) => !v)}
@@ -153,9 +190,19 @@ export function AgendaClient({
         >
           {onlyMine ? "★ Solo mi agenda" : "☆ Solo mi agenda"}
         </button>
+        )}
       </div>
 
-      {searching ? (
+      {view === "dj" ? (
+        <ArtistList
+          query={query}
+          picks={picks}
+          mine={mine}
+          currentUserName={currentUserName}
+          clashes={clashes}
+          onToggle={toggle}
+        />
+      ) : searching ? (
         <SearchResults
           results={results}
           query={query}
@@ -262,7 +309,8 @@ function PartyCard({
             </span>
           </p>
           <p className="text-[11px] font-semibold text-[#a07040]">
-            {venueLabel(venue)} · {venue.location} · {partyRange(party)}
+            {venueLabel(venue) !== party.name && `${venueLabel(venue)} · `}
+            {venue.location} · {partyRange(party)}
             {isEstimated(party) && (
               <span className="ml-1.5 whitespace-nowrap rounded-md bg-[#c4906a]/25 px-1.5 py-0.5 text-[10px] font-bold text-[#7a4a20]">
                 ⏱ horas estimadas
@@ -304,6 +352,7 @@ function SetRow({
   conflicts,
   onToggle,
   showVenue = false,
+  showDay = false,
 }: {
   set: DjSet;
   party: Party;
@@ -314,6 +363,8 @@ function SetRow({
   conflicts: AgendaEntry[];
   onToggle: (setId: string) => void;
   showVenue?: boolean;
+  /** Antepone el día; solo hace falta en listas que cruzan fechas. */
+  showDay?: boolean;
 }) {
   const venue = venueOf(party);
   const others = who.filter((n) => n !== currentUserName);
@@ -338,9 +389,12 @@ function SetRow({
         title={window.estimated ? "Hora estimada: el cartel solo publica el orden" : undefined}
       >
         {window.estimated ? fromMinutes(window.start) : set.start}
-        {(afterMidnight || window.estimated) && (
+        {(afterMidnight || showDay || window.estimated) && (
           <span className="block text-[10px] font-bold uppercase leading-tight text-[#a07040]">
-            {[afterMidnight ? dayAfterLabel(party.date) : null, window.estimated ? "aprox." : null]
+            {[
+              afterMidnight ? dayAfterLabel(party.date) : showDay ? shortWeekday(party.date) : null,
+              window.estimated ? "aprox." : null,
+            ]
               .filter(Boolean)
               .join(" · ")}
           </span>
@@ -352,17 +406,22 @@ function SetRow({
 
         {/* Las etiquetas en su propia fila: en línea con el nombre, "CABEZA DE
             CARTEL" no cabía en un móvil y se metía debajo del botón. */}
-        {(set.live || set.headliner || set.note) && (
+        {(set.live || set.headliner || set.sun || set.note) && (
           <span className="mt-1 flex flex-wrap items-center gap-1">
             {set.live && <Tag className="bg-[#c84a10] text-[#fdf4e0]">LIVE</Tag>}
             {set.headliner && <Tag className="bg-[#f5c518] text-[#4a2a08]">✳ CABEZA DE CARTEL</Tag>}
+            {set.sun && (
+              <Tag className="bg-[#f5c518]/40 text-[#7a4a20]">
+                {set.sun === "amanecer" ? "🌅" : "🌇"} {set.sun}
+              </Tag>
+            )}
             {set.note && <Tag className="bg-[#c4906a]/25 text-[#7a4a20]">{set.note}</Tag>}
           </span>
         )}
 
         {showVenue && (
           <p className="text-[11px] font-semibold text-[#a07040]">
-            {venue.emoji} {venueLabel(venue)} · {party.name}
+            {venue.emoji} {whereLabel(party)}
           </p>
         )}
 
@@ -515,6 +574,102 @@ function Empty({ children }: { children: React.ReactNode }) {
   return (
     <div className="rounded-2xl border-2 border-dashed border-[#c4906a]/50 bg-[#f6e6c8]/60 px-4 py-6 text-center">
       <p className="text-xs font-semibold leading-relaxed text-[#7a5030]">{children}</p>
+    </div>
+  );
+}
+
+/**
+ * Todos los DJs del cartel en una lista. Al tocar un nombre se despliega dónde
+ * y cuándo pincha — que para los que repiten escenario es la pregunta de
+ * verdad: Vintage Culture sale nueve veces en seis sitios distintos.
+ */
+function ArtistList({
+  query,
+  picks,
+  mine,
+  currentUserName,
+  clashes,
+  onToggle,
+}: {
+  query: string;
+  picks: DjPicksBySet;
+  mine: Set<string>;
+  currentUserName: string;
+  clashes: Clash[];
+  onToggle: (setId: string) => void;
+}) {
+  const [open, setOpen] = useState<Set<string>>(new Set());
+
+  const artists = useMemo(() => {
+    const q = normalize(query);
+    return ALL_ARTISTS.filter((a) => !q || normalize(a).includes(q));
+  }, [query]);
+
+  function toggleOpen(artist: string) {
+    setOpen((prev) => {
+      const next = new Set(prev);
+      if (!next.delete(artist)) next.add(artist);
+      return next;
+    });
+  }
+
+  if (artists.length === 0) {
+    return <Empty>Ningún DJ del cartel se llama así: “{query.trim()}”.</Empty>;
+  }
+
+  return (
+    <div className="overflow-hidden rounded-2xl border-2 border-[#c4906a]/40 bg-[#fdf4e0]">
+      {artists.map((artist) => {
+        const refs = ARTIST_INDEX.get(artist) ?? [];
+        // Del primero al último, que es como se leen: en orden de evento.
+        const entries = refs.map(toEntry).sort((a, b) => a.absStart - b.absStart);
+        const chosen = entries.filter((e) => mine.has(e.set.id)).length;
+        const isOpen = open.has(artist);
+
+        return (
+          <div key={artist} className="border-t border-[#c4906a]/15 first:border-t-0">
+            <button
+              type="button"
+              onClick={() => toggleOpen(artist)}
+              aria-expanded={isOpen}
+              className="flex w-full items-center gap-2 px-4 py-2.5 text-left transition-colors hover:bg-[#f6e6c8]"
+            >
+              <span className="min-w-0 flex-1 text-sm font-bold text-[#2a1a08]">{artist}</span>
+
+              {chosen > 0 && <span className="shrink-0 text-xs font-black text-[#c84a10]">{chosen} ★</span>}
+
+              <span className="shrink-0 rounded-md bg-[#c4906a]/20 px-1.5 py-0.5 text-[11px] font-bold text-[#7a4a20]">
+                {entries.length} {entries.length === 1 ? "set" : "sets"}
+              </span>
+
+              <span
+                className={`shrink-0 text-sm font-black text-[#c84a10] transition-transform ${isOpen ? "rotate-90" : ""}`}
+              >
+                ›
+              </span>
+            </button>
+
+            {isOpen && (
+              <div className="border-t border-[#c4906a]/15 bg-[#f6e6c8]/40">
+                {entries.map((entry) => (
+                  <SetRow
+                    key={entry.set.id}
+                    set={entry.set}
+                    party={entry.party}
+                    picked={mine.has(entry.set.id)}
+                    who={picks[entry.set.id] ?? []}
+                    currentUserName={currentUserName}
+                    conflicts={mine.has(entry.set.id) ? clashesFor(entry.set.id, clashes) : []}
+                    onToggle={onToggle}
+                    showVenue
+                    showDay
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }

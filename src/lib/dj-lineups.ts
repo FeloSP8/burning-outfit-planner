@@ -10,6 +10,9 @@
  *   • Symbio                    (2:30 & F)
  *   • The Melon Motel           (2:00 & I)
  *   • Favela ArtCar             (art car, sin sitio fijo)
+ *   • Nova Heaven               (deep playa, la \"DMZ\")
+ *   • Huofeng                   (10 & K)
+ *   • Longfeng                  (art car, 10 & K)
  *
  * OJO con los ids: `DjPick.setId` los guarda en base de datos. Cambiar un id
  * existente equivale a borrar la selección de todo el mundo para ese set.
@@ -50,8 +53,14 @@ export interface DjSet {
   live?: boolean;
   /** Cabeza de cartel — el ✳ que marca el cartel. */
   headliner?: boolean;
-  /** Matiz del cartel: "madhaus set", "sunrise set", "DJ set"… */
+  /** Matiz del cartel: "madhaus set", "DJ set", "hybrid"… */
   note?: string;
+  /**
+   * Varios carteles marcan con un icono el set durante el cual sale o se pone
+   * el sol. No es decoración: en una noche sin hora de cierre, saber que un
+   * set concreto pilla el amanecer dice hasta dónde llega la fiesta.
+   */
+  sun?: "amanecer" | "atardecer";
 }
 
 export type PartyKind = "night" | "sunset" | "sunrise" | "day";
@@ -183,6 +192,42 @@ export const VENUES: Venue[] = [
       text: "text-slate-900",
     },
   },
+  {
+    id: "nova-heaven",
+    name: "Nova Heaven",
+    location: "deep playa · la DMZ",
+    emoji: "✨",
+    theme: {
+      card: "bg-indigo-50/80",
+      border: "border-indigo-300",
+      chip: "bg-indigo-100 text-indigo-900",
+      text: "text-indigo-900",
+    },
+  },
+  {
+    id: "huofeng",
+    name: "Huofeng",
+    location: "10 & K",
+    emoji: "🦚",
+    theme: {
+      card: "bg-red-50/80",
+      border: "border-red-300",
+      chip: "bg-red-100 text-red-900",
+      text: "text-red-900",
+    },
+  },
+  {
+    id: "longfeng",
+    name: "Longfeng",
+    location: "10 & K · art car",
+    emoji: "🐉",
+    theme: {
+      card: "bg-fuchsia-50/80",
+      border: "border-fuchsia-300",
+      chip: "bg-fuchsia-100 text-fuchsia-900",
+      text: "text-fuchsia-900",
+    },
+  },
 ];
 
 export const PARTIES: Party[] = [
@@ -239,7 +284,7 @@ export const PARTIES: Party[] = [
       { id: "ot-wed-beltran",        label: "Beltran",         artists: ["Beltran"],         start: "02:00" },
       { id: "ot-wed-grammar",        label: "Grammar",         artists: ["Grammar"],         start: "04:00" },
       { id: "ot-wed-crispy",         label: "Crispy",          artists: ["Crispy"],          start: "05:00" },
-      { id: "ot-wed-madison-orange", label: "Madison Orange",  artists: ["Madison Orange"],  start: "06:00", note: "sunrise set" },
+      { id: "ot-wed-madison-orange", label: "Madison Orange",  artists: ["Madison Orange"],  start: "06:00", sun: "amanecer" },
     ],
   },
   {
@@ -273,7 +318,7 @@ export const PARTIES: Party[] = [
       { id: "ot-thu-marten-lou",    label: "Marten Lou",     artists: ["Marten Lou"],     start: "02:30" },
       { id: "ot-thu-admiral",       label: "Admiral",        artists: ["Admiral"],        start: "04:00" },
       { id: "ot-thu-fiers",         label: "Fiers",          artists: ["Fiers"],          start: "05:00" },
-      { id: "ot-thu-obie-fernandez",label: "Obie Fernandez", artists: ["Obie Fernandez"], start: "06:00", note: "sunrise set" },
+      { id: "ot-thu-obie-fernandez",label: "Obie Fernandez", artists: ["Obie Fernandez"], start: "06:00", sun: "amanecer" },
     ],
   },
   {
@@ -308,7 +353,7 @@ export const PARTIES: Party[] = [
       { id: "ot-fri-dj-icon",         label: "DJ Icon",                artists: ["DJ Icon"],                     start: "03:15" },
       { id: "ot-fri-ashley-ames",     label: "Ashley Ames",            artists: ["Ashley Ames"],                 start: "04:15" },
       { id: "ot-fri-azriel",          label: "Azriel",                 artists: ["Azriel"],                      start: "05:15" },
-      { id: "ot-fri-major-nisene",    label: "Major Trouble & Nisene", artists: ["Major Trouble", "Nisene"],     start: "06:00", note: "sunrise set" },
+      { id: "ot-fri-major-nisene",    label: "Major Trouble & Nisene", artists: ["Major Trouble", "Nisene"],     start: "06:00", sun: "amanecer" },
     ],
   },
   {
@@ -568,10 +613,13 @@ export const PARTIES: Party[] = [
   },
 
   // ─────────────────────────── Favela ArtCar ───────────────────────────
-  // El cartel no publica ni una hora salvo la ceremonia del viernes, pero el
-  // campamento confirma que el art car sale a las 23:00 todos los días. Esa
-  // hora es buena; el reparto de cada set dentro de la noche sigue siendo
-  // estimación.
+  // El cartel no publica ni una hora, pero el campamento confirma que el art
+  // car sale a las 23:00 todos los días. Esa hora es buena; el reparto de cada
+  // set dentro de la noche sigue siendo estimación.
+  //
+  // El miércoles y el viernes NO están aquí: son las mismas fiestas que el
+  // cartel de Nova Heaven anuncia como "art car >> Favela", y allí vienen con
+  // hora exacta. Estaban duplicadas y se quedan en nova-heaven.
   {
     id: "fav-tue",
     venueId: "favela",
@@ -585,23 +633,6 @@ export const PARTIES: Party[] = [
       { id: "fav-tue-ruback",         label: "Ruback",                  artists: ["Ruback"],                 start: null },
       { id: "fav-tue-gabe",           label: "Gabe",                    artists: ["Gabe"],                   start: null },
       { id: "fav-tue-greggio",        label: "Greggio",                 artists: ["Greggio"],                start: null },
-    ],
-  },
-  {
-    id: "fav-wed",
-    venueId: "favela",
-    date: "2026-09-02",
-    name: "Favela + Nova Heaven + Bipolar Express",
-    kind: "night",
-    start: "23:00",
-    note: "Tres art cars juntos, según el cartel.",
-    sets: [
-      { id: "fav-wed-mary-du-serena",  label: "Mary Mesk B2B Du Serena",    artists: ["Mary Mesk", "Du Serena"],       start: null },
-      { id: "fav-wed-doozie",          label: "Doozie",                     artists: ["Doozie"],                       start: null },
-      { id: "fav-wed-vintage-omri",    label: "Vintage Culture B2B Omri.",  artists: ["Vintage Culture", "Omri."],     start: null },
-      { id: "fav-wed-anna",            label: "Anna",                       artists: ["Anna"],                         start: null },
-      { id: "fav-wed-infected-mushroom",label: "Infected Mushroom",         artists: ["Infected Mushroom"],            start: null },
-      { id: "fav-wed-wrecked-vermont", label: "Wrecked Machines B2B Vermont",artists: ["Wrecked Machines", "Vermont"], start: null },
     ],
   },
   {
@@ -620,25 +651,6 @@ export const PARTIES: Party[] = [
     ],
   },
   {
-    id: "fav-fri",
-    venueId: "favela",
-    date: "2026-09-04",
-    name: "Ascension · Memorian Celebration",
-    kind: "night",
-    start: "23:00",
-    end: "08:00",
-    note: "Con Nova Heaven. La ceremonia de las 6:29 es la salida del sol; el reparto del resto es estimación.",
-    sets: [
-      { id: "fav-fri-you-and-i",      label: "YØU&I",                  artists: ["YØU&I"],                    start: null },
-      { id: "fav-fri-nevos",          label: "Nevos",                  artists: ["Nevos"],                    start: null },
-      { id: "fav-fri-club-de-combat", label: "Clüb de Combat",         artists: ["Clüb de Combat"],           start: null },
-      { id: "fav-fri-kimonos",        label: "Kimonos",                artists: ["Kimonos"],                  start: null },
-      { id: "fav-fri-rafael",         label: "Rafael",                 artists: ["Rafael"],                   start: null },
-      { id: "fav-fri-ceremonia",      label: "Ceremonia de las 6:29",  artists: [],                           start: "06:29", note: "amanecer" },
-      { id: "fav-fri-sasi-captain",   label: "Sasi B2B Captain Hook",  artists: ["Sasi", "Captain Hook"],     start: null },
-    ],
-  },
-  {
     id: "fav-sat",
     venueId: "favela",
     date: "2026-09-05",
@@ -647,6 +659,281 @@ export const PARTIES: Party[] = [
     start: "23:00",
     sets: [
       { id: "fav-sat-orbit", label: "Orbit", artists: ["Orbit"], start: null, live: true },
+    ],
+  },
+  // ──────────────────────────── Nova Heaven ────────────────────────────
+  // El único cartel que publica hora de cada set y qué art cars aparcan esa
+  // noche. Las noches de miércoles y viernes son las que Favela anunciaba por
+  // su lado; estas mandan, porque llevan las horas.
+  {
+    id: "nova-mon",
+    venueId: "nova-heaven",
+    date: "2026-08-31",
+    name: "Opening",
+    kind: "night",
+    start: "21:00",
+    end: "08:00",
+    note: "Art cars: Eden, Saboku, Blue Bull y Kuker.",
+    sets: [
+      { id: "nova-mon-opening",   label: "Ceremonia de apertura", artists: [],                             start: "21:00" },
+      { id: "nova-mon-light",     label: "Let There Be Light",    artists: [],                             start: "21:30", live: true, note: "live show" },
+      { id: "nova-mon-sasi",      label: "Sasi",                  artists: ["Sasi"],                       start: "22:00" },
+      { id: "nova-mon-ashley",    label: "Ashley Fitelson",       artists: ["Ashley Fitelson"],            start: "23:30" },
+      { id: "nova-mon-gabe",      label: "Gabe",                  artists: ["Gabe"],                       start: "01:00" },
+      { id: "nova-mon-enamour",   label: "Enamour",               artists: ["Enamour"],                    start: "02:30" },
+      { id: "nova-mon-max-mishell",label: "Max Styler B2B Mishell",artists: ["Max Styler", "Mishell"],     start: "04:00" },
+      { id: "nova-mon-darco-luch",label: "Darco B2B Luch",        artists: ["Darco", "Luch"],              start: "06:30", sun: "amanecer" },
+    ],
+  },
+  {
+    id: "nova-tue",
+    venueId: "nova-heaven",
+    date: "2026-09-01",
+    name: "Nova Heaven",
+    kind: "night",
+    start: "23:00",
+    end: "08:00",
+    note: "Art cars: Trion y Forest House.",
+    sets: [
+      { id: "nova-tue-philou",       label: "Philou",                    artists: ["Philou"],                     start: "23:00" },
+      { id: "nova-tue-roy-vanjee",   label: "Roy Rosenfeld B2B Vanjee",  artists: ["Roy Rosenfeld", "Vanjee"],    start: "00:30" },
+      { id: "nova-tue-lp-giobbi",    label: "LP Giobbi",                 artists: ["LP Giobbi"],                  start: "02:30" },
+      { id: "nova-tue-rafael",       label: "Rafael",                    artists: ["Rafael"],                     start: "04:00", sun: "amanecer" },
+    ],
+  },
+  {
+    id: "nova-wed",
+    venueId: "nova-heaven",
+    date: "2026-09-02",
+    name: "Nova Heaven",
+    kind: "night",
+    start: "23:00",
+    end: "08:30",
+    note: "Art cars: Favela y Bipolar Express.",
+    sets: [
+      { id: "nova-wed-mary-du-serena",  label: "Mary Mesk B2B Du Serena",   artists: ["Mary Mesk", "Du Serena"],     start: "23:00" },
+      { id: "nova-wed-doozie",          label: "Doozie",                    artists: ["Doozie"],                     start: "01:00" },
+      { id: "nova-wed-vintage-omri",    label: "Vintage Culture B2B Omri.", artists: ["Vintage Culture", "Omri."],   start: "02:30" },
+      { id: "nova-wed-anna",            label: "Anna",                      artists: ["Anna"],                       start: "04:00" },
+      { id: "nova-wed-infected-mushroom",label: "Infected Mushroom",        artists: ["Infected Mushroom"],          start: "05:30", sun: "amanecer" },
+      { id: "nova-wed-wrecked-vermont", label: "Wrecked Machines vs Vermont",artists: ["Wrecked Machines", "Vermont"],start: "07:00" },
+    ],
+  },
+  {
+    id: "nova-fri",
+    venueId: "nova-heaven",
+    date: "2026-09-04",
+    name: "Ascension · Memorian Celebration",
+    kind: "night",
+    start: "23:00",
+    note: "Art cars: Eden, Favela, The Giving Tree y Saboku. El cartel cierra en \"06:29 – close\", sin hora.",
+    sets: [
+      { id: "nova-fri-you-and-i",      label: "YØU&I",                 artists: ["YØU&I"],                 start: "23:00" },
+      { id: "nova-fri-nevos",          label: "Nevos",                 artists: ["Nevos"],                 start: "00:00" },
+      { id: "nova-fri-club-de-combat", label: "Clüb de Combat",        artists: ["Clüb de Combat"],        start: "01:30" },
+      { id: "nova-fri-kimonos",        label: "Kimonos",               artists: ["Kimonos"],               start: "03:00" },
+      { id: "nova-fri-rafael",         label: "Rafael",                artists: ["Rafael"],                start: "04:30" },
+      { id: "nova-fri-ceremonia",      label: "Ceremonia de las 6:29", artists: [],                        start: "06:00", sun: "amanecer" },
+      { id: "nova-fri-sasi-captain",   label: "Sasi B2B Captain Hook", artists: ["Sasi", "Captain Hook"],  start: "06:29" },
+    ],
+  },
+  // ─────────────────── Melon Motel × Playground (viernes) ───────────────────
+  {
+    id: "mel-fri",
+    venueId: "melon-motel",
+    date: "2026-09-04",
+    name: "Play with Melons",
+    kind: "day",
+    start: "14:00",
+    end: "00:00",
+    note: "Con Playground. El cartel da la franja (2pm–12am) pero no la hora de cada set.",
+    sets: [
+      { id: "mel-fri-arianna-sunshine", label: "Arianna Sunshine",        artists: ["Arianna Sunshine"],        start: null },
+      { id: "mel-fri-grace-stavi",      label: "Grace Arribas B2B Stavi", artists: ["Grace Arribas", "Stavi"],  start: null },
+      { id: "mel-fri-miramar",          label: "Miramar",                 artists: ["Miramar"],                 start: null },
+      { id: "mel-fri-bender",           label: "Bender",                  artists: ["Bender"],                  start: null },
+      { id: "mel-fri-marten-arodes",    label: "Marten Lou B2B Arodes",   artists: ["Marten Lou", "Arodes"],    start: null },
+      { id: "mel-fri-josh-gigante",     label: "Josh Gigante",            artists: ["Josh Gigante"],            start: null },
+    ],
+  },
+
+  // ────────────────────────────── Huofeng ──────────────────────────────
+  // Todas las tardes de 18:00 a 23:00. El cartel marca con un icono el set
+  // que pilla la puesta de sol.
+  {
+    id: "huo-mon",
+    venueId: "huofeng",
+    date: "2026-08-31",
+    name: "Huofeng",
+    kind: "sunset",
+    start: "18:00",
+    end: "23:00",
+    sets: [
+      { id: "huo-mon-ascension-knob", label: "Ascension B2B Knob Ross",     artists: ["Ascension", "Knob Ross"],     start: null },
+      { id: "huo-mon-techno-tupac",   label: "Techno Tupac",                artists: ["Techno Tupac"],               start: null, sun: "atardecer" },
+      { id: "huo-mon-lidiya",         label: "LIDIYA",                      artists: ["LIDIYA"],                     start: null },
+      { id: "huo-mon-seventh-sisyphos",label: "Seventh Axis B2B Sisyphos",  artists: ["Seventh Axis", "Sisyphos"],   start: null },
+      { id: "huo-mon-chaske",         label: "Chaske",                      artists: ["Chaske"],                     start: null },
+    ],
+  },
+  {
+    id: "huo-tue",
+    venueId: "huofeng",
+    date: "2026-09-01",
+    name: "Huofeng",
+    kind: "sunset",
+    start: "18:00",
+    end: "23:00",
+    sets: [
+      { id: "huo-tue-natascha-polke", label: "Natascha Polké", artists: ["Natascha Polké"], start: null, live: true },
+      { id: "huo-tue-michael-bibi",   label: "Michael Bibi",   artists: ["Michael Bibi"],   start: null, sun: "atardecer" },
+      { id: "huo-tue-gallivanter",    label: "GALLiVANTER",    artists: ["GALLiVANTER"],    start: null },
+    ],
+  },
+  {
+    id: "huo-wed",
+    venueId: "huofeng",
+    date: "2026-09-02",
+    name: "Huofeng",
+    kind: "sunset",
+    start: "18:00",
+    end: "23:00",
+    sets: [
+      { id: "huo-wed-double-touch",  label: "Double Touch",                 artists: ["Double Touch"],                 start: null, live: true },
+      { id: "huo-wed-franky-rizardo",label: "Franky Rizardo",               artists: ["Franky Rizardo"],               start: null, sun: "atardecer" },
+      { id: "huo-wed-deer-julia",    label: "Deer Jade B2B Julia Sandstorm",artists: ["Deer Jade", "Julia Sandstorm"], start: null },
+    ],
+  },
+  {
+    id: "huo-thu",
+    venueId: "huofeng",
+    date: "2026-09-03",
+    name: "Huofeng",
+    kind: "sunset",
+    start: "18:00",
+    end: "23:00",
+    sets: [
+      { id: "huo-thu-london-grammar", label: "London Grammar", artists: ["London Grammar"], start: null, note: "DJ set" },
+      { id: "huo-thu-ahmed-spins",    label: "Ahmed Spins",    artists: ["Ahmed Spins"],    start: null, sun: "atardecer" },
+      { id: "huo-thu-gawdat",         label: "Gawdat",         artists: ["Gawdat"],         start: null },
+    ],
+  },
+  {
+    id: "huo-fri",
+    venueId: "huofeng",
+    date: "2026-09-04",
+    name: "Huofeng",
+    kind: "sunset",
+    start: "18:00",
+    end: "23:00",
+    sets: [
+      { id: "huo-fri-purple",         label: "Purple",          artists: ["Purple"],          start: null },
+      { id: "huo-fri-vintage-culture",label: "Vintage Culture", artists: ["Vintage Culture"], start: null, sun: "atardecer" },
+      { id: "huo-fri-anna",           label: "Anna",            artists: ["Anna"],            start: null },
+    ],
+  },
+  // ────────────────────────────── Longfeng ──────────────────────────────
+  // Art car en 10 & K, arranca a las 23:00 (23:45 el sábado). Sin hora por set
+  // y sin cierre, pero el cartel marca en cada noche cuál pilla el amanecer,
+  // y eso es lo que estira el reparto hasta las 8 en vez de las 6.
+  {
+    id: "lon-mon",
+    venueId: "longfeng",
+    date: "2026-08-31",
+    name: "Longfeng",
+    kind: "night",
+    start: "23:00",
+    sets: [
+      { id: "lon-mon-red-gecko",    label: "Red Gecko",              artists: ["Red Gecko"],              start: null },
+      { id: "lon-mon-manu-seve",    label: "Manu Seve",              artists: ["Manu Seve"],              start: null },
+      { id: "lon-mon-danni-juju",   label: "Danni G B2B Juju Star",  artists: ["Danni G", "Juju Star"],   start: null },
+      { id: "lon-mon-sonder",       label: "Sonder",                 artists: ["Sonder"],                 start: null },
+      { id: "lon-mon-solos",        label: "SOLØS",                  artists: ["SOLØS"],                  start: null, live: true },
+      { id: "lon-mon-philou",       label: "Philou",                 artists: ["Philou"],                 start: null },
+      { id: "lon-mon-roy-rosenfeld",label: "Roy Rosenfeld",          artists: ["Roy Rosenfeld"],          start: null, sun: "amanecer" },
+      { id: "lon-mon-betical",      label: "Betical",                artists: ["Betical"],                start: null },
+    ],
+  },
+  {
+    id: "lon-tue",
+    venueId: "longfeng",
+    date: "2026-09-01",
+    name: "Longfeng",
+    kind: "night",
+    start: "23:00",
+    sets: [
+      { id: "lon-tue-lp-giobbi",       label: "LP Giobbi",              artists: ["LP Giobbi"],             start: null },
+      { id: "lon-tue-max-styler",      label: "Max Styler",             artists: ["Max Styler"],            start: null },
+      { id: "lon-tue-mason-collective",label: "Mason Collective",       artists: ["Mason Collective"],      start: null },
+      { id: "lon-tue-franky-rizardo",  label: "Franky Rizardo",         artists: ["Franky Rizardo"],        start: null },
+      { id: "lon-tue-arodes-marten",   label: "Arodes B2B Marten Lou",  artists: ["Arodes", "Marten Lou"],  start: null, sun: "amanecer" },
+      { id: "lon-tue-calussa-mishell", label: "Calussa B2B Mishell",    artists: ["Calussa", "Mishell"],    start: null },
+    ],
+  },
+  {
+    id: "lon-wed",
+    venueId: "longfeng",
+    date: "2026-09-02",
+    name: "Longfeng",
+    kind: "night",
+    start: "23:00",
+    sets: [
+      { id: "lon-wed-mike-posner",   label: "Mike Posner",           artists: ["Mike Posner"],            start: null, note: "hybrid" },
+      { id: "lon-wed-josh-luch",     label: "Josh Gigante B2B Luch", artists: ["Josh Gigante", "Luch"],   start: null },
+      { id: "lon-wed-major-lazer",   label: "Major Lazer",           artists: ["Major Lazer"],            start: null },
+      { id: "lon-wed-kaz-james",     label: "Kaz James & Friends",   artists: ["Kaz James"],              start: null },
+      { id: "lon-wed-michael-bibi",  label: "Michael Bibi",          artists: ["Michael Bibi"],           start: null, sun: "amanecer" },
+      { id: "lon-wed-darco-rafael",  label: "Darco B2B Rafael",      artists: ["Darco", "Rafael"],        start: null },
+    ],
+  },
+  {
+    id: "lon-thu",
+    venueId: "longfeng",
+    date: "2026-09-03",
+    name: "Longfeng · Dragon Awakening",
+    kind: "night",
+    start: "23:00",
+    note: "El cartel lo rotula como \"Dragon Awakening tie-up\".",
+    sets: [
+      { id: "lon-thu-tom-collins",    label: "Tom & Collins",     artists: ["Tom & Collins"],       start: null },
+      { id: "lon-thu-kimonos",        label: "Kimonos",           artists: ["Kimonos"],             start: null },
+      { id: "lon-thu-diplo-gordo",    label: "Diplo B2B Gordo",   artists: ["Diplo", "Gordo"],      start: null },
+      { id: "lon-thu-carlita-riche",  label: "Carlita B2B Riche", artists: ["Carlita", "Riche"],    start: null },
+      { id: "lon-thu-francis-mercier",label: "Francis Mercier",   artists: ["Francis Mercier"],     start: null, sun: "amanecer" },
+      { id: "lon-thu-academe-vanjee", label: "AMÉMÉ B2B Vanjee",  artists: ["AMÉMÉ", "Vanjee"],     start: null },
+    ],
+  },
+  {
+    id: "lon-fri",
+    venueId: "longfeng",
+    date: "2026-09-04",
+    name: "Longfeng · Bipolar Express",
+    kind: "night",
+    start: "23:00",
+    note: "El cartel lo rotula como \"Bipolar Express tie-up\".",
+    sets: [
+      { id: "lon-fri-seth-schwarz",  label: "Seth Schwarz",                  artists: ["Seth Schwarz"],                  start: null, live: true },
+      { id: "lon-fri-kream-tripps",  label: "Kream B2B Tripps",              artists: ["Kream", "Tripps"],               start: null },
+      { id: "lon-fri-aryme-maxi",    label: "Arymé B2B Maxi Meraki",         artists: ["Arymé", "Maxi Meraki"],          start: null },
+      { id: "lon-fri-sam-sebastian", label: "Sam Shure B2B Sebastian Konrad",artists: ["Sam Shure", "Sebastian Konrad"], start: null },
+      { id: "lon-fri-monolink",      label: "Monolink",                      artists: ["Monolink"],                      start: null, note: "hybrid", sun: "amanecer" },
+      { id: "lon-fri-mahmut-orhan",  label: "Mahmut Orhan",                  artists: ["Mahmut Orhan"],                  start: null },
+    ],
+  },
+  {
+    id: "lon-sat",
+    venueId: "longfeng",
+    date: "2026-09-05",
+    name: "Longfeng",
+    kind: "night",
+    start: "23:45",
+    sets: [
+      { id: "lon-sat-oliver-marshak",  label: "Oliver Marshak",                 artists: ["Oliver Marshak"],                 start: null },
+      { id: "lon-sat-luciano-talon",   label: "Luciano Scalioni B2B Talón",     artists: ["Luciano Scalioni", "Talón"],      start: null },
+      { id: "lon-sat-club-de-combat",  label: "Clüb de Combat",                 artists: ["Clüb de Combat"],                 start: null },
+      { id: "lon-sat-amour-propre",    label: "Amour Propre",                   artists: ["Amour Propre"],                   start: null },
+      { id: "lon-sat-annicka-xinobi",  label: "Annicka B2B Xinobi",             artists: ["Annicka", "Xinobi"],              start: null },
+      { id: "lon-sat-vintage-doozie",  label: "Vintage Culture B2B Doozie",     artists: ["Vintage Culture", "Doozie"],      start: null, sun: "amanecer" },
     ],
   },
 ];

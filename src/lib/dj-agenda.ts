@@ -29,6 +29,13 @@ export const ESTIMATED_SET_MINUTES = 2 * 60;
  */
 const NIGHT_END = MINUTES_PER_DAY + 6 * 60;
 
+/**
+ * El mismo tope para las noches que el propio cartel marca con un set de
+ * amanecer: si dice que alguien pincha mientras sale el sol, la fiesta llega
+ * más allá de las 6. Nova Heaven y Longfeng cierran sobre las 8.
+ */
+const NIGHT_END_SUNRISE = MINUTES_PER_DAY + 8 * 60;
+
 export const VENUE_BY_ID: Record<string, Venue> = Object.fromEntries(VENUES.map((v) => [v.id, v]));
 export const PARTY_BY_ID: Record<string, Party> = Object.fromEntries(PARTIES.map((p) => [p.id, p]));
 
@@ -54,6 +61,22 @@ export const ALL_SETS: SetRef[] = Object.values(SET_INDEX);
 export const ALL_ARTISTS: string[] = Array.from(
   new Set(ALL_SETS.flatMap((r) => r.set.artists))
 ).sort((a, b) => a.localeCompare(b, "es"));
+
+/**
+ * `artista → sus sets`, ordenados en el tiempo. Es el índice de la vista por
+ * DJ: quién pincha, cuántas veces y dónde.
+ */
+export const ARTIST_INDEX: Map<string, SetRef[]> = (() => {
+  const out = new Map<string, SetRef[]>();
+  for (const ref of ALL_SETS) {
+    for (const artist of ref.set.artists) {
+      const list = out.get(artist);
+      if (list) list.push(ref);
+      else out.set(artist, [ref]);
+    }
+  }
+  return out;
+})();
 
 /** "22:30" → 1350. */
 export function toMinutes(hhmm: string): number {
@@ -89,9 +112,10 @@ export interface Window {
  * Cuánto se le supone a cada set de una fiesta sin horas publicadas.
  *
  * Dos horas, salvo que no quepan: en una noche los sets se reparten a partes
- * iguales lo que va del arranque a las 6 de la mañana, redondeando a cuartos
- * de hora hacia abajo para no pasarse. Siete sets desde las 22:00 salen a una
- * hora cada uno; seis desde las 21:00, a hora y media.
+ * iguales lo que va del arranque a las 6 de la mañana —a las 8 si el cartel
+ * marca un set de amanecer—, redondeando a cinco minutos hacia abajo para no
+ * pasarse. Siete sets desde las 22:00 salen a poco más de una hora cada uno;
+ * seis desde las 21:00, a hora y media.
  *
  * Las fiestas de día, atardecer y amanecer no tienen ese tope —no acaban de
  * madrugada—, así que se quedan en las dos horas, salvo que la fiesta traiga
@@ -104,8 +128,8 @@ export function estimatedSlotMinutes(party: Party): number {
   const untimed = party.sets.filter((s) => !s.start).length;
   if (untimed === 0 || party.kind !== "night") return ESTIMATED_SET_MINUTES;
 
-  const available = NIGHT_END - toMinutes(party.start);
-  const fair = Math.floor(available / untimed / 15) * 15;
+  const end = party.sets.some((s) => s.sun === "amanecer") ? NIGHT_END_SUNRISE : NIGHT_END;
+  const fair = Math.floor((end - toMinutes(party.start)) / untimed / 5) * 5;
   return Math.max(15, Math.min(ESTIMATED_SET_MINUTES, fair));
 }
 
@@ -119,8 +143,16 @@ export function partyWindow(party: Party): Window {
   const start = toMinutes(party.start);
   if (party.end) return { start, end: withinParty(party, party.end), exact: true, estimated: false };
 
-  // Sin hora de cierre: se cierra donde acabe el último set estimado.
   const slot = estimatedSlotMinutes(party);
+
+  // Sin hora de cierre pero con todas las del cartel puestas: la fiesta acaba
+  // un hueco después del último set, no sumando uno por cada uno.
+  const timed = party.sets.filter((x) => x.start).map((x) => withinParty(party, x.start!));
+  if (timed.length === party.sets.length) {
+    return { start, end: Math.max(...timed) + slot, exact: false, estimated: true };
+  }
+
+  // Sin horas: se cierra donde acabe el último set estimado.
   return { start, end: start + party.sets.length * slot, exact: false, estimated: true };
 }
 
