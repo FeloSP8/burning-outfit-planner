@@ -42,15 +42,19 @@ function whereLabel(party: Party): string {
 
 export function AgendaClient({
   initialPicks,
+  initialFavorites,
   currentUserName,
   today,
 }: {
   initialPicks: DjPicksBySet;
+  /** Artistas que le gustan al usuario: salen arriba de la lista por DJ. */
+  initialFavorites: string[];
   currentUserName: string;
   /** Fecha de hoy en el playa, para abrir la página por el día que toca. */
   today: string;
 }) {
   const [picks, setPicks] = useState<DjPicksBySet>(initialPicks);
+  const [favorites, setFavorites] = useState<Set<string>>(() => new Set(initialFavorites));
   const [day, setDay] = useState<string>(
     () => DAYS_WITH_LINEUP.find((d) => d.date >= today)?.date ?? DAYS_WITH_LINEUP[0].date
   );
@@ -113,6 +117,30 @@ export function AgendaClient({
           ...prev,
           [setId]: isMine ? [...who, currentUserName] : who.filter((n) => n !== currentUserName),
         };
+      });
+    }
+  }
+
+  async function toggleFavorite(artist: string) {
+    const wasFavorite = favorites.has(artist);
+    setFavorites((prev) => {
+      const next = new Set(prev);
+      if (!next.delete(artist)) next.add(artist);
+      return next;
+    });
+
+    const res = await fetch("/api/dj-favorites", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ artist }),
+    });
+
+    if (!res.ok) {
+      setFavorites((prev) => {
+        const next = new Set(prev);
+        if (wasFavorite) next.add(artist);
+        else next.delete(artist);
+        return next;
       });
     }
   }
@@ -196,6 +224,8 @@ export function AgendaClient({
       {view === "dj" ? (
         <ArtistList
           query={query}
+          favorites={favorites}
+          onToggleFavorite={toggleFavorite}
           picks={picks}
           mine={mine}
           currentUserName={currentUserName}
@@ -581,10 +611,15 @@ function Empty({ children }: { children: React.ReactNode }) {
 /**
  * Todos los DJs del cartel en una lista. Al tocar un nombre se despliega dónde
  * y cuándo pincha — que para los que repiten escenario es la pregunta de
- * verdad: Vintage Culture sale nueve veces en seis sitios distintos.
+ * verdad: Vintage Culture sale siete veces en siete sitios distintos.
+ *
+ * Los marcados con ♥ suben arriba del todo. Con 157 nombres, buscar a los
+ * cuatro que te importan cada vez que abres la página no es agenda, es trabajo.
  */
 function ArtistList({
   query,
+  favorites,
+  onToggleFavorite,
   picks,
   mine,
   currentUserName,
@@ -592,6 +627,8 @@ function ArtistList({
   onToggle,
 }: {
   query: string;
+  favorites: Set<string>;
+  onToggleFavorite: (artist: string) => void;
   picks: DjPicksBySet;
   mine: Set<string>;
   currentUserName: string;
@@ -600,10 +637,14 @@ function ArtistList({
 }) {
   const [open, setOpen] = useState<Set<string>>(new Set());
 
-  const artists = useMemo(() => {
+  const matching = useMemo(() => {
     const q = normalize(query);
     return ALL_ARTISTS.filter((a) => !q || normalize(a).includes(q));
   }, [query]);
+
+  // Dos bloques, cada uno alfabético: los tuyos y el resto.
+  const favoritos = matching.filter((a) => favorites.has(a));
+  const resto = matching.filter((a) => !favorites.has(a));
 
   function toggleOpen(artist: string) {
     setOpen((prev) => {
@@ -613,63 +654,143 @@ function ArtistList({
     });
   }
 
-  if (artists.length === 0) {
+  if (matching.length === 0) {
     return <Empty>Ningún DJ del cartel se llama así: “{query.trim()}”.</Empty>;
   }
 
-  return (
+  const block = (artists: string[]) => (
     <div className="overflow-hidden rounded-2xl border-2 border-[#c4906a]/40 bg-[#fdf4e0]">
-      {artists.map((artist) => {
-        const refs = ARTIST_INDEX.get(artist) ?? [];
-        // Del primero al último, que es como se leen: en orden de evento.
-        const entries = refs.map(toEntry).sort((a, b) => a.absStart - b.absStart);
-        const chosen = entries.filter((e) => mine.has(e.set.id)).length;
-        const isOpen = open.has(artist);
+      {artists.map((artist) => (
+        <ArtistRow
+          key={artist}
+          artist={artist}
+          favorite={favorites.has(artist)}
+          onToggleFavorite={onToggleFavorite}
+          isOpen={open.has(artist)}
+          onToggleOpen={toggleOpen}
+          picks={picks}
+          mine={mine}
+          currentUserName={currentUserName}
+          clashes={clashes}
+          onToggle={onToggle}
+        />
+      ))}
+    </div>
+  );
 
-        return (
-          <div key={artist} className="border-t border-[#c4906a]/15 first:border-t-0">
-            <button
-              type="button"
-              onClick={() => toggleOpen(artist)}
-              aria-expanded={isOpen}
-              className="flex w-full items-center gap-2 px-4 py-2.5 text-left transition-colors hover:bg-[#f6e6c8]"
-            >
-              <span className="min-w-0 flex-1 text-sm font-bold text-[#2a1a08]">{artist}</span>
+  return (
+    <div className="flex flex-col gap-4">
+      {favoritos.length > 0 && (
+        <div>
+          <p className="mb-1.5 text-xs font-black uppercase tracking-widest text-[#a07040]">
+            ♥ Mis DJs
+          </p>
+          {block(favoritos)}
+        </div>
+      )}
 
-              {chosen > 0 && <span className="shrink-0 text-xs font-black text-[#c84a10]">{chosen} ★</span>}
+      {resto.length > 0 && (
+        <div>
+          {favoritos.length > 0 && (
+            <p className="mb-1.5 text-xs font-black uppercase tracking-widest text-[#a07040]">
+              Todos los demás
+            </p>
+          )}
+          {block(resto)}
+        </div>
+      )}
+    </div>
+  );
+}
 
-              <span className="shrink-0 rounded-md bg-[#c4906a]/20 px-1.5 py-0.5 text-[11px] font-bold text-[#7a4a20]">
-                {entries.length} {entries.length === 1 ? "set" : "sets"}
-              </span>
+/** Una fila de la lista de DJs: el corazón, el nombre y, desplegado, sus sets. */
+function ArtistRow({
+  artist,
+  favorite,
+  onToggleFavorite,
+  isOpen,
+  onToggleOpen,
+  picks,
+  mine,
+  currentUserName,
+  clashes,
+  onToggle,
+}: {
+  artist: string;
+  favorite: boolean;
+  onToggleFavorite: (artist: string) => void;
+  isOpen: boolean;
+  onToggleOpen: (artist: string) => void;
+  picks: DjPicksBySet;
+  mine: Set<string>;
+  currentUserName: string;
+  clashes: Clash[];
+  onToggle: (setId: string) => void;
+}) {
+  // Del primero al último, que es como se leen: en orden de evento.
+  const entries = useMemo(
+    () => (ARTIST_INDEX.get(artist) ?? []).map(toEntry).sort((a, b) => a.absStart - b.absStart),
+    [artist]
+  );
+  const chosen = entries.filter((e) => mine.has(e.set.id)).length;
 
-              <span
-                className={`shrink-0 text-sm font-black text-[#c84a10] transition-transform ${isOpen ? "rotate-90" : ""}`}
-              >
-                ›
-              </span>
-            </button>
+  return (
+    <div className="border-t border-[#c4906a]/15 first:border-t-0">
+      {/* Dos botones separados, no uno dentro de otro: el corazón marca y el
+          resto de la fila despliega. */}
+      <div className="flex items-center">
+        <button
+          type="button"
+          onClick={() => onToggleFavorite(artist)}
+          aria-pressed={favorite}
+          aria-label={favorite ? `Quitar a ${artist} de mis DJs` : `Añadir a ${artist} a mis DJs`}
+          className={`shrink-0 py-2.5 pl-4 pr-2 text-base leading-none transition-colors ${
+            favorite ? "text-[#c84a10]" : "text-[#c4906a]/50 hover:text-[#c84a10]/70"
+          }`}
+        >
+          {favorite ? "♥" : "♡"}
+        </button>
 
-            {isOpen && (
-              <div className="border-t border-[#c4906a]/15 bg-[#f6e6c8]/40">
-                {entries.map((entry) => (
-                  <SetRow
-                    key={entry.set.id}
-                    set={entry.set}
-                    party={entry.party}
-                    picked={mine.has(entry.set.id)}
-                    who={picks[entry.set.id] ?? []}
-                    currentUserName={currentUserName}
-                    conflicts={mine.has(entry.set.id) ? clashesFor(entry.set.id, clashes) : []}
-                    onToggle={onToggle}
-                    showVenue
-                    showDay
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        );
-      })}
+        <button
+          type="button"
+          onClick={() => onToggleOpen(artist)}
+          aria-expanded={isOpen}
+          className="flex min-w-0 flex-1 items-center gap-2 py-2.5 pr-4 text-left transition-colors hover:bg-[#f6e6c8]"
+        >
+          <span className="min-w-0 flex-1 text-sm font-bold text-[#2a1a08]">{artist}</span>
+
+          {chosen > 0 && <span className="shrink-0 text-xs font-black text-[#c84a10]">{chosen} ★</span>}
+
+          <span className="shrink-0 rounded-md bg-[#c4906a]/20 px-1.5 py-0.5 text-[11px] font-bold text-[#7a4a20]">
+            {entries.length} {entries.length === 1 ? "set" : "sets"}
+          </span>
+
+          <span
+            className={`shrink-0 text-sm font-black text-[#c84a10] transition-transform ${isOpen ? "rotate-90" : ""}`}
+          >
+            ›
+          </span>
+        </button>
+      </div>
+
+      {isOpen && (
+        <div className="border-t border-[#c4906a]/15 bg-[#f6e6c8]/40">
+          {entries.map((entry) => (
+            <SetRow
+              key={entry.set.id}
+              set={entry.set}
+              party={entry.party}
+              picked={mine.has(entry.set.id)}
+              who={picks[entry.set.id] ?? []}
+              currentUserName={currentUserName}
+              conflicts={mine.has(entry.set.id) ? clashesFor(entry.set.id, clashes) : []}
+              onToggle={onToggle}
+              showVenue
+              showDay
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

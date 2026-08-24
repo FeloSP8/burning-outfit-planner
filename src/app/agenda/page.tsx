@@ -1,5 +1,6 @@
 import { getCurrentUser } from "@/lib/auth";
 import { loadPicks } from "@/lib/dj-picks";
+import { loadFavoriteArtists } from "@/lib/dj-favorites";
 import { playaToday } from "@/lib/weather";
 import { ALL_ARTISTS, ALL_SETS, DAYS_WITH_LINEUP, venueLabel } from "@/lib/dj-agenda";
 import { VENUES } from "@/lib/dj-lineups";
@@ -15,7 +16,7 @@ export default async function AgendaPage() {
   const user = await getCurrentUser();
   if (!user) return null; // el proxy ya redirige a /login
 
-  const picks = await loadPicks();
+  const [picks, favorites] = await Promise.all([loadPicks(), loadFavoriteArtists(user.id)]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -32,7 +33,12 @@ export default async function AgendaPage() {
         </p>
       </div>
 
-      <AgendaClient initialPicks={picks} currentUserName={user.name} today={playaToday()} />
+      <AgendaClient
+        initialPicks={picks}
+        initialFavorites={favorites}
+        currentUserName={user.name}
+        today={playaToday()}
+      />
 
       <p className="text-[11px] font-medium leading-relaxed text-[#a07040]">
         Line-ups transcritos de los carteles de{" "}

@@ -19,6 +19,7 @@ model User {
   checklistChecks ChecklistCheck[]
   styleLooks     StyleLook[]
   djPicks        DjPick[]
+  favoriteArtists FavoriteArtist[]
   createdAt      DateTime        @default(now())
 }
 
@@ -164,4 +165,19 @@ model DjPick {
 
   @@unique([userId, setId])
   @@index([setId])
+}
+
+// Un artista que le gusta a un usuario. Ordena la lista de DJs: los suyos
+// primero. `artist` es el nombre tal cual aparece en el catálogo de
+// `src/lib/dj-lineups.ts`, no una FK — los artistas no son filas. Si un
+// cartel se corrige y un nombre cambia, la fila se queda huérfana y se ignora.
+model FavoriteArtist {
+  id        String   @id @default(cuid())
+  artist    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, artist])
+  @@index([userId])
 }

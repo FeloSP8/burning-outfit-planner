@@ -50,6 +50,7 @@ Aplicación web para planificar el vestuario de un festival en el desierto (Burn
 ### 🎧 Agenda de DJs (`/agenda`)
 - **Line-ups por día** transcritos de los carteles de los campamentos: Playground · Arrival Stage y Dune Lounge (2 & C), Opulent Temple (10 & Esplanade), Symbio (2:30 & F), The Melon Motel (2:00 & I), Nova Heaven (deep playa, la DMZ), Huofeng y Longfeng (10 & K) y el art car Favela. 217 sets, 157 artistas y 9 escenarios, de lunes 31 a sábado 5
 - **Dos vistas de lo mismo**: `🗓️ Por día`, con las fiestas de cada jornada en orden; y `🎧 Por DJ`, la lista completa de artistas — al tocar un nombre se despliega dónde y cuándo pincha, en orden de evento y con el ★ en cada set. Vintage Culture sale siete veces en siete escenarios distintos, y esa es la pregunta que la lista responde de un vistazo
+- **♥ Mis DJs**: cada usuario marca los artistas que le interesan y suben a un bloque propio arriba de la lista, antes del resto. Con 157 nombres, rebuscar los cuatro que importan cada vez que abres la página no es agenda, es trabajo. Es personal, no compartido, y se guarda en `FavoriteArtist`
 - Cada set se marca con **★ Voy** y entra en tu agenda. Es compartido: debajo de cada set salen los demás del grupo que también van ("👥 también Ana")
 - **Aviso de solapes**: si dos sets elegidos se pisan, los dos lo dicen y el resumen lleva la cuenta. El cálculo cruza días —un set de las 06:00 del miércoles compite con la fiesta de amanecer del jueves— porque las ventanas se miden en minutos absolutos, no por fecha del cartel
 - Los carteles no publican todos igual: Opulent Temple da la hora exacta de cada set; Playground y Symbio, solo la de arranque de la fiesta y el orden de los sets. A esos se les **estima horario**, marcado siempre como `aprox.` y en otro color, con la fiesta rotulada `⏱ horas estimadas`
@@ -128,6 +129,7 @@ src/
 │       ├── upload/route.ts              # POST subir imagen → { url }  (max 5 MB)
 │       ├── inventory-pdf/route.ts       # GET generar PDF del inventario completo
 │       ├── dj-picks/route.ts            # GET selecciones del grupo  ·  POST toggle de un set
+│       ├── dj-favorites/route.ts        # GET mis DJs favoritos  ·  POST toggle de un artista
 │       ├── style-looks/route.ts         # GET looks de estilismo del usuario
 │       ├── style-looks/[id]/route.ts    # DELETE borrar un look (y su imagen)
 │       ├── ai/try-on/route.ts           # POST try-on con Leonardo.Ai GPT Image 2
@@ -163,6 +165,7 @@ src/
 │   ├── dj-lineups.ts                   # Catálogo de line-ups transcrito de los carteles
 │   ├── dj-agenda.ts                    # Horas, ventanas de cada fiesta y detección de solapes
 │   ├── dj-picks.ts                     # Lectura de las selecciones del grupo (server-only)
+│   ├── dj-favorites.ts                 # Lectura de los DJs favoritos del usuario (server-only)
 │   ├── weather.ts                      # NWS + Open-Meteo + observaciones reales y umbrales
 │   └── weather-guide.ts                # Umbrales, climatología, memoria del playa y fuentes
 │
@@ -193,6 +196,8 @@ Outfit (1) ──────────────< TryOnResult  (imageUrl ge
 User   (1) ──────────────< StyleLook    (variante de la foto: peinado, tinte, barba)
 
 User   (1) ──────────────< DjPick       (setId → set del catálogo de src/lib/dj-lineups.ts)
+
+User   (1) ──────────────< FavoriteArtist (nombre del artista en ese mismo catálogo)
 ```
 
 **Reglas de negocio:**
@@ -206,6 +211,7 @@ User   (1) ──────────────< DjPick       (setId → s
 - No se puede borrar el `StyleLook` que sea la foto de modelo actual (`User.photoUrl`)
 - `DjPick` unique `[userId, setId]` — un usuario elige un set una sola vez; la API hace toggle
 - `DjPick.setId` **no es una FK**: los line-ups son un catálogo en código, no filas. Un id que ya no exista en `src/lib/dj-lineups.ts` se ignora al pintar la agenda en vez de romperla
+- `FavoriteArtist` unique `[userId, artist]`, y `artist` tampoco es una FK: mismo criterio, un nombre que desaparezca del catálogo se ignora
 
 ---
 
