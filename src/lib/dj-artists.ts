@@ -186,4 +186,40 @@ export const ARTIST_INFO: Record<string, ArtistInfo> = {
     genre: "House · nu-disco",
     instagram: "xinobi",
   },
+  "Ahmed Spins": {
+    genre: "Afro house",
+    instagram: "ahmedspins",
+  },
+  "Nora En Pure": {
+    genre: "Deep house · indie dance",
+    instagram: "noraenpure",
+  },
+  "Natascha Polké": {
+    genre: "Electrónica en directo · voz",
+    instagram: "nataschapolke.ch",
+  },
+  "Lost Desert": {
+    genre: "Melodic · organic house",
+    instagram: "lostdesertmusic",
+  },
+  "Sam Shure": {
+    genre: "Melodic house · techno",
+    instagram: "sam_shure",
+  },
+  "Francis Mercier": {
+    genre: "Afro house",
+    instagram: "francismercier",
+  },
+  "Roy Rosenfeld": {
+    genre: "Melodic house · techno",
+    instagram: "royrosenfeld_ofc",
+  },
+  "Kaz James": {
+    genre: "House",
+    instagram: "kazjames",
+  },
+  "Mason Collective": {
+    genre: "Tech house",
+    instagram: "masoncollective",
+  },
 };
