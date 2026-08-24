@@ -13,6 +13,7 @@
  *   • Nova Heaven               (deep playa, la \"DMZ\")
  *   • Huofeng                   (10 & K)
  *   • Longfeng                  (art car, 10 & K)
+ *   • Robot Heart               (el Bus, aparca en un sitio distinto cada día)
  *
  * OJO con los ids: `DjPick.setId` los guarda en base de datos. Cambiar un id
  * existente equivale a borrar la selección de todo el mundo para ese set.
@@ -79,6 +80,11 @@ export interface Party {
   end?: string;
   /** Aclaración cuando el cartel no es legible del todo. */
   note?: string;
+  /**
+   * Dónde se monta esa fiesta concreta, cuando no es la dirección del
+   * escenario. Robot Heart es un bus: cada noche aparca en otro sitio.
+   */
+  where?: string;
   /**
    * Cuánto dura cada set cuando el cartel no da horas, en minutos, para las
    * fiestas donde la regla general (`estimatedSlotMinutes`) se queda lejos.
@@ -226,6 +232,18 @@ export const VENUES: Venue[] = [
       border: "border-fuchsia-300",
       chip: "bg-fuchsia-100 text-fuchsia-900",
       text: "text-fuchsia-900",
+    },
+  },
+  {
+    id: "robot-heart",
+    name: "Robot Heart",
+    location: "el Bus · aparca donde toque",
+    emoji: "🤖",
+    theme: {
+      card: "bg-teal-50/80",
+      border: "border-teal-300",
+      chip: "bg-teal-100 text-teal-900",
+      text: "text-teal-900",
     },
   },
 ];
@@ -934,6 +952,140 @@ export const PARTIES: Party[] = [
       { id: "lon-sat-amour-propre",    label: "Amour Propre",                   artists: ["Amour Propre"],                   start: null },
       { id: "lon-sat-annicka-xinobi",  label: "Annicka B2B Xinobi",             artists: ["Annicka", "Xinobi"],              start: null },
       { id: "lon-sat-vintage-doozie",  label: "Vintage Culture B2B Doozie",     artists: ["Vintage Culture", "Doozie"],      start: null, sun: "amanecer" },
+    ],
+  },
+  // ──────────────────────────── Robot Heart ────────────────────────────
+  // El anuncio de Robot Heart no es un cartel: es un texto que cuenta el día,
+  // el sitio donde aparca el bus y el orden de los artistas, pero ni una hora.
+  //
+  // Las horas de arranque son estimación con el patrón de siempre del bus:
+  // amaneceres a partir de las 03:00 y atardeceres desde las 18:00. Donde el
+  // texto sí dice algo —que Deer Giobbi toca al amanecer, que Danny Tenaglia
+  // trae seis horas, que Major Lazer cierra con el sol bajando— eso manda y el
+  // reparto se ajusta alrededor.
+  {
+    id: "rh-tue-am",
+    venueId: "robot-heart",
+    date: "2026-09-01",
+    name: "Robot Heart × Solar Punks",
+    kind: "sunrise",
+    start: "03:00",
+    where: "2 & K · los campos solares",
+    setMinutes: 90,
+    note: "Fiesta de apertura. El orden es el del anuncio; las horas, estimación.",
+    sets: [
+      { id: "rh-tue-am-miluhska",      label: "Miluhska",       artists: ["Miluhska"],       start: null },
+      { id: "rh-tue-am-madota",        label: "Madota",         artists: ["Madota"],         start: null },
+      { id: "rh-tue-am-aline-brooklyn",label: "Aline Brooklyn", artists: ["Aline Brooklyn"], start: null },
+      { id: "rh-tue-am-jan-blomqvist", label: "Jan Blomqvist",  artists: ["Jan Blomqvist"],  start: null },
+      { id: "rh-tue-am-omri",          label: "Omri.",          artists: ["Omri."],          start: null },
+    ],
+  },
+  {
+    id: "rh-tue-pm",
+    venueId: "robot-heart",
+    date: "2026-09-01",
+    name: "Procesión al Templo",
+    kind: "sunset",
+    start: "18:00",
+    end: "21:00",
+    where: "procesión por el playa hasta el Templo",
+    note: "En memoria de Nico Stojan y Phillip Jung.",
+    sets: [
+      { id: "rh-tue-pm-holmar", label: "Holmar", artists: ["Holmar"], start: null },
+      { id: "rh-tue-pm-gunita", label: "Gunita", artists: ["Gunita"], start: null, sun: "atardecer" },
+    ],
+  },
+  {
+    id: "rh-wed-am",
+    venueId: "robot-heart",
+    date: "2026-09-02",
+    name: "Maxa Tie-Up",
+    kind: "sunrise",
+    start: "03:00",
+    where: "Eiffela Broken Dreams",
+    setMinutes: 90,
+    note: "El texto sitúa a Deer Giobbi en el amanecer, y el reparto se cuadra para que caiga ahí.",
+    sets: [
+      { id: "rh-wed-am-alok",        label: "Alok · Something Else",        artists: ["Alok"],                        start: null, note: "su único set del playa" },
+      { id: "rh-wed-am-max-styler",  label: "Max Styler",                   artists: ["Max Styler"],                  start: null, note: "MAXA" },
+      { id: "rh-wed-am-deer-giobbi", label: "Deer Giobbi · Deer Jade B2B LP Giobbi", artists: ["Deer Jade", "LP Giobbi"], start: null, sun: "amanecer", note: "con el Black Rock Quartet" },
+      { id: "rh-wed-am-bibi-franky", label: "Michael Bibi B2B Franky Rizardo", artists: ["Michael Bibi", "Franky Rizardo"], start: null, note: "MAXA" },
+    ],
+  },
+  {
+    id: "rh-wed-pm",
+    venueId: "robot-heart",
+    date: "2026-09-02",
+    name: "Apotheneum × Robot Heart",
+    kind: "night",
+    start: "21:00",
+    where: "Apotheneum",
+    note: "Noche de directo: música que no se puede repetir en otro sitio.",
+    sets: [
+      { id: "rh-wed-pm-parra-orbit", label: "Parra for Cuva B2B Orbit", artists: ["Parra for Cuva", "Orbit"], start: null, live: true },
+      { id: "rh-wed-pm-joke",        label: "Jo.Ke",                    artists: ["Jo.Ke"],                   start: null, live: true, note: "estreno del directo nuevo" },
+    ],
+  },
+  {
+    id: "rh-thu",
+    venueId: "robot-heart",
+    date: "2026-09-03",
+    name: "Art Day",
+    kind: "sunset",
+    start: "16:00",
+    end: "21:00",
+    where: "acaba en The Keyhole to Other Dimensions",
+    note: "Ruta de arte por el playa; el bus termina en la pieza de John Dill.",
+    sets: [
+      { id: "rh-thu-june-robin",     label: "June Robin",           artists: ["June Robin"],          start: null, note: "voz" },
+      { id: "rh-thu-bilal-rebolledo",label: "Bilal B2B Rebolledo",  artists: ["Bilal", "Rebolledo"],  start: null },
+      { id: "rh-thu-major-lazer",    label: "Major Lazer",          artists: ["Major Lazer"],         start: null, sun: "atardecer", note: "reggae y dub" },
+    ],
+  },
+  {
+    id: "rh-fri-am",
+    venueId: "robot-heart",
+    date: "2026-09-04",
+    name: "Danny T Marathon",
+    kind: "sunrise",
+    start: "03:00",
+    end: "11:00",
+    where: "Gothic Folly",
+    note: "Las seis horas de Danny Tenaglia son las que anuncia él; la hora de arranque es estimación.",
+    sets: [
+      { id: "rh-fri-am-john-summit",    label: "John Summit",     artists: ["John Summit"],     start: null },
+      { id: "rh-fri-am-danny-tenaglia", label: "Danny Tenaglia",  artists: ["Danny Tenaglia"],  start: "05:00", sun: "amanecer", note: "6 horas · su debut en el playa" },
+    ],
+  },
+  {
+    id: "rh-fri-pm",
+    venueId: "robot-heart",
+    date: "2026-09-04",
+    name: "Titanic Burn",
+    kind: "sunset",
+    start: "18:00",
+    where: "la quema del Titanic",
+    sets: [
+      { id: "rh-fri-pm-monolink",       label: "Monolink",        artists: ["Monolink"],           start: null, sun: "atardecer", note: "hybrid" },
+      { id: "rh-fri-pm-miguelle-tons",  label: "Miguelle & Tons", artists: ["Miguelle", "Tons"],   start: null },
+    ],
+  },
+  {
+    id: "rh-sat-am",
+    venueId: "robot-heart",
+    date: "2026-09-05",
+    name: "Lee Burridge & Friends",
+    kind: "sunrise",
+    start: "03:00",
+    setMinutes: 105,
+    note: "El anuncio no publica el orden de los cinco; va como los nombra. Avisan de que se alargará más de lo normal.",
+    sets: [
+      { id: "rh-sat-am-lee-burridge", label: "Lee Burridge",  artists: ["Lee Burridge"],  start: null },
+      { id: "rh-sat-am-double-touch", label: "Double Touch",  artists: ["Double Touch"],  start: null },
+      { id: "rh-sat-am-lost-desert",  label: "Lost Desert",   artists: ["Lost Desert"],   start: null },
+      { id: "rh-sat-am-rod-jr",       label: "Rod Jr.",       artists: ["Rod Jr."],       start: null },
+      { id: "rh-sat-am-pippi-ciez",   label: "Pippi Ciez",    artists: ["Pippi Ciez"],    start: null },
     ],
   },
 ];

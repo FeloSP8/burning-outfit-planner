@@ -340,7 +340,7 @@ function PartyCard({
           </p>
           <p className="text-[11px] font-semibold text-[#a07040]">
             {venueLabel(venue) !== party.name && `${venueLabel(venue)} · `}
-            {venue.location} · {partyRange(party)}
+            {party.where ?? venue.location} · {partyRange(party)}
             {isEstimated(party) && (
               <span className="ml-1.5 whitespace-nowrap rounded-md bg-[#c4906a]/25 px-1.5 py-0.5 text-[10px] font-bold text-[#7a4a20]">
                 ⏱ horas estimadas
