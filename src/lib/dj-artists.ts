@@ -43,25 +43,31 @@ export const ARTIST_INFO: Record<string, ArtistInfo> = {
   Doozie: {
     genre: "House · tech house",
     instagram: "doozie",
+    video: { url: "https://www.youtube.com/watch?v=p2NUdsmKqrk", label: "DNA Art Car, Camboriú 2026" },
   },
   "LP Giobbi": {
     genre: "House · piano en directo",
     instagram: "lpgiobbi",
+    video: { url: "https://www.youtube.com/watch?v=-eOa77e_uJg", label: "Tomorrowland 2026" },
   },
   "Omri.": {
     genre: "Afro house · melodic house",
+    video: { url: "https://www.youtube.com/watch?v=OSqNr4qXgNQ", label: "Green Valley, Carnaval Brasil 2026" },
   },
   "Marten Lou": {
     genre: "Melodic house",
     instagram: "martenlou",
+    video: { url: "https://www.youtube.com/watch?v=wZEhpiIPZhg", label: "MAAT Lisboa 2026" },
   },
   "Mahmut Orhan": {
     genre: "Melodic house · deep house",
     instagram: "mahmutorhan",
+    video: { url: "https://www.youtube.com/watch?v=ZlueBnl69VM", label: "Coachella 2026" },
   },
   "Michael Bibi": {
     genre: "Tech house · house",
     instagram: "michael_bibi_",
+    video: { url: "https://www.youtube.com/watch?v=g_umzDckot8", label: "Pacha NYC 2026" },
   },
   "Parra for Cuva": {
     genre: "Electrónica melódica · downtempo",
@@ -90,14 +96,17 @@ export const ARTIST_INFO: Record<string, ArtistInfo> = {
   Gordo: {
     genre: "House · tech house · sonido latino",
     instagram: "gordoszn",
+    video: { url: "https://www.youtube.com/watch?v=Kd-F37pCcB8", label: "Kokun 2026" },
   },
   Carlita: {
     genre: "Melodic house · organic house",
     instagram: "carlita",
+    video: { url: "https://www.youtube.com/watch?v=vFcpKlb5i_w", label: "Scorpios Mykonos 2026" },
   },
   "Deer Jade": {
     genre: "Melodic house · techno",
     instagram: "deerjade",
+    video: { url: "https://www.youtube.com/watch?v=-xQuhzez19I", label: "Hangar · The Gardens of Babylon" },
   },
   // Los que siguen tienen el género descrito en el texto de Robot Heart.
   Orbit: {
@@ -136,13 +145,16 @@ export const ARTIST_INFO: Record<string, ArtistInfo> = {
   },
   "Max Styler": {
     genre: "Tech house",
+    video: { url: "https://www.youtube.com/watch?v=Ckd37fqkEoo", label: "Yuma Tent, Coachella 2026" },
   },
   "Franky Rizardo": {
     genre: "House · after hours",
+    video: { url: "https://www.youtube.com/watch?v=CCumCaZRvkI", label: "Coachella 2026" },
   },
   Arodes: {
     genre: "Melodic house",
     instagram: "arodes_ofc",
+    video: { url: "https://www.youtube.com/watch?v=iMO30ETV1w8", label: "Coachella 2026" },
   },
   Darco: {
     genre: "Melodic house · organic house",
