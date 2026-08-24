@@ -8,6 +8,10 @@
  * con la ficha a medias— sale igual en la lista, sin el dato que falte.
  *
  * La clave es el nombre exacto del catálogo de `src/lib/dj-lineups.ts`.
+ *
+ * Los géneros salen de cómo se describen ellos y su prensa. Unos cuantos vienen
+ * del propio texto de curaduría de Robot Heart, que describe el sonido de casi
+ * veinte de los artistas del cartel con nombre y apellido.
  */
 
 export interface ArtistVideo {
@@ -78,5 +82,64 @@ export const ARTIST_INFO: Record<string, ArtistInfo> = {
   "Danny Tenaglia": {
     genre: "House · techno · tribal",
     instagram: "dannytenagliaofficial",
+  },
+  "Infected Mushroom": {
+    genre: "Psytrance",
+    instagram: "infectedmushroom",
+  },
+  Gordo: {
+    genre: "House · tech house · sonido latino",
+    instagram: "gordoszn",
+  },
+  Carlita: {
+    genre: "Melodic house · organic house",
+    instagram: "carlita",
+  },
+  "Deer Jade": {
+    genre: "Melodic house · techno",
+    instagram: "deerjade",
+  },
+  // Los que siguen tienen el género descrito en el texto de Robot Heart.
+  Orbit: {
+    genre: "Electrónica orgánica · instrumentos acústicos",
+  },
+  Alok: {
+    genre: "Underground · chuggers",
+  },
+  "Miguelle": {
+    genre: "House rítmico con acento latino",
+  },
+  Tons: {
+    genre: "House rítmico con acento latino",
+  },
+  Miluhska: {
+    genre: "House con acento latino",
+  },
+  Madota: {
+    genre: "Tech house",
+  },
+  "Aline Brooklyn": {
+    genre: "House con funk y electro",
+  },
+  "Major Lazer": {
+    genre: "Dancehall · reggae · dub",
+  },
+  Rebolledo: {
+    genre: "House · cosmic disco",
+  },
+  "Jan Blomqvist": {
+    genre: "Melodic techno · directo",
+  },
+  "Jo.Ke": {
+    genre: "Electrónica en directo",
+  },
+  "June Robin": {
+    genre: "Voz",
+  },
+  "Max Styler": {
+    genre: "Tech house",
+  },
+  "Franky Rizardo": {
+    genre: "House · after hours",
   },
 };
