@@ -26,6 +26,7 @@ import {
   type SetRef,
 } from "@/lib/dj-agenda";
 import type { DjSet, Party } from "@/lib/dj-lineups";
+import { ARTIST_INFO } from "@/lib/dj-artists";
 import type { DjPicksBySet } from "@/types";
 
 const venueOf = (party: Party) => VENUE_BY_ID[party.venueId];
@@ -775,6 +776,7 @@ function ArtistRow({
 
       {isOpen && (
         <div className="border-t border-[#c4906a]/15 bg-[#f6e6c8]/40">
+          <ArtistCard artist={artist} />
           {entries.map((entry) => (
             <SetRow
               key={entry.set.id}
@@ -790,6 +792,47 @@ function ArtistRow({
             />
           ))}
         </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Género, Instagram y un set en vídeo. Lo que no se ha podido comprobar no se
+ * pinta: mejor una ficha a medias que un enlace que lleva a otro.
+ */
+function ArtistCard({ artist }: { artist: string }) {
+  const info = ARTIST_INFO[artist];
+  if (!info || (!info.genre && !info.instagram && !info.video)) return null;
+
+  return (
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 border-b border-[#c4906a]/15 px-4 py-2.5">
+      {info.genre && (
+        <span className="rounded-md bg-[#c4906a]/25 px-1.5 py-0.5 text-[11px] font-bold text-[#7a4a20]">
+          {info.genre}
+        </span>
+      )}
+
+      {info.instagram && (
+        <a
+          href={`https://instagram.com/${info.instagram}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-[11px] font-bold text-[#c84a10] underline underline-offset-2"
+        >
+          📷 @{info.instagram}
+        </a>
+      )}
+
+      {info.video && (
+        <a
+          href={info.video.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-[11px] font-bold text-[#c84a10] underline underline-offset-2"
+        >
+          ▶️ {info.video.label}
+        </a>
       )}
     </div>
   );
