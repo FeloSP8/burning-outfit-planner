@@ -142,4 +142,48 @@ export const ARTIST_INFO: Record<string, ArtistInfo> = {
   "Franky Rizardo": {
     genre: "House · after hours",
   },
+  Arodes: {
+    genre: "Melodic house",
+    instagram: "arodes_ofc",
+  },
+  Darco: {
+    genre: "Melodic house · organic house",
+    instagram: "____darco____",
+  },
+  Rafael: {
+    genre: "Tech house",
+    instagram: "rafael___music",
+  },
+  Anna: {
+    genre: "Techno",
+    instagram: "djannaofficial",
+  },
+  Beltran: {
+    genre: "House",
+    instagram: "beltran",
+  },
+  Bender: {
+    genre: "Melodic house",
+    instagram: "bendermusic",
+  },
+  "Clüb de Combat": {
+    genre: "Tech house · house",
+    instagram: "club_decombat",
+  },
+  "Double Touch": {
+    genre: "Organic house en directo · teclados y batería",
+    instagram: "doubletouchofficial",
+  },
+  Kimonos: {
+    genre: "House",
+    instagram: "kimonos.music",
+  },
+  "Maxi Meraki": {
+    genre: "Melodic house",
+    instagram: "maximeraki",
+  },
+  Xinobi: {
+    genre: "House · nu-disco",
+    instagram: "xinobi",
+  },
 };
