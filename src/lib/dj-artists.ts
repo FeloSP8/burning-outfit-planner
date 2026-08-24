@@ -250,4 +250,32 @@ export const ARTIST_INFO: Record<string, ArtistInfo> = {
     genre: "House · techno",
     instagram: "syd_gris",
   },
+  Annicka: {
+    genre: "Minimal house",
+    instagram: "foreverannicka",
+  },
+  Calussa: {
+    genre: "House",
+    instagram: "calussa",
+  },
+  "Josh Gigante": {
+    genre: "Melodic house · techno",
+    instagram: "joshgigante",
+  },
+  "Julia Sandstorm": {
+    genre: "House",
+    instagram: "juliasandstorm",
+  },
+  Diplo: {
+    genre: "House · dancehall · electrónica",
+    instagram: "diplo",
+  },
+  SLANDER: {
+    genre: "Bass music · dubstep melódico",
+    instagram: "slanderofficial",
+  },
+  "Spencer Brown": {
+    genre: "Progressive house",
+    instagram: "spencerbrownofficial",
+  },
 };
