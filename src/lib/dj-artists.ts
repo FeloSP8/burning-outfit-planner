@@ -558,4 +558,68 @@ export const ARTIST_INFO: Record<string, ArtistInfo> = {
     genres: ["House"],
     instagram: "d1creator",
   },
+  Unders: {
+    genres: ["Melodic house", "Organic house"],
+    about: "Duncan Melema, holandés; se curtió montando fiestas y noches de sello antes de pinchar en Time Warp, Awakenings y ADE",
+    instagram: "undersmusic",
+  },
+  "Ro Rousseau": {
+    genres: ["Organic house", "Melodic house"],
+    about: "Ucraniano afincado en Los Ángeles; músico, promotor y habitual del playa desde el Burning Man virtual de 2020 con el campamento Kurenivka",
+  },
+  "Admiral Fantastica": {
+    genres: ["Directo", "Melodic house"],
+    about: "Alex Jack, guitarrista ucraniano en Los Ángeles con 35 años tocando. No es un DJ: mete guitarra y sintetizador en directo sobre la sesión. No confundir con Admiral, que es otro",
+    instagram: "admiral_fantastica",
+  },
+  Natipitch: {
+    genres: ["Melodic techno", "Deep house", "Tech house"],
+    about: "Israelí",
+  },
+  Madmotormiquel: {
+    genres: ["Deep house", "Melodic house", "Techno", "Disco"],
+    about: "Berlinés salido del Bar 25 y el Katerholzig; lleva el sello URSL y es de sesiones maratón que van subiendo despacio",
+  },
+  Kotoe: {
+    genres: ["Disco", "House", "Melodic house", "Techno"],
+    about: "Berlinesa; DJ, actriz y organizadora de festivales. Mezcla texturas asiáticas y sudamericanas con su propia voz encima",
+    instagram: "kotoekk",
+  },
+  "Nacho Isa": {
+    genres: ["Melodic house", "Melodic techno", "House"],
+    about: "De Nueva York; director musical de HNWC y fundador de la escuela de producción 343 Labs. Pinchó en el Mayan Warrior en 2022",
+    instagram: "nachoisa",
+  },
+  "Avi Snow": {
+    genres: ["Directo", "Downtempo", "Organic house"],
+    about: "Multiinstrumentista de Los Ángeles, un tercio de la banda City of the Sun; sus temas pasan de 250 millones de escuchas",
+    instagram: "cityofthesnow",
+  },
+  "Black Rock Philharmonic": {
+    genres: ["Directo"],
+    about: "No es un DJ: es la orquesta del playa, tocando en Black Rock City desde 2018. Entra de todo, de críos que empiezan con el instrumento a músicos profesionales",
+  },
+  "Meir Briskman": {
+    genres: ["Directo", "Melodic techno"],
+    about: "Director y compositor israelí, máster en dirección de orquesta por la Academia de Música y Danza de Jerusalén; monta sets sinfónicos en directo sobre electrónica",
+    video: {
+      url: "https://www.youtube.com/watch?v=m8EAmSvzgAQ",
+      label: "Mita Gami & Meir Briskman · Mayan Warrior · Burning Man 2024",
+    },
+  },
+  "Rockin Morrocin": {
+    genres: ["Disco", "Melodic house", "House"],
+    about: "Nabz, del oeste de Londres; percusión, disco nuevo y melódico en sesiones oscuras. Él lo escribe Rockin Moroccin. Edita en Get Physical, Diynamic y MIDH",
+    instagram: "rockinmoroccin",
+  },
+  "D'Witches": {
+    genres: ["Techno", "Afro house"],
+    about: "Dúo mexicano: las gemelas Thania y Thamara Ortiz, techno con sonidos afro",
+    instagram: "dwitchesofficial",
+  },
+  "Off in Lala": {
+    genres: ["Tech house", "House"],
+    about: "De San Francisco; ha abierto para Cloonee y Kaskade",
+    instagram: "offinlalaverse",
+  },
 };

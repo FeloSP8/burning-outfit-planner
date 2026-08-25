@@ -524,7 +524,9 @@ function SetRow({
 
 function Tag({ children, className }: { children: React.ReactNode; className: string }) {
   return (
-    <span className={`whitespace-nowrap rounded-md px-1.5 py-0.5 text-[10px] font-black ${className}`}>
+    // Sin `whitespace-nowrap`: las etiquetas cortas caben igual en una línea, y
+    // una nota larga se parte en vez de salirse de la tarjeta.
+    <span className={`max-w-full rounded-md px-1.5 py-0.5 text-[10px] font-black ${className}`}>
       {children}
     </span>
   );

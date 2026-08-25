@@ -247,6 +247,18 @@ export const VENUES: Venue[] = [
     },
   },
   {
+    id: "discotique",
+    name: "Discotique",
+    location: "2 & G",
+    emoji: "🪩",
+    theme: {
+      card: "bg-lime-50/80",
+      border: "border-lime-300",
+      chip: "bg-lime-100 text-lime-900",
+      text: "text-lime-900",
+    },
+  },
+  {
     id: "bipolar-express",
     name: "Bipolar Express",
     location: "art car · aparca donde toque",
@@ -1205,6 +1217,68 @@ export const PARTIES: Party[] = [
       { id: "bip-sat-phoenix",  label: "Phoenix M",                            artists: ["Phoenix M"],                  start: null },
       { id: "bip-sat-rafael",   label: "Rafael",                               artists: ["Rafael"],                     start: null },
       { id: "bip-sat-joezi",    label: "Joezi B2B Arymé",                      artists: ["Joezi", "Arymé"],             start: null, sun: "amanecer" },
+    ],
+  },
+
+  // ─────────────────────────── Discotique ───────────────────────────
+  //
+  // El cartel da la hora de arranque de cada día y nada más: ni cierre ni
+  // hora por set. Se estiman sets de 1 h 15 —lo que cuadra los tres días
+  // dentro de la jornada, incluido el viernes, que trae nueve nombres—.
+  {
+    id: "disco-wed",
+    venueId: "discotique",
+    date: "2026-09-02",
+    name: "Discotique",
+    kind: "day",
+    start: "08:00",
+    setMinutes: 75,
+    note: "El cartel solo publica la hora de arranque (8:00). Los sets se estiman a 1 h 15.",
+    sets: [
+      { id: "disco-wed-igor-santiago", label: "Igor Marijuan B2B Santiago Garcia", artists: ["Igor Marijuan", "Santiago Garcia"], start: null },
+      { id: "disco-wed-vanjee",        label: "Vanjee",                            artists: ["Vanjee"],                          start: null },
+      { id: "disco-wed-mishell-nevos", label: "Mishell B2B Nevos",                 artists: ["Mishell", "Nevos"],                start: null },
+      { id: "disco-wed-rockin",        label: "Rockin Morrocin",                   artists: ["Rockin Morrocin"],                 start: null },
+      { id: "disco-wed-rafael-roy",    label: "Rafael B2B Roy Rosenfeld",          artists: ["Rafael", "Roy Rosenfeld"],         start: null, note: "extended set — el cartel no dice cuánto" },
+    ],
+  },
+  {
+    id: "disco-thu",
+    venueId: "discotique",
+    date: "2026-09-03",
+    name: "Discotique",
+    kind: "day",
+    start: "07:00",
+    setMinutes: 75,
+    note: "El cartel solo publica la hora de arranque (7:00). Los sets se estiman a 1 h 15.",
+    sets: [
+      { id: "disco-thu-grace",          label: "Grace Arribas",     artists: ["Grace Arribas"],  start: null },
+      { id: "disco-thu-ahmed",          label: "Ahmed Spins B2B ?", artists: ["Ahmed Spins"],    start: null, note: "el cartel tapa el segundo nombre" },
+      { id: "disco-thu-jackson",        label: "Jackson",           artists: ["Jackson"],        start: null },
+      { id: "disco-thu-gawdat",         label: "Gawdat",            artists: ["Gawdat"],         start: null },
+      { id: "disco-thu-tom-collins",    label: "Tom & Collins",     artists: ["Tom & Collins"],  start: null },
+      { id: "disco-thu-calussa-stavi",  label: "Calussa B2B Stavi", artists: ["Calussa", "Stavi"], start: null },
+    ],
+  },
+  {
+    id: "disco-fri",
+    venueId: "discotique",
+    date: "2026-09-04",
+    name: "Discotique",
+    kind: "day",
+    start: "08:00",
+    setMinutes: 75,
+    note: "El cartel solo publica la hora de arranque (8:00). Los sets se estiman a 1 h 15: nueve nombres estiran el día hasta el atardecer.",
+    sets: [
+      { id: "disco-fri-ro-rousseau",   label: "Ro Rousseau",          artists: ["Ro Rousseau"],        start: null },
+      { id: "disco-fri-xinobi-aryme",  label: "Xinobi B2B Arymé",     artists: ["Xinobi", "Arymé"],    start: null },
+      { id: "disco-fri-marten-lou",    label: "Marten Lou",           artists: ["Marten Lou"],         start: null },
+      { id: "disco-fri-betical",       label: "Betical",              artists: ["Betical"],            start: null },
+      { id: "disco-fri-mooglie",       label: "Mooglie",              artists: ["Mooglie"],            start: null },
+      { id: "disco-fri-dwitches",      label: "D'Witches",            artists: ["D'Witches"],          start: null },
+      { id: "disco-fri-shimon-mono",   label: "Shimon B2B Monobase",  artists: ["Shimon", "Monobase"], start: null },
+      { id: "disco-fri-annicka",       label: "Annicka",              artists: ["Annicka"],            start: null, note: "también en Dune Lounge esa tarde" },
+      { id: "disco-fri-tripps",        label: "Tripps",               artists: ["Tripps"],             start: null },
     ],
   },
 ];
