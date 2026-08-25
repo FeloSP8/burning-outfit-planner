@@ -162,6 +162,10 @@ export function PlayaClient() {
         >
           {busy ? "Actualizando…" : "Actualizar"}
         </button>
+        {/* Arriba y a la vista: el PDF es el plan B y no se busca scrolleando. */}
+        <div className="w-full">
+          <PdfButton variant="quiet" />
+        </div>
       </div>
       {error && <p className="text-xs font-bold text-[#c84a10]">{error}</p>}
       {shellFailed != null && shellFailed > 0 && (
@@ -196,11 +200,7 @@ export function PlayaClient() {
       {tab === "inventario" && <InventoryView garments={snapshot.garments} />}
       {tab === "tiempo" && <WeatherView weather={snapshot.weather} />}
 
-      <div className="mt-2">
-        <PdfButton variant="quiet" />
-      </div>
-
-      <p className="text-[11px] font-medium leading-relaxed text-[#a07040]">
+      <p className="mt-2 text-[11px] font-medium leading-relaxed text-[#a07040]">
         Esta pantalla es de solo consulta: marcar sets, tachar la checklist o subir fotos necesita
         cobertura y se hace en las pantallas normales. Las fotos no se descargan a propósito — son
         casi todo el peso y en el evento no se miran.
