@@ -93,12 +93,15 @@ export function CityMap({
   camps,
   layers,
   focus,
+  favourites = [],
 }: {
   venues: MapVenue[];
   camps: MapCamp[];
   layers: Record<LayerKey, boolean>;
   /** uid del campamento al que ir; cambia cada vez que se busca uno. */
   focus?: { uid: string; nonce: number } | null;
+  /** uids marcados por el grupo: se pintan aparte para verlos de un vistazo. */
+  favourites?: string[];
 }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -107,6 +110,8 @@ export function CityMap({
   const groupsRef = useRef<Record<LayerKey, any>>({} as Record<LayerKey, any>);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const campMarkersRef = useRef<Map<string, any>>(new Map());
+  /** Los marcados, en un ref: el pintado del mapa los consulta al vuelo. */
+  const favouritesRef = useRef<Set<string>>(new Set(favourites));
   const [status, setStatus] = useState<"loading" | "ready" | "failed">("loading");
 
   useEffect(() => {
@@ -274,11 +279,7 @@ export function CityMap({
         for (const camp of camps) {
           if (!camp.point) continue; // sin colocar todavía, o dirección ilegible
           const marker = L.circleMarker(camp.point, {
-            radius: 3.5,
-            color: "#7a4ea9",
-            weight: 1,
-            fillColor: "#a982d8",
-            fillOpacity: 0.85,
+            ...campStyle(favouritesRef.current.has(camp.uid)),
           }).bindPopup(
             `<div style="font-family:inherit;min-width:140px">
                <div style="font-weight:800;font-size:13px;color:${INK}">${esc(camp.name)}</div>
@@ -292,12 +293,17 @@ export function CityMap({
         groupsRef.current.camps = campGroup;
 
         // A vista de ciudad entera, 1.400 puntos del tamaño de los de zoom son
-        // una mancha morada que tapa las calles: el radio crece al ampliar.
+        // una mancha morada que tapa las calles: el radio crece al ampliar. Los
+        // marcados van siempre un punto más grandes, para encontrarlos sin
+        // buscarlos.
         const campRadius = (zoom: number) =>
           zoom >= 16 ? 5 : zoom >= 15 ? 3.5 : zoom >= 14 ? 2.5 : 1.5;
         const syncCampSize = () => {
           const radius = campRadius(map.getZoom());
-          for (const marker of campMarkersRef.current.values()) marker.setRadius(radius);
+          for (const [uid, marker] of campMarkersRef.current) {
+            const favourite = favouritesRef.current.has(uid);
+            marker.setRadius(favourite ? radius + 2 : radius);
+          }
         };
         map.on("zoomend", syncCampSize);
 
@@ -345,6 +351,20 @@ export function CityMap({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [venues, camps]);
 
+  // Marcar y desmarcar repinta los puntos, sin reconstruir el mapa.
+  useEffect(() => {
+    favouritesRef.current = new Set(favourites);
+    const map = mapRef.current;
+    if (!map) return;
+    const zoom = map.getZoom();
+    const radius = zoom >= 16 ? 5 : zoom >= 15 ? 3.5 : zoom >= 14 ? 2.5 : 1.5;
+    for (const [uid, marker] of campMarkersRef.current) {
+      const favourite = favouritesRef.current.has(uid);
+      marker.setStyle(campStyle(favourite));
+      marker.setRadius(favourite ? radius + 2 : radius);
+    }
+  }, [favourites, status]);
+
   // Ir al campamento que se acaba de buscar.
   useEffect(() => {
     const map = mapRef.current;
@@ -378,6 +398,13 @@ export function CityMap({
   }
 
   return <div ref={containerRef} className="h-full w-full" style={{ background: PLAYA }} />;
+}
+
+/** Morado los del listado, naranja los que le interesan a alguien del grupo. */
+function campStyle(favourite: boolean) {
+  return favourite
+    ? { radius: 5.5, color: "#7a2e08", weight: 1.5, fillColor: "#f0902a", fillOpacity: 1 }
+    : { radius: 3.5, color: "#7a4ea9", weight: 1, fillColor: "#a982d8", fillOpacity: 0.85 };
 }
 
 function esc(s: string): string {

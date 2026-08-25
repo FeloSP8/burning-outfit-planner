@@ -2,6 +2,7 @@ import type { ChecklistItemData, Day, DjPicksBySet, FansByArtist, Garment } from
 import type { Ensemble, ModelForecast } from "@/lib/weather";
 import type { CampPin, PlayaEvent } from "@/lib/brc-api";
 import type { EventPicksByPass } from "@/lib/event-picks";
+import type { CampPicksByUid } from "@/lib/camp-picks";
 
 /**
  * Todo lo que hay que llevarse al playa en un solo objeto.
@@ -34,9 +35,11 @@ export interface PlayaSnapshot {
   events: PlayaEvent[];
   /** `uid|inicio` → quiénes quieren ir a ese pase. */
   eventPicks: EventPicksByPass;
+  /** uid del campamento → quiénes lo tienen marcado. */
+  campPicks: CampPicksByUid;
   /** Pronóstico congelado en el momento de la descarga. null si falló. */
   weather: { models: ModelForecast[]; ensemble: Ensemble | null } | null;
 }
 
 /** Formato actual. Cambiarlo invalida los snapshots ya descargados. */
-export const SNAPSHOT_VERSION = 4;
+export const SNAPSHOT_VERSION = 5;

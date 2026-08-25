@@ -250,6 +250,10 @@ export function PlayaClient() {
           venues={placed}
           roving={roving}
           camps={snapshot.camps}
+          campPicks={snapshot.campPicks}
+          currentUserName={snapshot.userName}
+          // Marcar exige sesión, y esta pantalla es pública: aquí solo se ven.
+          canPick={false}
           campsNote={
             snapshot.camps.length === 0
               ? "Esta copia no trae el listado oficial de campamentos."

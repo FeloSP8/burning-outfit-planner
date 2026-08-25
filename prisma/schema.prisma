@@ -20,6 +20,7 @@ model User {
   styleLooks     StyleLook[]
   djPicks        DjPick[]
   eventPicks     EventPick[]
+  campPicks      CampPick[]
   favoriteArtists FavoriteArtist[]
   createdAt      DateTime        @default(now())
 }
@@ -181,6 +182,19 @@ model EventPick {
 
   @@unique([userId, eventUid, startTime])
   @@index([eventUid])
+}
+
+// Un campamento del listado oficial que le interesa a un usuario. Compartido,
+// como todo lo demás: en el mapa se ven los de todos, marcados aparte.
+model CampPick {
+  id        String   @id @default(cuid())
+  campUid   String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, campUid])
+  @@index([campUid])
 }
 
 // Un artista que le gusta a un usuario. Ordena la lista de DJs: los suyos

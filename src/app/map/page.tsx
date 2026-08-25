@@ -1,5 +1,6 @@
 import { getCurrentUser } from "@/lib/auth";
 import { getCamps, toPins } from "@/lib/brc-api";
+import { loadCampPicks } from "@/lib/camp-picks";
 import { BRC_YEAR } from "@/lib/brc-city";
 import { placeVenues } from "@/lib/playa-venues";
 import { MapPanel } from "@/components/map/MapPanel";
@@ -14,7 +15,10 @@ export default async function MapPage() {
   if (!user) return null; // el proxy ya redirige a /login
 
   const { placed, roving } = placeVenues();
-  const { camps, error, locationsEmbargoed } = await getCamps();
+  const [{ camps, error, locationsEmbargoed }, campPicks] = await Promise.all([
+    getCamps(),
+    loadCampPicks(),
+  ]);
   const placedCamps = camps.filter((camp) => camp.point).length;
 
   return (
@@ -37,6 +41,8 @@ export default async function MapPage() {
         venues={placed}
         roving={roving}
         camps={toPins(camps)}
+        campPicks={campPicks}
+        currentUserName={user.name}
         campsNote={
           error
             ? `Campamentos oficiales no disponibles: ${error}`
