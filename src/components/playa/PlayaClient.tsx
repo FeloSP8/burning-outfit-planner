@@ -11,6 +11,7 @@ import {
 import { placeVenues } from "@/lib/playa-venues";
 import { MapPanel } from "@/components/map/MapPanel";
 import { EventsPanel } from "@/components/events/EventsPanel";
+import { MyAgenda } from "@/components/events/MyAgenda";
 import {
   AgendaView,
   ChecklistView,
@@ -31,10 +32,11 @@ import type { PlayaSnapshot } from "@/types/snapshot";
  * desde la caché.
  */
 
-type TabId = "agenda" | "eventos" | "mapa" | "outfits" | "checklist" | "inventario" | "tiempo";
+type TabId = "mia" | "agenda" | "eventos" | "mapa" | "outfits" | "checklist" | "inventario" | "tiempo";
 
 const TABS: { id: TabId; label: string; emoji: string }[] = [
-  { id: "agenda", label: "Agenda", emoji: "🎧" },
+  { id: "mia", label: "Mi agenda", emoji: "⭐" },
+  { id: "agenda", label: "Agenda DJs", emoji: "🎧" },
   { id: "eventos", label: "Eventos", emoji: "📋" },
   { id: "mapa", label: "Mapa", emoji: "🗺️" },
   { id: "outfits", label: "Outfits", emoji: "👕" },
@@ -64,7 +66,7 @@ export function PlayaClient() {
   const [used, setUsed] = useState<number | null>(null);
   /** Archivos del armazón que no se pudieron guardar en la última descarga. */
   const [shellFailed, setShellFailed] = useState<number | null>(null);
-  const [tab, setTab] = useState<TabId>("agenda");
+  const [tab, setTab] = useState<TabId>("mia");
   /** El service worker ha visto una versión nueva de la pantalla. */
   const [updated, setUpdated] = useState(false);
 
@@ -219,10 +221,23 @@ export function PlayaClient() {
         ))}
       </div>
 
+      {tab === "mia" && (
+        <MyAgenda
+          picks={snapshot.picks}
+          events={snapshot.events}
+          eventPicks={snapshot.eventPicks}
+          currentUserName={snapshot.userName}
+        />
+      )}
       {tab === "agenda" && <AgendaView picks={snapshot.picks} />}
       {tab === "eventos" && (
         <EventsPanel
           events={snapshot.events}
+          picks={snapshot.picks}
+          eventPicks={snapshot.eventPicks}
+          currentUserName={snapshot.userName}
+          // Marcar exige red: aquí la estrella solo cuenta lo que ya hay.
+          canPick={false}
           note={
             snapshot.events.length === 0
               ? "Esta copia no trae los eventos oficiales."

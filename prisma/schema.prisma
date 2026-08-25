@@ -19,6 +19,7 @@ model User {
   checklistChecks ChecklistCheck[]
   styleLooks     StyleLook[]
   djPicks        DjPick[]
+  eventPicks     EventPick[]
   favoriteArtists FavoriteArtist[]
   createdAt      DateTime        @default(now())
 }
@@ -165,6 +166,21 @@ model DjPick {
 
   @@unique([userId, setId])
   @@index([setId])
+}
+
+// Un pase concreto del listado oficial que un usuario quiere ver. Va por pase
+// y no por evento porque casi todos se repiten varios días: `startTime` es el
+// inicio tal como lo da la API, en hora del playa y con su desfase detrás.
+model EventPick {
+  id        String   @id @default(cuid())
+  eventUid  String
+  startTime String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, eventUid, startTime])
+  @@index([eventUid])
 }
 
 // Un artista que le gusta a un usuario. Ordena la lista de DJs: los suyos

@@ -2,6 +2,7 @@ import "server-only";
 import { db } from "@/lib/db";
 import { loadPicks } from "@/lib/dj-picks";
 import { loadFansByArtist } from "@/lib/dj-favorites";
+import { loadEventPicks } from "@/lib/event-picks";
 import { getWeatherBundle } from "@/lib/weather";
 import { getCamps, getEvents, toPins } from "@/lib/brc-api";
 import { SNAPSHOT_VERSION, type PlayaSnapshot } from "@/types/snapshot";
@@ -16,10 +17,11 @@ import type { ChecklistItemData, ChecklistOrigin, ChecklistType, Day, Garment } 
  * los dos, así no se van separando con el tiempo.
  */
 export async function buildSnapshot(userId: string, userName: string): Promise<PlayaSnapshot> {
-  const [picks, fans, rawDays, rawGarments, rawChecklist, weather, campsResult, eventsResult] =
+  const [picks, fans, eventPicks, rawDays, rawGarments, rawChecklist, weather, campsResult, eventsResult] =
     await Promise.all([
     loadPicks(),
     loadFansByArtist(),
+    loadEventPicks(),
     db.day.findMany({
       where: { userId },
       orderBy: { date: "asc" },
@@ -98,5 +100,6 @@ export async function buildSnapshot(userId: string, userName: string): Promise<P
     weather: weather ? { models: weather.models, ensemble: weather.ensemble } : null,
     camps: campsResult ? toPins(campsResult.camps) : [],
     events: eventsResult?.events ?? [],
+    eventPicks,
   };
 }
