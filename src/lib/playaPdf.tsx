@@ -1,5 +1,5 @@
 import React from "react";
-import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
+import { Document, Image, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 import { ALL_SLOTS, C } from "@/lib/pdf-theme";
 import { EVENT_DAYS } from "@/lib/dj-lineups";
 import { SET_INDEX, fromMinutes, pickedEntriesByDay, venueLabel } from "@/lib/dj-agenda";
@@ -12,7 +12,9 @@ import type { PlayaSnapshot } from "@/types/snapshot";
  * de almacenamiento, ni de que Safari decida vaciar la caché, ni de que la app
  * arranque: si todo lo demás falla, esto sigue abriéndose.
  *
- * Sin fotos, a propósito: son el 99% del peso y en el evento no se miran.
+ * Las fotos son opcionales (`images`): el try-on de cada turno y las miniaturas
+ * de las prendas, ya bajadas y encogidas por `pdf-images.ts`. Sin ellas el
+ * dossier sale igual, solo que en texto.
  */
 
 const s = StyleSheet.create({
@@ -72,6 +74,29 @@ const s = StyleSheet.create({
   note: { color: C.textLight, fontSize: 7 },
   empty: { color: C.textLight, fontStyle: "italic", marginBottom: 4 },
 
+  outfitBody: { flexDirection: "row", gap: 8, width: "87%" },
+  tryOn: {
+    width: 96,
+    height: 128,
+    objectFit: "cover",
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: C.sandBorder,
+    borderStyle: "solid",
+  },
+  thumbGrid: { flexDirection: "row", flexWrap: "wrap", gap: 5, marginTop: 2 },
+  thumbBox: { width: 54 },
+  thumb: {
+    width: 54,
+    height: 54,
+    objectFit: "cover",
+    borderRadius: 3,
+    borderWidth: 1,
+    borderColor: C.divider,
+    borderStyle: "solid",
+  },
+  thumbName: { fontSize: 6.5, color: C.textMid, marginTop: 1.5 },
+
   chipRow: { flexDirection: "row", flexWrap: "wrap", gap: 3, marginTop: 2 },
   chip: {
     backgroundColor: C.sandDark,
@@ -126,10 +151,14 @@ function Agenda({ picks }: { picks: PlayaSnapshot["picks"] }) {
   return (
     <>
       {days.map(({ day, entries }) => (
-        <View key={day.date} wrap={false}>
-          <Text style={s.dayTitle}>{dayHeading(day.date)}</Text>
+        <View key={day.date}>
+          {/* minPresenceAhead: si no caben un par de sets debajo, el título se
+              va con ellos a la página siguiente en vez de quedarse solo. */}
+          <View minPresenceAhead={40}>
+            <Text style={s.dayTitle}>{dayHeading(day.date)}</Text>
+          </View>
           {entries.map((entry, i) => (
-            <View key={entry.set.id} style={i % 2 === 1 ? [s.row, s.rowAlt] : s.row}>
+            <View key={entry.set.id} wrap={false} style={i % 2 === 1 ? [s.row, s.rowAlt] : s.row}>
               <Text style={s.time}>
                 {fromMinutes(entry.window.start)}
                 {entry.window.estimated ? <Text style={s.note}> aprox.</Text> : ""}
@@ -152,7 +181,10 @@ function Agenda({ picks }: { picks: PlayaSnapshot["picks"] }) {
   );
 }
 
-function Outfits({ days }: { days: PlayaSnapshot["days"] }) {
+/** `url → data URI`, lo que devuelve `loadPdfImages`. */
+export type PdfImages = Record<string, string>;
+
+function Outfits({ days, images }: { days: PlayaSnapshot["days"]; images: PdfImages }) {
   const withOutfit = days.filter((d) => d.shifts.some((sh) => sh.outfit && sh.outfit.items.length > 0));
   if (withOutfit.length === 0) {
     return <Text style={s.empty}>Ningún outfit montado todavía.</Text>;
@@ -161,24 +193,52 @@ function Outfits({ days }: { days: PlayaSnapshot["days"] }) {
   return (
     <>
       {withOutfit.map((day) => (
-        <View key={day.id} wrap={false}>
-          <Text style={s.dayTitle}>
-            {dayHeading(day.date.slice(0, 10))}
-            {day.label ? ` · ${day.label}` : ""}
-          </Text>
+        <View key={day.id}>
+          {/* Un día con fotos mide media página: si se mantuviera entero, un
+              día que no cabe dejaría la anterior medio vacía. Lo que no se
+              parte es cada turno. */}
+          <View minPresenceAhead={150}>
+            <Text style={s.dayTitle}>
+              {dayHeading(day.date.slice(0, 10))}
+              {day.label ? ` · ${day.label}` : ""}
+            </Text>
+          </View>
           {day.shifts.map((shift) => {
             const items = shift.outfit?.items ?? [];
             if (items.length === 0) return null;
+
+            const tryOnUrl = shift.outfit?.tryOn?.imageUrl;
+            const tryOn = tryOnUrl ? images[tryOnUrl] : undefined;
+            const withPhoto = items.filter((item) => item.garment.photoUrl && images[item.garment.photoUrl]);
+            // Las que no tienen foto siguen apareciendo, como etiqueta: un
+            // outfit a medio fotografiar no puede salir a medias.
+            const withoutPhoto = items.filter((item) => !withPhoto.includes(item));
+
             return (
-              <View key={shift.id} style={s.row}>
+              <View key={shift.id} wrap={false} style={s.row}>
                 <Text style={s.time}>{shift.type === "TARDE" ? "Tarde" : "Noche"}</Text>
-                <View style={{ width: "87%" }}>
-                  <View style={s.chipRow}>
-                    {items.map((item) => (
-                      <Text key={item.id} style={s.chip}>
-                        {item.garment.name}
-                      </Text>
-                    ))}
+                <View style={s.outfitBody}>
+                  {tryOn && <Image src={tryOn} style={s.tryOn} />}
+                  <View style={{ flex: 1 }}>
+                    {withPhoto.length > 0 && (
+                      <View style={s.thumbGrid}>
+                        {withPhoto.map((item) => (
+                          <View key={item.id} style={s.thumbBox}>
+                            <Image src={images[item.garment.photoUrl!]} style={s.thumb} />
+                            <Text style={s.thumbName}>{item.garment.name}</Text>
+                          </View>
+                        ))}
+                      </View>
+                    )}
+                    {withoutPhoto.length > 0 && (
+                      <View style={s.chipRow}>
+                        {withoutPhoto.map((item) => (
+                          <Text key={item.id} style={s.chip}>
+                            {item.garment.name}
+                          </Text>
+                        ))}
+                      </View>
+                    )}
                   </View>
                 </View>
               </View>
@@ -236,10 +296,12 @@ function Inventory({ garments }: { garments: PlayaSnapshot["garments"] }) {
         const items = garments.filter((g) => g.slot === slot.key);
         if (items.length === 0) return null;
         return (
-          <View key={slot.key} wrap={false}>
-            <Text style={s.dayTitle}>
-              {slot.label} · {items.length}
-            </Text>
+          <View key={slot.key}>
+            <View minPresenceAhead={40}>
+              <Text style={s.dayTitle}>
+                {slot.label} · {items.length}
+              </Text>
+            </View>
             {items.map((g, i) => (
               <View key={g.id} style={i % 2 === 1 ? [s.row, s.rowAlt] : s.row}>
                 <Text style={{ width: "60%" }}>{g.name}</Text>
@@ -256,7 +318,15 @@ function Inventory({ garments }: { garments: PlayaSnapshot["garments"] }) {
   );
 }
 
-export function PlayaPDF({ snapshot, generatedAt }: { snapshot: PlayaSnapshot; generatedAt: string }) {
+export function PlayaPDF({
+  snapshot,
+  generatedAt,
+  images = {},
+}: {
+  snapshot: PlayaSnapshot;
+  generatedAt: string;
+  images?: PdfImages;
+}) {
   const pickedCount = Object.keys(snapshot.picks).filter((id) => SET_INDEX[id]).length;
 
   return (
@@ -286,7 +356,7 @@ export function PlayaPDF({ snapshot, generatedAt }: { snapshot: PlayaSnapshot; g
         </Section>
 
         <Section title="Outfits por día">
-          <Outfits days={snapshot.days} />
+          <Outfits days={snapshot.days} images={images} />
         </Section>
 
         <Section title="Checklist">

@@ -132,8 +132,9 @@ export function PlayaClient() {
           <div className="mt-6 border-t border-[#c4906a]/40 pt-5">
             <PdfButton variant="primary" />
             <p className="mx-auto mt-2 max-w-md text-[11px] font-medium text-[#a07040]">
-              Lo mismo pero en papel: agenda, outfits, checklist e inventario en un PDF que se
-              guarda en el móvil. No depende de esta pantalla ni del navegador.
+              Lo mismo pero en papel, y con las fotos de tus outfits: agenda, outfits, checklist e
+              inventario en un PDF que se guarda en el móvil. No depende de esta pantalla ni del
+              navegador.
             </p>
           </div>
         </div>
