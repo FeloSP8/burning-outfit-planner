@@ -1,7 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { cacheAppShell, loadSnapshot, saveSnapshot, storageUsed } from "@/lib/offline-store";
+import {
+  cacheAppShell,
+  checkShellUpdate,
+  loadSnapshot,
+  saveSnapshot,
+  storageUsed,
+} from "@/lib/offline-store";
 import { placeVenues } from "@/lib/playa-venues";
 import { MapPanel } from "@/components/map/MapPanel";
 import {
@@ -57,6 +63,20 @@ export function PlayaClient() {
   /** Archivos del armazón que no se pudieron guardar en la última descarga. */
   const [shellFailed, setShellFailed] = useState<number | null>(null);
   const [tab, setTab] = useState<TabId>("agenda");
+  /** El service worker ha visto una versión nueva de la pantalla. */
+  const [updated, setUpdated] = useState(false);
+
+  // La pantalla se sirve de caché, así que lo que se está viendo es la versión
+  // de la vez anterior. Se pregunta al arrancar si hay una más nueva.
+  useEffect(() => {
+    let cancelled = false;
+    checkShellUpdate().then((hasUpdate) => {
+      if (!cancelled) setUpdated(hasUpdate);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -111,6 +131,7 @@ export function PlayaClient() {
   if (!snapshot) {
     return (
       <div className="flex flex-col gap-4">
+        {updated && <UpdateBanner />}
         <div className="rounded-2xl border-2 border-dashed border-[#c4906a] bg-[#fdf4e0] px-5 py-8 text-center">
           <p className="text-3xl">📥</p>
           <p className="mt-3 text-lg font-black text-[#2a1a08]">Todavía no has descargado nada</p>
@@ -147,6 +168,8 @@ export function PlayaClient() {
 
   return (
     <div className="flex flex-col gap-4">
+      {updated && <UpdateBanner />}
+
       {/* Estado de la copia */}
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-2xl border-2 border-[#c4906a]/40 bg-[#fdf4e0] px-4 py-2.5">
         <p className="text-xs font-bold text-[#2a1a08]">
@@ -208,6 +231,25 @@ export function PlayaClient() {
       </p>
       <InstallHelp />
     </div>
+  );
+}
+
+
+/** Aviso de versión nueva: un toque y se recarga con lo último. */
+function UpdateBanner() {
+  return (
+    <button
+      type="button"
+      onClick={() => location.reload()}
+      className="flex w-full items-center justify-between gap-3 rounded-2xl border-2 border-[#c84a10] bg-[#c84a10] px-4 py-2.5 text-left"
+    >
+      <span className="text-xs font-black text-[#fdf4e0]">
+        Hay una versión nueva de la app
+      </span>
+      <span className="shrink-0 rounded-full bg-[#fdf4e0] px-3 py-1 text-[11px] font-black text-[#c84a10]">
+        Recargar
+      </span>
+    </button>
   );
 }
 

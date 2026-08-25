@@ -69,6 +69,10 @@ self.addEventListener("activate", (event) => {
  * peticiones no pasan por aquí y no se cachean solas.
  */
 self.addEventListener("message", (event) => {
+  if (event.data?.type === "CHECK_SHELL") {
+    event.waitUntil(checkShell(event.ports?.[0]));
+    return;
+  }
   if (event.data?.type !== "CACHE_ESSENTIALS") return;
   const port = event.ports?.[0];
   const assets = Array.isArray(event.data.assets) ? event.data.assets : [];
@@ -85,6 +89,38 @@ self.addEventListener("message", (event) => {
   );
 });
 
+
+
+/**
+ * ¿La pantalla guardada sigue siendo la que sirve el servidor?
+ *
+ * Servirla de caché tiene un precio: lo que se ve es siempre la copia de la
+ * vez anterior. Sin esta comprobación, cada cambio que se despliega tardaría
+ * dos aperturas en aparecer y desde el móvil no habría manera de saberlo.
+ *
+ * La pide la página al arrancar, y no se hace sola en segundo plano, porque
+ * así la respuesta llega cuando ya hay alguien escuchando.
+ */
+async function checkShell(port) {
+  const answer = (updated) => port?.postMessage({ type: "SHELL_CHECKED", updated });
+  try {
+    const cache = await caches.open(CACHE);
+    const cached = await cache.match(OFFLINE_PAGE);
+    if (!cached) return answer(false);
+
+    const fresh = await fetch(OFFLINE_PAGE, { cache: "no-store" });
+    if (!fresh.ok) return answer(false);
+
+    const [before, after] = await Promise.all([cached.clone().text(), fresh.clone().text()]);
+    // Se guarda antes de avisar: al recargar tiene que salir ya la nueva.
+    await cache.put(OFFLINE_PAGE, fresh);
+    answer(before !== after);
+  } catch {
+    // Sin red no hay novedades que dar: se sigue con la copia guardada.
+    answer(false);
+  }
+}
+
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   if (request.method !== "GET") return;
@@ -100,15 +136,9 @@ self.addEventListener("fetch", (event) => {
       (async () => {
         const cache = await caches.open(CACHE);
         const hit = await cache.match(OFFLINE_PAGE);
-        if (hit) {
-          // Se refresca por detrás para la próxima vez.
-          event.waitUntil(
-            fetch(request)
-              .then((response) => response.ok && cache.put(OFFLINE_PAGE, response.clone()))
-              .catch(() => {})
-          );
-          return hit;
-        }
+        // Se sirve tal cual y no se refresca por detrás: de eso se encarga la
+        // propia pantalla con CHECK_SHELL, que sí sabe avisar al usuario.
+        if (hit) return hit;
         return fetch(request);
       })()
     );

@@ -104,3 +104,28 @@ export async function cacheAppShell(): Promise<number | null> {
     worker.postMessage({ type: "CACHE_ESSENTIALS", assets }, [channel.port2]);
   });
 }
+
+/**
+ * Pregunta al service worker si la pantalla guardada se ha quedado vieja.
+ *
+ * La copia se sirve de caché, o sea que lo que se está viendo es siempre la
+ * versión de la vez anterior. Esto lo detecta y deja la nueva ya guardada, así
+ * que basta con recargar.
+ */
+export async function checkShellUpdate(): Promise<boolean> {
+  if (!("serviceWorker" in navigator) || !navigator.onLine) return false;
+
+  const registration = await navigator.serviceWorker.ready;
+  const worker = registration.active;
+  if (!worker) return false;
+
+  return new Promise<boolean>((resolve) => {
+    const channel = new MessageChannel();
+    const timer = setTimeout(() => resolve(false), 10_000);
+    channel.port1.onmessage = (event) => {
+      clearTimeout(timer);
+      resolve(event.data?.updated === true);
+    };
+    worker.postMessage({ type: "CHECK_SHELL" }, [channel.port2]);
+  });
+}
