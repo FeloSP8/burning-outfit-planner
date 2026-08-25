@@ -10,6 +10,7 @@ const LINKS = [
   { href: "/checklist", label: "Checklist" },
   { href: "/planner",   label: "Planificador" },
   { href: "/agenda",    label: "Agenda DJs" },
+  { href: "/map",       label: "Mapa" },
   { href: "/inventory", label: "Inventario" },
   { href: "/style",     label: "Estilismo" },
   { href: "/overview",  label: "Vista general" },
