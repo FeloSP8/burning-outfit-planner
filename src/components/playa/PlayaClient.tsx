@@ -128,6 +128,14 @@ export function PlayaClient() {
             {busy ? "Descargando…" : "Descargar para el playa"}
           </button>
           {error && <p className="mt-3 text-xs font-bold text-[#c84a10]">{error}</p>}
+
+          <div className="mt-6 border-t border-[#c4906a]/40 pt-5">
+            <PdfButton variant="primary" />
+            <p className="mx-auto mt-2 max-w-md text-[11px] font-medium text-[#a07040]">
+              Lo mismo pero en papel: agenda, outfits, checklist e inventario en un PDF que se
+              guarda en el móvil. No depende de esta pantalla ni del navegador.
+            </p>
+          </div>
         </div>
         <InstallHelp />
       </div>
@@ -188,17 +196,36 @@ export function PlayaClient() {
       {tab === "inventario" && <InventoryView garments={snapshot.garments} />}
       {tab === "tiempo" && <WeatherView weather={snapshot.weather} />}
 
-      <p className="mt-2 text-[11px] font-medium leading-relaxed text-[#a07040]">
+      <div className="mt-2">
+        <PdfButton variant="quiet" />
+      </div>
+
+      <p className="text-[11px] font-medium leading-relaxed text-[#a07040]">
         Esta pantalla es de solo consulta: marcar sets, tachar la checklist o subir fotos necesita
         cobertura y se hace en las pantallas normales. Las fotos no se descargan a propósito — son
-        casi todo el peso y en el evento no se miran. Si quieres un plan B que no dependa de nada,{" "}
-        <a href="/api/playa-pdf" className="font-bold underline">
-          descarga el dossier en PDF
-        </a>{" "}
-        y guárdalo en el móvil.
+        casi todo el peso y en el evento no se miran.
       </p>
       <InstallHelp />
     </div>
+  );
+}
+
+/**
+ * El dossier de papel. Sale en las dos pantallas —con copia y sin ella— porque
+ * es justo lo que quiere alguien que todavía no se fía del modo offline.
+ */
+function PdfButton({ variant }: { variant: "primary" | "quiet" }) {
+  return (
+    <a
+      href="/api/playa-pdf"
+      className={
+        variant === "primary"
+          ? "inline-block rounded-full border-2 border-[#c84a10] px-5 py-2.5 text-sm font-black text-[#c84a10]"
+          : "inline-block rounded-full border-2 border-[#c4906a]/50 px-3 py-1.5 text-xs font-bold text-[#a07040]"
+      }
+    >
+      📄 Descargar dossier en PDF
+    </a>
   );
 }
 
