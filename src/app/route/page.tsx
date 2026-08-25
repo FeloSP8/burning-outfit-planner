@@ -212,7 +212,13 @@ export default async function RoutePage() {
             { label: "Booking", value: ROUTE_META.booking },
             {
               label: "Recogida",
-              value: `${ROUTE_META.pickup.date} · ${ROUTE_META.pickup.window} · ${ROUTE_META.pickup.place}`,
+              value: `${ROUTE_META.pickup.date} · ${ROUTE_META.pickup.place}`,
+            },
+            {
+              // La ventana es la del contrato; la hora real no la cierra la
+              // sede por teléfono, así que al lado va lo que se va a hacer.
+              label: "Hora de recogida",
+              value: `${ROUTE_META.pickup.plan} (ventana del contrato: ${ROUTE_META.pickup.window})`,
             },
             {
               label: "Devolución",

@@ -44,7 +44,10 @@ export const ROUTE_META = {
   people: 4,
   pickup: {
     date: "29 agosto 2026",
+    /** La ventana del contrato. La sede no cierra hora concreta por teléfono. */
     window: "13:00–16:00",
+    /** Lo que se va a hacer: plantarse allí temprano y salir en cuanto la den. */
+    plan: "Estar en la sede a las 7:00 y salir en cuanto la entreguen",
     place: "Cruise America San Francisco",
   },
   return: {
@@ -152,8 +155,8 @@ export const ROUTE_NOTES: { title: string; body: string; emoji: string }[] = [
   },
   {
     emoji: "⏰",
-    title: "La recogida 13:00–16:00 aprieta el día 29",
-    body: "Deja poco margen para hacer las 3 compras y conducir 7h30 el mismo día. Considerar pernocta intermedia (Reno o Fernley) o comprimir compras.",
+    title: "El día 29 se hace entero: sin pernocta en ruta",
+    body: "Decisión tomada: las 3 compras y las 7h30 de volante van el mismo día, sin parar a dormir en Reno ni en Fernley. La hora de recogida no se puede cerrar por teléfono —la ventana del contrato es 13:00–16:00 y hay contratada la Early Bird Departure Option—, así que el plan es estar en la sede a las 7:00 y salir en cuanto la entreguen.",
   },
   {
     emoji: "⛽",
@@ -184,8 +187,6 @@ export const ROUTE_NOTES: { title: string; body: string; emoji: string }[] = [
 
 export const ROUTE_PENDING: string[] = [
   "Añadir el 4º personal kit (o llevar ropa de cama y toallas propias para esa persona). Se puede añadir en la recogida.",
-  "Decidir si se pernocta en ruta el 29 de agosto.",
-  "Confirmar hora exacta de pickup (se agenda llamando a la sede 1–3 días antes).",
 ];
 
 /**
