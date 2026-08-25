@@ -24,6 +24,13 @@ export interface ChecklistItemData {
  */
 export type DjPicksBySet = Record<string, string[]>;
 
+/**
+ * Artistas favoritos del grupo: nombre del artista en el catálogo → nombres de
+ * quienes lo tienen marcado. Compartido, como las selecciones: saber que a tres
+ * más les gusta un DJ es la mitad de la agenda hecha.
+ */
+export type FansByArtist = Record<string, string[]>;
+
 export interface Garment {
   id: string;
   name: string;

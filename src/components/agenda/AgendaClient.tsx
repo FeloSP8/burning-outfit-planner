@@ -28,7 +28,7 @@ import {
 } from "@/lib/dj-agenda";
 import type { DjSet, Party } from "@/lib/dj-lineups";
 import { ARTIST_INFO, type Genre } from "@/lib/dj-artists";
-import type { DjPicksBySet } from "@/types";
+import type { DjPicksBySet, FansByArtist } from "@/types";
 
 const venueOf = (party: Party) => VENUE_BY_ID[party.venueId];
 
@@ -54,19 +54,23 @@ function nameCarriesVenue(party: Party, label: string): boolean {
 
 export function AgendaClient({
   initialPicks,
-  initialFavorites,
+  initialFans,
   currentUserName,
   today,
 }: {
   initialPicks: DjPicksBySet;
-  /** Artistas que le gustan al usuario: salen arriba de la lista por DJ. */
-  initialFavorites: string[];
+  /**
+   * Quién ha marcado a cada artista. De aquí salen las dos cosas: el contador
+   * que ve todo el grupo y los favoritos del usuario, que son las entradas
+   * donde aparece su nombre y suben arriba de la lista.
+   */
+  initialFans: FansByArtist;
   currentUserName: string;
   /** Fecha de hoy en el playa, para abrir la página por el día que toca. */
   today: string;
 }) {
   const [picks, setPicks] = useState<DjPicksBySet>(initialPicks);
-  const [favorites, setFavorites] = useState<Set<string>>(() => new Set(initialFavorites));
+  const [fans, setFans] = useState<FansByArtist>(initialFans);
   const [day, setDay] = useState<string>(
     () => DAYS_WITH_LINEUP.find((d) => d.date >= today)?.date ?? DAYS_WITH_LINEUP[0].date
   );
@@ -78,6 +82,11 @@ export function AgendaClient({
   const mine = useMemo(
     () => new Set(Object.entries(picks).filter(([, who]) => who.includes(currentUserName)).map(([id]) => id)),
     [picks, currentUserName]
+  );
+
+  const favorites = useMemo(
+    () => new Set(Object.entries(fans).filter(([, who]) => who.includes(currentUserName)).map(([a]) => a)),
+    [fans, currentUserName]
   );
 
   /** Mis sets de todo el evento, ya con ventana horaria. Es la base de la agenda. */
@@ -136,11 +145,18 @@ export function AgendaClient({
 
   async function toggleFavorite(artist: string) {
     const wasFavorite = favorites.has(artist);
-    setFavorites((prev) => {
-      const next = new Set(prev);
-      if (!next.delete(artist)) next.add(artist);
-      return next;
-    });
+    // Optimista, igual que el ★: mi nombre entra o sale de la lista del artista
+    // y el POST solo lo confirma.
+    const flip = (add: boolean) =>
+      setFans((prev) => {
+        const who = prev[artist] ?? [];
+        return {
+          ...prev,
+          [artist]: add ? [...who, currentUserName] : who.filter((n) => n !== currentUserName),
+        };
+      });
+
+    flip(!wasFavorite);
 
     const res = await fetch("/api/dj-favorites", {
       method: "POST",
@@ -148,14 +164,7 @@ export function AgendaClient({
       body: JSON.stringify({ artist }),
     });
 
-    if (!res.ok) {
-      setFavorites((prev) => {
-        const next = new Set(prev);
-        if (wasFavorite) next.add(artist);
-        else next.delete(artist);
-        return next;
-      });
-    }
+    if (!res.ok) flip(wasFavorite);
   }
 
   const dayEntries = myEntries
@@ -243,6 +252,7 @@ export function AgendaClient({
           onSelect={setGenre}
           query={query}
           favorites={favorites}
+          fans={fans}
           onToggleFavorite={toggleFavorite}
           picks={picks}
           mine={mine}
@@ -254,6 +264,7 @@ export function AgendaClient({
         <ArtistList
           query={query}
           favorites={favorites}
+          fans={fans}
           onToggleFavorite={toggleFavorite}
           picks={picks}
           mine={mine}
@@ -650,6 +661,7 @@ function Empty({ children }: { children: React.ReactNode }) {
 function ArtistList({
   query,
   favorites,
+  fans,
   onToggleFavorite,
   picks,
   mine,
@@ -659,6 +671,7 @@ function ArtistList({
 }: {
   query: string;
   favorites: Set<string>;
+  fans: FansByArtist;
   onToggleFavorite: (artist: string) => void;
   picks: DjPicksBySet;
   mine: Set<string>;
@@ -696,6 +709,7 @@ function ArtistList({
           key={artist}
           artist={artist}
           favorite={favorites.has(artist)}
+          fans={fans[artist] ?? []}
           onToggleFavorite={onToggleFavorite}
           isOpen={open.has(artist)}
           onToggleOpen={toggleOpen}
@@ -738,6 +752,7 @@ function ArtistList({
 function ArtistRow({
   artist,
   favorite,
+  fans,
   onToggleFavorite,
   isOpen,
   onToggleOpen,
@@ -749,6 +764,8 @@ function ArtistRow({
 }: {
   artist: string;
   favorite: boolean;
+  /** Todo el grupo que lo tiene marcado, yo incluido si lo he marcado. */
+  fans: string[];
   onToggleFavorite: (artist: string) => void;
   isOpen: boolean;
   onToggleOpen: (artist: string) => void;
@@ -764,6 +781,7 @@ function ArtistRow({
     [artist]
   );
   const chosen = entries.filter((e) => mine.has(e.set.id)).length;
+  const others = fans.filter((n) => n !== currentUserName);
 
   return (
     <div className="border-t border-[#c4906a]/15 first:border-t-0">
@@ -774,12 +792,21 @@ function ArtistRow({
           type="button"
           onClick={() => onToggleFavorite(artist)}
           aria-pressed={favorite}
-          aria-label={favorite ? `Quitar a ${artist} de mis DJs` : `Añadir a ${artist} a mis DJs`}
-          className={`shrink-0 py-2.5 pl-4 pr-2 text-base leading-none transition-colors ${
+          aria-label={
+            favorite ? `Quitar a ${artist} de mis DJs` : `Añadir a ${artist} a mis DJs`
+          }
+          className={`flex shrink-0 items-center gap-1 py-2.5 pl-4 pr-2 leading-none transition-colors ${
             favorite ? "text-[#c84a10]" : "text-[#c4906a]/50 hover:text-[#c84a10]/70"
           }`}
         >
-          {favorite ? "♥" : "♡"}
+          <span className="text-base">{favorite ? "♥" : "♡"}</span>
+          {/* El número va en el propio corazón: cuenta a todo el grupo, no solo
+              a mí, y así se ve de un vistazo a quién quiere ver más gente. */}
+          {fans.length > 0 && (
+            <span className={`text-[11px] font-black ${favorite ? "" : "text-[#c84a10]/60"}`}>
+              {fans.length}
+            </span>
+          )}
         </button>
 
         <button
@@ -806,6 +833,11 @@ function ArtistRow({
 
       {isOpen && (
         <div className="border-t border-[#c4906a]/15 bg-[#f6e6c8]/40">
+          {others.length > 0 && (
+            <p className="px-4 pt-3 text-[11px] font-semibold text-[#a07040]">
+              ♥ también {others.join(", ")}
+            </p>
+          )}
           <ArtistCard artist={artist} />
           {entries.map((entry) => (
             <SetRow
@@ -894,6 +926,7 @@ function GenreList({
   onSelect,
   query,
   favorites,
+  fans,
   onToggleFavorite,
   picks,
   mine,
@@ -905,6 +938,7 @@ function GenreList({
   onSelect: (g: Genre | null) => void;
   query: string;
   favorites: Set<string>;
+  fans: FansByArtist;
   onToggleFavorite: (artist: string) => void;
   picks: DjPicksBySet;
   mine: Set<string>;
@@ -972,6 +1006,7 @@ function GenreList({
               key={artist}
               artist={artist}
               favorite={favorites.has(artist)}
+              fans={fans[artist] ?? []}
               onToggleFavorite={onToggleFavorite}
               isOpen={open.has(artist)}
               onToggleOpen={toggleOpen}
