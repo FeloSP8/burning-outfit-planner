@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { loadPicks } from "@/lib/dj-picks";
 import { loadFansByArtist } from "@/lib/dj-favorites";
 import { getWeatherBundle } from "@/lib/weather";
-import { getCamps, toPins } from "@/lib/brc-api";
+import { getCamps, getEvents, toPins } from "@/lib/brc-api";
 import { SNAPSHOT_VERSION, type PlayaSnapshot } from "@/types/snapshot";
 import type { ChecklistItemData, ChecklistOrigin, ChecklistType, Day, Garment } from "@/types";
 
@@ -16,7 +16,8 @@ import type { ChecklistItemData, ChecklistOrigin, ChecklistType, Day, Garment } 
  * los dos, así no se van separando con el tiempo.
  */
 export async function buildSnapshot(userId: string, userName: string): Promise<PlayaSnapshot> {
-  const [picks, fans, rawDays, rawGarments, rawChecklist, weather, campsResult] = await Promise.all([
+  const [picks, fans, rawDays, rawGarments, rawChecklist, weather, campsResult, eventsResult] =
+    await Promise.all([
     loadPicks(),
     loadFansByArtist(),
     db.day.findMany({
@@ -43,6 +44,7 @@ export async function buildSnapshot(userId: string, userName: string): Promise<P
     // Si la API de Burning Man falla, uno se queda sin el listado oficial pero
     // con todo lo demás.
     getCamps().catch(() => null),
+    getEvents().catch(() => null),
   ]);
 
   const days = rawDays.map((d) => ({
@@ -95,5 +97,6 @@ export async function buildSnapshot(userId: string, userName: string): Promise<P
     checklist,
     weather: weather ? { models: weather.models, ensemble: weather.ensemble } : null,
     camps: campsResult ? toPins(campsResult.camps) : [],
+    events: eventsResult?.events ?? [],
   };
 }

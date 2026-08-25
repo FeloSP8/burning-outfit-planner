@@ -11,6 +11,7 @@ const LINKS = [
   { href: "/planner",   label: "Planificador" },
   { href: "/agenda",    label: "Agenda DJs" },
   { href: "/map",       label: "Mapa" },
+  { href: "/events",    label: "Eventos" },
   { href: "/playa",     label: "Modo playa" },
   { href: "/inventory", label: "Inventario" },
   { href: "/style",     label: "Estilismo" },

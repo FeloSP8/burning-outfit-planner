@@ -1,0 +1,36 @@
+import { getCurrentUser } from "@/lib/auth";
+import { getEvents } from "@/lib/brc-api";
+import { EventsPanel } from "@/components/events/EventsPanel";
+
+export const metadata = {
+  title: "Eventos oficiales · Burning Outfit Planner",
+  description: "Todo lo que pasa en Black Rock City, del listado oficial de Burning Man",
+};
+
+export default async function EventsPage() {
+  const user = await getCurrentUser();
+  if (!user) return null; // el proxy ya redirige a /login
+
+  const { events, error } = await getEvents();
+  const passes = events.reduce((total, event) => total + event.occurrences.length, 0);
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div>
+        <p
+          className="text-4xl leading-tight text-[#7a2e08] sm:text-5xl"
+          style={{ fontFamily: "var(--font-display)" }}
+        >
+          Eventos oficiales
+        </p>
+        <p className="mt-1 text-sm font-medium text-[#7a5030]">
+          {error
+            ? "Ahora mismo no se pueden cargar."
+            : `${events.length} eventos y ${passes} pases del listado oficial. La agenda de música la llevamos aparte: esto es todo lo demás — talleres, comida, charlas y fiestas de campamento.`}
+        </p>
+      </div>
+
+      <EventsPanel events={events} note={error ? `No se han podido cargar: ${error}` : null} />
+    </div>
+  );
+}
