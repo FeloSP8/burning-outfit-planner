@@ -218,7 +218,18 @@ export function PlayaClient() {
       </div>
 
       {tab === "agenda" && <AgendaView picks={snapshot.picks} />}
-      {tab === "mapa" && <MapPanel venues={placed} roving={roving} />}
+      {tab === "mapa" && (
+        <MapPanel
+          venues={placed}
+          roving={roving}
+          camps={snapshot.camps}
+          campsNote={
+            snapshot.camps.length === 0
+              ? "Esta copia no trae el listado oficial de campamentos."
+              : null
+          }
+        />
+      )}
       {tab === "outfits" && <OutfitsView days={snapshot.days} />}
       {tab === "checklist" && <ChecklistView items={snapshot.checklist} />}
       {tab === "inventario" && <InventoryView garments={snapshot.garments} />}

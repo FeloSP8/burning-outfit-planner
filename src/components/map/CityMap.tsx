@@ -29,8 +29,17 @@ export interface MapVenue {
   exact: boolean;
 }
 
+/** Campamento del listado oficial, ya situado. */
+export interface MapCamp {
+  uid: string;
+  name: string;
+  address: string | null;
+  point: [number, number] | null;
+  exact: boolean;
+}
+
 /** Capas que el usuario puede apagar. */
-export type LayerKey = "venues" | "toilets" | "essentials" | "services";
+export type LayerKey = "venues" | "camps" | "toilets" | "essentials" | "services";
 
 const PLAYA = "#e8dcc4";
 const STREET = "#b8895a";
@@ -79,12 +88,25 @@ const ANCHOR_EMOJI: Partial<Record<PoiKind, string>> = {
   dmz: "🔊",
 };
 
-export function CityMap({ venues, layers }: { venues: MapVenue[]; layers: Record<LayerKey, boolean> }) {
+export function CityMap({
+  venues,
+  camps,
+  layers,
+  focus,
+}: {
+  venues: MapVenue[];
+  camps: MapCamp[];
+  layers: Record<LayerKey, boolean>;
+  /** uid del campamento al que ir; cambia cada vez que se busca uno. */
+  focus?: { uid: string; nonce: number } | null;
+}) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mapRef = useRef<any>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const groupsRef = useRef<Record<LayerKey, any>>({} as Record<LayerKey, any>);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const campMarkersRef = useRef<Map<string, any>>(new Map());
   const [status, setStatus] = useState<"loading" | "ready" | "failed">("loading");
 
   useEffect(() => {
@@ -124,6 +146,9 @@ export function CityMap({ venues, layers }: { venues: MapVenue[]; layers: Record
           // Sin teselas no hay nada que se vea borroso a zoom fraccionado, y
           // con saltos enteros la ciudad se quedaba pequeña en el encuadre.
           zoomSnap: 0,
+          // Los ~1.400 campamentos se pintan en un canvas: como marcadores del
+          // DOM, mover el mapa en el móvil va a tirones.
+          preferCanvas: true,
         });
         mapRef.current = map;
 
@@ -244,6 +269,38 @@ export function CityMap({ venues, layers }: { venues: MapVenue[]; layers: Record
         groupsRef.current.essentials = essentials;
         groupsRef.current.services = services;
 
+        const campGroup = L.layerGroup();
+        campMarkersRef.current.clear();
+        for (const camp of camps) {
+          if (!camp.point) continue; // sin colocar todavía, o dirección ilegible
+          const marker = L.circleMarker(camp.point, {
+            radius: 3.5,
+            color: "#7a4ea9",
+            weight: 1,
+            fillColor: "#a982d8",
+            fillOpacity: 0.85,
+          }).bindPopup(
+            `<div style="font-family:inherit;min-width:140px">
+               <div style="font-weight:800;font-size:13px;color:${INK}">${esc(camp.name)}</div>
+               <div style="font-size:11px;color:#a07040;margin-top:3px">${esc(camp.address ?? "")}</div>
+               ${camp.exact ? "" : `<div style="font-size:10px;color:#a07040;margin-top:4px">Cruce estimado.</div>`}
+             </div>`
+          );
+          marker.addTo(campGroup);
+          campMarkersRef.current.set(camp.uid, marker);
+        }
+        groupsRef.current.camps = campGroup;
+
+        // A vista de ciudad entera, 1.400 puntos del tamaño de los de zoom son
+        // una mancha morada que tapa las calles: el radio crece al ampliar.
+        const campRadius = (zoom: number) =>
+          zoom >= 16 ? 5 : zoom >= 15 ? 3.5 : zoom >= 14 ? 2.5 : 1.5;
+        const syncCampSize = () => {
+          const radius = campRadius(map.getZoom());
+          for (const marker of campMarkersRef.current.values()) marker.setRadius(radius);
+        };
+        map.on("zoomend", syncCampSize);
+
         const venueGroup = L.layerGroup();
         for (const venue of venues) {
           const title = venue.stage ? `${venue.name} · ${venue.stage}` : venue.name;
@@ -268,6 +325,7 @@ export function CityMap({ venues, layers }: { venues: MapVenue[]; layers: Record
         // porque es donde tocan la mitad de los art cars.
         map.fitBounds(streets.getBounds().extend(dmz.getBounds()), { padding: [12, 12] });
         syncRingLabels();
+        syncCampSize();
         setTimeout(() => map && map.invalidateSize(), 180);
         if (!cancelled) setStatus("ready");
       } catch {
@@ -285,7 +343,17 @@ export function CityMap({ venues, layers }: { venues: MapVenue[]; layers: Record
     // `layers` solo decide el estado inicial; los cambios los aplica el efecto
     // de abajo sin volver a montar el mapa.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [venues]);
+  }, [venues, camps]);
+
+  // Ir al campamento que se acaba de buscar.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !focus) return;
+    const marker = campMarkersRef.current.get(focus.uid);
+    if (!marker) return;
+    map.flyTo(marker.getLatLng(), Math.max(map.getZoom(), 16), { duration: 0.8 });
+    marker.openPopup();
+  }, [focus, status]);
 
   // Encender y apagar capas sin reconstruir nada.
   useEffect(() => {
