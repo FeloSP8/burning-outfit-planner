@@ -815,7 +815,17 @@ function ArtistRow({
           aria-expanded={isOpen}
           className="flex min-w-0 flex-1 items-center gap-2 py-2.5 pr-4 text-left transition-colors hover:bg-[#f6e6c8]"
         >
-          <span className="min-w-0 flex-1 text-sm font-bold text-[#2a1a08]">{artist}</span>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-sm font-bold text-[#2a1a08]">{artist}</span>
+            {/* Los nombres van en la fila, no dentro del desplegable: saber
+                quién más quiere ver a un DJ sirve mientras recorres la lista,
+                no después de abrirlo. */}
+            {others.length > 0 && (
+              <span className="block truncate text-[11px] font-semibold text-[#a07040]">
+                ♥ también {others.join(", ")}
+              </span>
+            )}
+          </span>
 
           {chosen > 0 && <span className="shrink-0 text-xs font-black text-[#c84a10]">{chosen} ★</span>}
 
@@ -833,11 +843,6 @@ function ArtistRow({
 
       {isOpen && (
         <div className="border-t border-[#c4906a]/15 bg-[#f6e6c8]/40">
-          {others.length > 0 && (
-            <p className="px-4 pt-3 text-[11px] font-semibold text-[#a07040]">
-              ♥ también {others.join(", ")}
-            </p>
-          )}
           <ArtistCard artist={artist} />
           {entries.map((entry) => (
             <SetRow
