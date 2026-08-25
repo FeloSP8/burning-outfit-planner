@@ -1,0 +1,17 @@
+{
+  "name": "Burning Outfit Planner",
+  "short_name": "Burning",
+  "description": "Outfits, agenda de DJs, checklist y mapa de Black Rock City, también sin cobertura.",
+  "lang": "es",
+  "start_url": "/playa",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#e8c99a",
+  "theme_color": "#e8c99a",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

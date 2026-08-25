@@ -8,27 +8,7 @@ import {
   StyleSheet,
 } from "@react-pdf/renderer";
 import type { Garment } from "@/types";
-
-// ── Paleta ────────────────────────────────────────────────────────────────────
-const C = {
-  brand:      "#7a2e08",
-  brandLight: "#c84a10",
-  sand:       "#fdf4e0",
-  sandDark:   "#f0e4c0",
-  sandBorder: "#c4906a",
-  text:       "#2a1a08",
-  textMid:    "#7a5030",
-  textLight:  "#a07040",
-  green:      "#1a6a28",
-  greenBg:    "#e6f4ea",
-  amber:      "#92400e",
-  amberBg:    "#fffbeb",
-  sky:        "#075985",
-  skyBg:      "#e0f2fe",
-  white:      "#ffffff",
-  rowAlt:     "#faf6ec",
-  divider:    "#e8d5b0",
-};
+import { ALL_SLOTS, C } from "@/lib/pdf-theme";
 
 // ── Anchos de columna (puntos, página A4 = 595 - 88 padding = 507 útiles) ────
 // Nombre 30% · Estado 15% · Precio 11% · Notas 20% · Enlace 24%
@@ -304,14 +284,6 @@ function formatPrice(p: number) {
   return p.toFixed(2).replace(".", ",") + " €";
 }
 
-const ALL_SLOTS: { key: string; label: string; isBike?: boolean }[] = [
-  { key: "TOP",            label: "Parte de arriba" },
-  { key: "BOTTOM",         label: "Parte de abajo" },
-  { key: "SHOES",          label: "Calzado" },
-  { key: "ACCESSORY",      label: "Accesorios" },
-  { key: "COAT",           label: "Abrigos" },
-  { key: "BIKE_ACCESSORY", label: "Accesorios bici", isBike: true },
-];
 
 // ── Tabla de una categoría ────────────────────────────────────────────────────
 function CategoryTable({ items }: { items: Garment[] }) {

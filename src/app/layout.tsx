@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Syne } from "next/font/google";
 import localFont from "next/font/local";
 import Link from "next/link";
@@ -6,6 +6,7 @@ import "./globals.css";
 import { getCurrentUser } from "@/lib/auth";
 import { NavMenu } from "@/components/NavMenu";
 import { BurningCountdown } from "@/components/BurningCountdown";
+import { OfflineBoot } from "@/components/OfflineBoot";
 import { Analytics } from "@vercel/analytics/next";
 
 // Body: Syne — geométrica, moderna, personalidad fuerte
@@ -43,6 +44,15 @@ const lunok = localFont({
 export const metadata: Metadata = {
   title: "Burning Outfit Planner",
   description: "Planificador de outfits para Burning Man",
+  // El manifest y el icono de 180 son lo que mira iOS al añadirla a la
+  // pantalla de inicio; sin instalar no hay modo offline que valga.
+  manifest: "/manifest.webmanifest",
+  appleWebApp: { capable: true, title: "Burning", statusBarStyle: "default" },
+  icons: { apple: "/icons/icon-180.png" },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#e8c99a",
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
@@ -87,6 +97,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <footer className="border-t border-[#b8956a]/20 py-4 text-center text-xs text-[#a08060]">
           Burning Man 2026 · Playa Mode 🌵
         </footer>
+        <OfflineBoot />
         <Analytics />
       </body>
     </html>

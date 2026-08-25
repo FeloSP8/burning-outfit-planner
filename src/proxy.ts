@@ -1,8 +1,30 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-/** Rutas accesibles sin sesión. El resto exige login. */
-const PUBLIC_PATHS = ["/login", "/auth"];
+/**
+ * Rutas accesibles sin sesión. El resto exige login.
+ *
+ * `/playa` entra aquí porque validar la sesión exige llamar a Supabase, y sin
+ * cobertura eso no resuelve: la pantalla offline acabaría redirigiendo a login
+ * justo cuando es la única que puede funcionar. No enseña nada por su cuenta —
+ * lo que pinta sale del snapshot que ya está guardado en ese móvil.
+ */
+const PUBLIC_PATHS = [
+  "/login",
+  "/auth",
+  "/playa",
+  // Lo que necesita el modo offline antes de que haya sesión que validar. Sin
+  // esto el navegador pide /sw.js, el proxy le contesta con el HTML del login
+  // y el service worker no llega ni a registrarse.
+  "/sw.js",
+  "/manifest.webmanifest",
+  "/icons",
+  "/fonts",
+  "/brc",
+  // El script de Vercel Analytics. Sin esto el proxy le devuelve el HTML del
+  // login y el navegador intenta ejecutarlo como JavaScript.
+  "/_vercel",
+];
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });

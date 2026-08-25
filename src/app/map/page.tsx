@@ -1,9 +1,7 @@
 import { getCurrentUser } from "@/lib/auth";
-import { VENUES } from "@/lib/dj-lineups";
-import { geocodeAddress, distanceMeters, formatDistance, walkMinutes } from "@/lib/brc-geocode";
-import { MAN, BRC_YEAR } from "@/lib/brc-city";
-import { MapPanel, type RovingVenue } from "@/components/map/MapPanel";
-import type { MapVenue } from "@/components/map/CityMap";
+import { BRC_YEAR } from "@/lib/brc-city";
+import { placeVenues } from "@/lib/playa-venues";
+import { MapPanel } from "@/components/map/MapPanel";
 
 export const metadata = {
   title: "Mapa de la ciudad · Burning Outfit Planner",
@@ -14,28 +12,7 @@ export default async function MapPage() {
   const user = await getCurrentUser();
   if (!user) return null; // el proxy ya redirige a /login
 
-  const placed: (MapVenue & { distance: string; walk: number })[] = [];
-  const roving: RovingVenue[] = [];
-
-  for (const venue of VENUES) {
-    const place = geocodeAddress(venue.location);
-    if (!place) {
-      roving.push({ id: venue.id, name: venue.name, emoji: venue.emoji, location: venue.location });
-      continue;
-    }
-    const meters = distanceMeters(MAN, place.point);
-    placed.push({
-      id: venue.id,
-      name: venue.name,
-      stage: venue.stage,
-      emoji: venue.emoji,
-      location: venue.location,
-      point: place.point,
-      exact: place.exact,
-      distance: formatDistance(meters),
-      walk: walkMinutes(meters),
-    });
-  }
+  const { placed, roving } = placeVenues();
 
   return (
     <div className="flex flex-col gap-6">

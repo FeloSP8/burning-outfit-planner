@@ -356,3 +356,34 @@ export function shortWeekday(date: string): string {
   const day = EVENT_DAYS.find((d) => d.date === date);
   return day ? day.weekday.slice(0, 3).toLowerCase() : date;
 }
+
+/** Un set elegido, con quién lo eligió. */
+export interface PickedEntry extends AgendaEntry {
+  fans: string[];
+}
+
+/**
+ * Los sets marcados por el grupo, por día y ordenados por hora.
+ *
+ * Es la agenda que se lleva uno encima: la usan tanto el dossier en PDF como
+ * la pantalla offline, así que vive aquí y no en cada uno.
+ *
+ * Los ids que ya no están en el catálogo se ignoran, igual que en `loadPicks`.
+ */
+export function pickedEntriesByDay(
+  picks: Record<string, string[]>
+): { day: EventDay; entries: PickedEntry[] }[] {
+  const byDate = new Map<string, PickedEntry[]>();
+  for (const [setId, fans] of Object.entries(picks)) {
+    const ref = SET_INDEX[setId];
+    if (!ref) continue;
+    const list = byDate.get(ref.party.date) ?? [];
+    list.push({ ...toEntry(ref), fans });
+    byDate.set(ref.party.date, list);
+  }
+
+  return EVENT_DAYS.filter((d) => byDate.has(d.date)).map((day) => ({
+    day,
+    entries: byDate.get(day.date)!.sort((a, b) => a.absStart - b.absStart),
+  }));
+}
