@@ -247,6 +247,18 @@ export const VENUES: Venue[] = [
     },
   },
   {
+    id: "trion",
+    name: "Trion",
+    location: "art car · aparca donde toque",
+    emoji: "🔺",
+    theme: {
+      card: "bg-purple-50/80",
+      border: "border-purple-300",
+      chip: "bg-purple-100 text-purple-900",
+      text: "text-purple-900",
+    },
+  },
+  {
     id: "secular-sabbath",
     name: "Secular Sabbath",
     location: "ambient · cada día en un sitio",
@@ -294,6 +306,7 @@ export const PARTIES: Party[] = [
     kind: "night",
     start: "21:00",
     end: "03:45",
+    note: "Art car: Trion, que publica la misma noche en su cartel (sin Maddy O'Neal).",
     sets: [
       { id: "ot-mon-opening",     label: "Ceremonia de apertura", artists: [],                  start: "21:00" },
       { id: "ot-mon-enmi",        label: "ENMI",                  artists: ["ENMI"],            start: "21:15" },
@@ -1361,6 +1374,87 @@ export const PARTIES: Party[] = [
         live: true,
         sun: "amanecer",
       },
+    ],
+  },
+
+  // ─────────────────────────────── Trion ───────────────────────────────
+  //
+  // "Transformation, rebirth, evolution, transmutation". Su cartel publica los
+  // seis días, pero el lunes y el martes son fiestas que ya están: el lunes es
+  // `ot-mon` (Opulent Temple) y el martes `nova-tue` (Nova Heaven), donde Trion
+  // es el art car. Aquí van solo sus cuatro salidas propias.
+  //
+  // De horas solo da la de arranque de cada día. Lo que cuadra el reparto son
+  // los iconos de sol, que dicen qué set pilla el amanecer o el atardecer.
+  {
+    id: "tri-wed",
+    venueId: "trion",
+    date: "2026-09-02",
+    name: "Trion",
+    kind: "night",
+    start: "18:00",
+    setMinutes: 95,
+    note: "El cartel da las 18:00 y dos soles: el atardecer en la sesión especial y el amanecer en Mahmut Orhan. Sets de 1 h 35, que es la única duración que hace caer los dos donde el cartel los pone.",
+    sets: [
+      { id: "tri-wed-stassy",     label: "Stassy",                      artists: ["Stassy"],           start: null },
+      { id: "tri-wed-sunset",     label: "Special Sunset Session Set",  artists: [],                   start: null, sun: "atardecer", note: "sesión especial de atardecer" },
+      { id: "tri-wed-mason",      label: "Mason Collective",            artists: ["Mason Collective"], start: null },
+      { id: "tri-wed-ahmed",      label: "Ahmed Spins",                 artists: ["Ahmed Spins"],      start: null },
+      { id: "tri-wed-miluhska",   label: "Miluhska",                    artists: ["Miluhska"],         start: null },
+      { id: "tri-wed-supa-ines",  label: "Supa Ines",                   artists: ["Supa Ines"],        start: null },
+      { id: "tri-wed-maxi",       label: "Maxi Meraki",                 artists: ["Maxi Meraki"],      start: null },
+      { id: "tri-wed-mahmut",     label: "Mahmut Orhan",                artists: ["Mahmut Orhan"],     start: null, sun: "amanecer" },
+      { id: "tri-wed-luch",       label: "Luch",                        artists: ["Luch"],             start: null },
+    ],
+  },
+  {
+    id: "tri-thu",
+    venueId: "trion",
+    date: "2026-09-03",
+    name: "Trion",
+    kind: "night",
+    start: "23:00",
+    note: "El cartel da las 23:00 y pone el amanecer en Kimonos, que es justo donde cae el reparto.",
+    sets: [
+      { id: "tri-thu-koray",     label: "Koray",            artists: ["Koray"],            start: null },
+      { id: "tri-thu-stassy",    label: "Stassy",           artists: ["Stassy"],           start: null },
+      { id: "tri-thu-sam-shure", label: "Sam Shure",        artists: ["Sam Shure"],        start: null },
+      { id: "tri-thu-ariel",     label: "Ariel Vromen",     artists: ["Ariel Vromen"],     start: null },
+      { id: "tri-thu-kimonos",   label: "Kimonos",          artists: ["Kimonos"],          start: null, sun: "amanecer" },
+      { id: "tri-thu-sebastian", label: "Sebastian Konrad", artists: ["Sebastian Konrad"], start: null },
+    ],
+  },
+  {
+    id: "tri-fri",
+    venueId: "trion",
+    date: "2026-09-04",
+    name: "Intergalactic × The Mothership Connection × Project Aikido",
+    kind: "night",
+    start: "23:00",
+    setMinutes: 120,
+    note: "Enganche a cuatro bandas con Intergalactic, The Mothership Connection y Project Aikido. El cartel da las 23:00 y pone el amanecer en Francis Mercier, que con cinco nombres solo cuadra a dos horas por set.",
+    sets: [
+      { id: "tri-fri-syd-gris",  label: "Syd Gris",         artists: ["Syd Gris"],          start: null },
+      { id: "tri-fri-aryme-mfk", label: "Arymé B2B MFK",    artists: ["Arymé", "MFK"],      start: null, note: "también anunciada esa noche en Longfeng" },
+      { id: "tri-fri-ameme",     label: "AMÉMÉ",            artists: ["AMÉMÉ"],             start: null },
+      { id: "tri-fri-francis",   label: "Francis Mercier",  artists: ["Francis Mercier"],   start: null, sun: "amanecer" },
+      { id: "tri-fri-miguelle",  label: "Miguelle & Tons",  artists: ["Miguelle", "Tons"],  start: null },
+    ],
+  },
+  {
+    id: "tri-sat",
+    venueId: "trion",
+    date: "2026-09-05",
+    name: "Trion",
+    kind: "night",
+    start: "20:00",
+    setMinutes: 180,
+    note: "El cartel da las 20:00 y pone el amanecer en Vanjee. Cuatro nombres para toda la noche salen a tres horas por set, que es lo que hace caer ese sol donde toca.",
+    sets: [
+      { id: "tri-sat-galeski",    label: "Galeski",    artists: ["Galeski"],    start: null },
+      { id: "tri-sat-arodes",     label: "Arodes",     artists: ["Arodes"],     start: null, note: "quema del Hombre, según el icono del cartel" },
+      { id: "tri-sat-sam-baroni", label: "Sam Baroni", artists: ["Sam Baroni"], start: null },
+      { id: "tri-sat-vanjee",     label: "Vanjee",     artists: ["Vanjee"],     start: null, sun: "amanecer" },
     ],
   },
 ];

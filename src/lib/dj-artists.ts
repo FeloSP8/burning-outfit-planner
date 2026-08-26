@@ -637,4 +637,29 @@ export const ARTIST_INFO: Record<string, ArtistInfo> = {
     about: "David Block, californiano; compositor de electrónica en directo y multiinstrumentista. Downtempo con instrumentación del mundo, y veterano del playa",
     instagram: "humanexperiencecreations",
   },
+  "Ariel Vromen": {
+    genres: ["Techno", "Trance", "Tech house", "Afro house"],
+    about: "El director de cine de The Iceman. Antes de rodar fue DJ y tuvo estudio en Londres, y sigue pinchando: techno y trance con casa afro y latina, y un punto cinematográfico",
+    instagram: "arielvromen",
+  },
+  "Sam Baroni": {
+    genres: ["Deep house", "Melodic house"],
+    about: "Francés afincado en Los Ángeles; deep house con aire de jungla y de Oriente Medio",
+    instagram: "sambaronii",
+    video: { url: "https://www.youtube.com/watch?v=owDeP8wU5cw", label: "Ephimera Tulum 2022" },
+  },
+  "Arymé": {
+    genres: ["Afro house", "Deep house", "Organic house", "Melodic techno"],
+    about: "De Casablanca y afincado en París. Cofundó YOKO, la fiesta mensual de afro-deep más grande de la ciudad, que ya sale también en Marrakech, Nueva York y Beirut",
+    instagram: "aryme_music",
+  },
+  Philou: {
+    genres: ["House", "Indie dance", "Sonido latino"],
+    about: "Parisina, residente del Silencio y fundadora de su propia serie de fiestas, UNTITLED. Sus años en São Paulo se le notan: house y acid con groove latino",
+  },
+  Artemistique: {
+    genres: ["Deep house", "House"],
+    about: "De las noches de París; deep house con aire soul y texturas jazz",
+    instagram: "artemistique_",
+  },
 };
