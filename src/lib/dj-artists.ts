@@ -622,4 +622,19 @@ export const ARTIST_INFO: Record<string, ArtistInfo> = {
     about: "De San Francisco; ha abierto para Cloonee y Kaskade",
     instagram: "offinlalaverse",
   },
+  Rhye: {
+    genres: ["Directo", "Downtempo", "Pop electrónico"],
+    about: "El proyecto de Michael Milosh, canadiense. En Secular Sabbath no toca el repertorio: es improvisación, él cantando melodías sin estructura sobre teclas y loops",
+    instagram: "rhye",
+  },
+  TOKiMONSTA: {
+    genres: ["Bass", "Downtempo"],
+    about: "Jennifer Lee, de Los Ángeles. Primera mujer que firmó Flying Lotus para Brainfeeder; ahora en Ninja Tune y con su propio sello, Young Art",
+    instagram: "tokimonsta",
+  },
+  "The Human Experience": {
+    genres: ["Downtempo", "Directo", "Organic house"],
+    about: "David Block, californiano; compositor de electrónica en directo y multiinstrumentista. Downtempo con instrumentación del mundo, y veterano del playa",
+    instagram: "humanexperiencecreations",
+  },
 };

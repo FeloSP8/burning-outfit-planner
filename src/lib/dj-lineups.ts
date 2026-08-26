@@ -247,6 +247,18 @@ export const VENUES: Venue[] = [
     },
   },
   {
+    id: "secular-sabbath",
+    name: "Secular Sabbath",
+    location: "ambient · cada día en un sitio",
+    emoji: "🕯️",
+    theme: {
+      card: "bg-blue-50/80",
+      border: "border-blue-300",
+      chip: "bg-blue-100 text-blue-900",
+      text: "text-blue-900",
+    },
+  },
+  {
     id: "discotique",
     name: "Discotique",
     location: "2 & G",
@@ -1279,6 +1291,76 @@ export const PARTIES: Party[] = [
       { id: "disco-fri-shimon-mono",   label: "Shimon B2B Monobase",  artists: ["Shimon", "Monobase"], start: null },
       { id: "disco-fri-annicka",       label: "Annicka",              artists: ["Annicka"],            start: null, note: "también en Dune Lounge esa tarde" },
       { id: "disco-fri-tripps",        label: "Tripps",               artists: ["Tripps"],             start: null },
+    ],
+  },
+
+  // ───────────────────────── Secular Sabbath ─────────────────────────
+  //
+  // Las tres salidas de Rhye. El cartel da las horas exactas, así que aquí no
+  // se estima nada: solo hay un set por salida, que es como funciona esto —
+  // ambient improvisado, Milosh cantando sobre teclas y loops, con un invitado
+  // distinto cada día y en un sitio distinto del playa cada vez.
+  {
+    id: "sab-tue",
+    venueId: "secular-sabbath",
+    date: "2026-09-01",
+    name: "Rhye",
+    kind: "sunset",
+    start: "18:30",
+    end: "20:00",
+    where: "Behind Closed Eyes",
+    note: "Ambient en el playa. Horas del cartel, sin estimar.",
+    sets: [
+      {
+        id: "sab-tue-rhye-tokimonsta",
+        label: "Rhye con TOKiMONSTA",
+        artists: ["Rhye", "TOKiMONSTA"],
+        start: "18:30",
+        live: true,
+        sun: "atardecer",
+      },
+    ],
+  },
+  {
+    id: "sab-thu",
+    venueId: "secular-sabbath",
+    date: "2026-09-03",
+    name: "Rhye",
+    kind: "sunrise",
+    start: "05:00",
+    end: "06:30",
+    where: "Lunars Balloon · 3:30 y Esplanade",
+    note: "Ambient en el playa. Horas del cartel, sin estimar.",
+    sets: [
+      {
+        id: "sab-thu-rhye-diplo",
+        label: "Rhye con Diplo",
+        artists: ["Rhye", "Diplo"],
+        start: "05:00",
+        live: true,
+        sun: "amanecer",
+      },
+    ],
+  },
+  {
+    id: "sab-fri",
+    venueId: "secular-sabbath",
+    date: "2026-09-04",
+    name: "Rhye",
+    kind: "sunrise",
+    start: "05:00",
+    end: "06:30",
+    where: "The Mundara",
+    note: "Ambient en el playa. Horas del cartel, sin estimar.",
+    sets: [
+      {
+        id: "sab-fri-rhye-the",
+        label: "Rhye con The Human Experience",
+        artists: ["Rhye", "The Human Experience"],
+        start: "05:00",
+        live: true,
+        sun: "amanecer",
+      },
     ],
   },
 ];
