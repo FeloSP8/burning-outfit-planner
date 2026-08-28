@@ -29,7 +29,7 @@ export interface PlayaSnapshot {
   days: Day[];
   garments: Garment[];
   checklist: ChecklistItemData[];
-  /** Listado oficial de campamentos, para buscarlos en el mapa sin cobertura. */
+  /** Listado oficial de campamentos, con su descripción recortada. */
   camps: CampPin[];
   /** Eventos oficiales con sus pases, ya situados. */
   events: PlayaEvent[];
@@ -42,4 +42,4 @@ export interface PlayaSnapshot {
 }
 
 /** Formato actual. Cambiarlo invalida los snapshots ya descargados. */
-export const SNAPSHOT_VERSION = 5;
+export const SNAPSHOT_VERSION = 6;

@@ -36,6 +36,8 @@ export interface MapCamp {
   address: string | null;
   point: [number, number] | null;
   exact: boolean;
+  /** Recortada en el servidor. El plano no la usa; la lista de al lado sí. */
+  description?: string | null;
 }
 
 /** Capas que el usuario puede apagar. */

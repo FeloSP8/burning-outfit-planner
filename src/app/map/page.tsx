@@ -1,7 +1,8 @@
 import { getCurrentUser } from "@/lib/auth";
 import { isShellRequest } from "@/lib/offline-routes";
 import { MapOffline } from "@/components/map/MapOffline";
-import { getCamps, toPins } from "@/lib/brc-api";
+import { getCamps, getEvents, toPins } from "@/lib/brc-api";
+import { toCampEvents } from "@/lib/camp-events";
 import { loadCampPicks } from "@/lib/camp-picks";
 import { BRC_YEAR } from "@/lib/brc-city";
 import { placeVenues } from "@/lib/playa-venues";
@@ -21,8 +22,11 @@ export default async function MapPage() {
   if (!user) return null; // el proxy ya redirige a /login
 
   const { placed, roving } = placeVenues();
-  const [{ camps, error, locationsEmbargoed }, campPicks] = await Promise.all([
+  const [{ camps, error, locationsEmbargoed }, { events }, campPicks] = await Promise.all([
     getCamps(),
+    // Solo para poder enseñar qué monta cada campamento marcado. Van recortados
+    // a lo que se pinta: enteros son cientos de kB de más en cada carga.
+    getEvents(),
     loadCampPicks(),
   ]);
   const placedCamps = camps.filter((camp) => camp.point).length;
@@ -47,6 +51,7 @@ export default async function MapPage() {
         venues={placed}
         roving={roving}
         camps={toPins(camps)}
+        campEvents={toCampEvents(events)}
         campPicks={campPicks}
         currentUserName={user.name}
         campsNote={

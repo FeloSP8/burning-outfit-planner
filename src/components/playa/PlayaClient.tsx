@@ -10,6 +10,7 @@ import {
 } from "@/lib/offline-store";
 import { placeVenues } from "@/lib/playa-venues";
 import { MapPanel } from "@/components/map/MapPanel";
+import { toCampEvents } from "@/lib/camp-events";
 import { EventsPanel } from "@/components/events/EventsPanel";
 import { MyAgenda } from "@/components/events/MyAgenda";
 import {
@@ -250,6 +251,7 @@ export function PlayaClient() {
           venues={placed}
           roving={roving}
           camps={snapshot.camps}
+          campEvents={toCampEvents(snapshot.events)}
           campPicks={snapshot.campPicks}
           currentUserName={snapshot.userName}
           // Marcar exige sesión, y esta pantalla es pública: aquí solo se ven.

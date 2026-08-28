@@ -38,6 +38,15 @@ const ART_LOCATIONS_FROM = "2026-08-30";
  */
 const DESCRIPTION_CHARS = 160;
 
+/**
+ * Y cuánta de cada campamento.
+ *
+ * Más larga que la de un evento porque es lo que se lee para decidir si te
+ * acercas, pero con tope: son más de mil campamentos y enteras engordarían el
+ * snapshot que hay que llevarse al playa sin que nadie lea tanto.
+ */
+const CAMP_DESCRIPTION_CHARS = 400;
+
 /** Lo que devuelve la API por campamento, de lo que usamos. */
 interface ApiCamp {
   uid: string;
@@ -66,15 +75,25 @@ export interface Camp {
 }
 
 /**
- * Lo mínimo para pintar un campamento en el mapa y buscarlo por nombre.
+ * Lo que hace falta para pintar un campamento, buscarlo y saber qué es.
  *
- * Es lo que viaja al navegador y al snapshot offline: las descripciones son
- * un párrafo por campamento y multiplicarían por cuatro lo que ocupa.
+ * Es lo que viaja al navegador y al snapshot offline. La descripción va
+ * recortada: entera, un párrafo por cada uno de los más de mil campamentos
+ * multiplicaría lo que ocupa la copia sin que nadie lea tanto.
  */
-export type CampPin = Pick<Camp, "uid" | "name" | "address" | "point" | "exact">;
+export type CampPin = Pick<Camp, "uid" | "name" | "address" | "point" | "exact"> & {
+  description: string | null;
+};
 
 export function toPins(camps: Camp[]): CampPin[] {
-  return camps.map(({ uid, name, address, point, exact }) => ({ uid, name, address, point, exact }));
+  return camps.map(({ uid, name, address, point, exact, description }) => ({
+    uid,
+    name,
+    address,
+    point,
+    exact,
+    description: cut(description, CAMP_DESCRIPTION_CHARS),
+  }));
 }
 
 export interface CampsResult {
@@ -233,6 +252,8 @@ export interface PlayaEvent {
   description: string | null;
   /** Quién lo monta: campamento, pieza de arte o lo que diga el propio evento. */
   where: string | null;
+  /** uid del campamento anfitrión, para poder listarle sus eventos. */
+  campUid: string | null;
   address: string | null;
   point: LatLng | null;
   allDay: boolean;
@@ -245,11 +266,13 @@ export interface EventsResult {
   error: string | null;
 }
 
-function trim(text: string | null | undefined): string | null {
+function cut(text: string | null | undefined, max: number): string | null {
   const clean = text?.replace(/\s+/g, " ").trim();
   if (!clean) return null;
-  return clean.length > DESCRIPTION_CHARS ? `${clean.slice(0, DESCRIPTION_CHARS).trimEnd()}…` : clean;
+  return clean.length > max ? `${clean.slice(0, max).trimEnd()}…` : clean;
 }
+
+const trim = (text: string | null | undefined) => cut(text, DESCRIPTION_CHARS);
 
 /**
  * Los eventos oficiales, ya con su sitio resuelto.
@@ -289,6 +312,7 @@ export async function getEvents(): Promise<EventsResult> {
         typeLabel: event.event_type?.label?.trim() || "Otros",
         description: trim(event.description),
         where: host?.name ?? trim(event.other_location) ?? null,
+        campUid: camp?.uid ?? null,
         address: host?.address ?? null,
         point: host?.point ?? null,
         allDay: event.all_day === true,

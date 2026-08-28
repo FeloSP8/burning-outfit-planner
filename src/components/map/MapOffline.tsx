@@ -3,6 +3,7 @@
 import { OfflineFrame, useSnapshot } from "@/components/offline/OfflineFrame";
 import { MapPanel } from "@/components/map/MapPanel";
 import { placeVenues } from "@/lib/playa-venues";
+import { toCampEvents } from "@/lib/camp-events";
 
 /**
  * El mapa sin cobertura.
@@ -22,6 +23,8 @@ export function MapOffline() {
           venues={placed}
           roving={roving}
           camps={snapshot.camps}
+          // Sale gratis: los eventos ya van enteros en el snapshot.
+          campEvents={toCampEvents(snapshot.events)}
           campPicks={snapshot.campPicks}
           currentUserName={snapshot.userName}
           canPick={false}
