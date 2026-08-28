@@ -61,3 +61,8 @@ next-env.d.ts
 *.png
 *.webp
 modelo.*
+
+# …salvo los iconos de la app instalada, que sí van al repo: el manifest los
+# nombra y sin ellos no se puede añadir a la pantalla de inicio, que en iOS es
+# justo lo que le da al modo offline su propio almacenamiento.
+!/public/icons/*.png

@@ -20,6 +20,7 @@
  * degradan a `null` si fallan: la página pinta el resto de secciones igual.
  */
 
+import { playaTodayLocal } from "@/lib/playa-today";
 import "server-only";
 
 // ─────────────────────────────────────────────────────────
@@ -141,14 +142,7 @@ export function bearingLabel(
 }
 
 /** Fecha local `YYYY-MM-DD` en la zona horaria del playa. */
-export function playaToday(): string {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/Los_Angeles",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date());
-}
+export const playaToday = playaTodayLocal;
 
 /** Días naturales entre dos fechas `YYYY-MM-DD`. */
 export function daysBetween(from: string, to: string): number {

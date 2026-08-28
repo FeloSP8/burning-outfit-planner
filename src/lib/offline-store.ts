@@ -84,6 +84,12 @@ export async function storageUsed(): Promise<number | null> {
 export async function cacheAppShell(): Promise<number | null> {
   if (!("serviceWorker" in navigator)) return null;
 
+  // Leaflet no lo carga nadie hasta que se abre un mapa: va en un `import()`
+  // dinámico, así que su trozo no aparece en el HTML de ninguna página ni en lo
+  // que el navegador ha pedido hasta ahora. Se fuerza aquí para que entre en la
+  // lista: sin él, el plano de la ciudad sale en blanco justo cuando hace falta.
+  await import("leaflet").catch(() => null);
+
   const assets = performance
     .getEntriesByType("resource")
     .map((entry) => entry.name)

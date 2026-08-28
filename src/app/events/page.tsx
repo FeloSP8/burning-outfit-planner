@@ -1,4 +1,6 @@
 import { getCurrentUser } from "@/lib/auth";
+import { isShellRequest } from "@/lib/offline-routes";
+import { EventsOffline } from "@/components/events/EventsOffline";
 import { getEvents } from "@/lib/brc-api";
 import { loadPicks } from "@/lib/dj-picks";
 import { loadEventPicks } from "@/lib/event-picks";
@@ -10,6 +12,10 @@ export const metadata = {
 };
 
 export default async function EventsPage() {
+  // El armazón que sirve el service worker cuando no hay red: sin sesión,
+  // sin base de datos y sin APIs. Se rellena ya en el móvil, con el snapshot.
+  if (await isShellRequest()) return <EventsOffline />;
+
   const user = await getCurrentUser();
   if (!user) return null; // el proxy ya redirige a /login
 

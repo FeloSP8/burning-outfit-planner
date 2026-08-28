@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { createContext, useContext, useMemo, useState } from "react";
 import {
   ALL_SETS,
   ALL_ARTISTS,
@@ -30,6 +30,15 @@ import type { DjSet, Party } from "@/lib/dj-lineups";
 import { ARTIST_INFO, type Genre } from "@/lib/dj-artists";
 import type { DjPicksBySet, FansByArtist } from "@/types";
 
+/**
+ * ¿Se puede marcar?
+ *
+ * Va por contexto y no por prop porque los dos botones que lo necesitan —el ★
+ * de un set y el ♥ de un DJ— están seis componentes por debajo, y arrastrarlo
+ * hasta ahí ensuciaría media firma del archivo.
+ */
+const CanPick = createContext(true);
+
 const venueOf = (party: Party) => VENUE_BY_ID[party.venueId];
 
 /**
@@ -57,6 +66,7 @@ export function AgendaClient({
   initialFans,
   currentUserName,
   today,
+  canPick = true,
 }: {
   initialPicks: DjPicksBySet;
   /**
@@ -68,6 +78,11 @@ export function AgendaClient({
   currentUserName: string;
   /** Fecha de hoy en el playa, para abrir la página por el día que toca. */
   today: string;
+  /**
+   * Sin red no se puede marcar: el ★ y el ♥ se siguen viendo —contar quién va
+   * es media agenda— pero no responden.
+   */
+  canPick?: boolean;
 }) {
   const [picks, setPicks] = useState<DjPicksBySet>(initialPicks);
   const [fans, setFans] = useState<FansByArtist>(initialFans);
@@ -115,6 +130,7 @@ export function AgendaClient({
   );
 
   async function toggle(setId: string) {
+    if (!canPick) return;
     const isMine = mine.has(setId);
     // Optimista: la lista se reordena sola y el POST solo confirma.
     setPicks((prev) => {
@@ -144,6 +160,7 @@ export function AgendaClient({
   }
 
   async function toggleFavorite(artist: string) {
+    if (!canPick) return;
     const wasFavorite = favorites.has(artist);
     // Optimista, igual que el ★: mi nombre entra o sale de la lista del artista
     // y el POST solo lo confirma.
@@ -172,7 +189,8 @@ export function AgendaClient({
     .sort((a, b) => a.absStart - b.absStart);
 
   return (
-    <div className="flex flex-col gap-5">
+    <CanPick.Provider value={canPick}>
+      <div className="flex flex-col gap-5">
       {/* Resumen de lo elegido */}
       <div className="flex flex-wrap items-center gap-2">
         <Stat value={mine.size} label={mine.size === 1 ? "set elegido" : "sets elegidos"} />
@@ -336,7 +354,8 @@ export function AgendaClient({
           )}
         </>
       )}
-    </div>
+      </div>
+    </CanPick.Provider>
   );
 }
 
@@ -436,6 +455,7 @@ function SetRow({
   /** Antepone el día; solo hace falta en listas que cruzan fechas. */
   showDay?: boolean;
 }) {
+  const canPick = useContext(CanPick);
   const venue = venueOf(party);
   const others = who.filter((n) => n !== currentUserName);
   const window = setWindow(party, set);
@@ -519,13 +539,15 @@ function SetRow({
       <button
         type="button"
         onClick={() => onToggle(set.id)}
+        disabled={!canPick}
         aria-pressed={picked}
         aria-label={picked ? `Quitar ${set.label} de mi agenda` : `Añadir ${set.label} a mi agenda`}
+        title={canPick ? undefined : "Marcar necesita cobertura"}
         className={`shrink-0 rounded-lg border-2 px-2.5 py-1 text-xs font-black transition-colors ${
           picked
             ? "border-[#c84a10] bg-[#c84a10] text-[#fdf4e0]"
-            : "border-[#c4906a]/40 bg-[#fdf4e0] text-[#a07040] hover:border-[#c84a10]/60 hover:text-[#c84a10]"
-        }`}
+            : "border-[#c4906a]/40 bg-[#fdf4e0] text-[#a07040]"
+        } ${canPick ? "hover:border-[#c84a10]/60 hover:text-[#c84a10]" : "opacity-50"}`}
       >
         {picked ? "★ Voy" : "☆ Voy"}
       </button>
@@ -782,6 +804,7 @@ function ArtistRow({
   );
   const chosen = entries.filter((e) => mine.has(e.set.id)).length;
   const others = fans.filter((n) => n !== currentUserName);
+  const canPick = useContext(CanPick);
 
   return (
     <div className="border-t border-[#c4906a]/15 first:border-t-0">
@@ -791,13 +814,15 @@ function ArtistRow({
         <button
           type="button"
           onClick={() => onToggleFavorite(artist)}
+          disabled={!canPick}
           aria-pressed={favorite}
           aria-label={
             favorite ? `Quitar a ${artist} de mis DJs` : `Añadir a ${artist} a mis DJs`
           }
+          title={canPick ? undefined : "Marcar necesita cobertura"}
           className={`flex shrink-0 items-center gap-1 py-2.5 pl-4 pr-2 leading-none transition-colors ${
-            favorite ? "text-[#c84a10]" : "text-[#c4906a]/50 hover:text-[#c84a10]/70"
-          }`}
+            favorite ? "text-[#c84a10]" : "text-[#c4906a]/50"
+          } ${canPick ? "hover:text-[#c84a10]/70" : "opacity-60"}`}
         >
           <span className="text-base">{favorite ? "♥" : "♡"}</span>
           {/* El número va en el propio corazón: cuenta a todo el grupo, no solo

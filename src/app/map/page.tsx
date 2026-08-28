@@ -1,4 +1,6 @@
 import { getCurrentUser } from "@/lib/auth";
+import { isShellRequest } from "@/lib/offline-routes";
+import { MapOffline } from "@/components/map/MapOffline";
 import { getCamps, toPins } from "@/lib/brc-api";
 import { loadCampPicks } from "@/lib/camp-picks";
 import { BRC_YEAR } from "@/lib/brc-city";
@@ -11,6 +13,10 @@ export const metadata = {
 };
 
 export default async function MapPage() {
+  // El armazón que sirve el service worker cuando no hay red: sin sesión,
+  // sin base de datos y sin APIs. Se rellena ya en el móvil, con el snapshot.
+  if (await isShellRequest()) return <MapOffline />;
+
   const user = await getCurrentUser();
   if (!user) return null; // el proxy ya redirige a /login
 

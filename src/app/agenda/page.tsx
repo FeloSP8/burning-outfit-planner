@@ -1,4 +1,6 @@
 import { getCurrentUser } from "@/lib/auth";
+import { isShellRequest } from "@/lib/offline-routes";
+import { AgendaOffline } from "@/components/agenda/AgendaOffline";
 import { loadPicks } from "@/lib/dj-picks";
 import { loadFansByArtist } from "@/lib/dj-favorites";
 import { playaToday } from "@/lib/weather";
@@ -13,6 +15,10 @@ export const metadata = {
 };
 
 export default async function AgendaPage() {
+  // El armazón que sirve el service worker cuando no hay red: sin sesión,
+  // sin base de datos y sin APIs. Se rellena ya en el móvil, con el snapshot.
+  if (await isShellRequest()) return <AgendaOffline />;
+
   const user = await getCurrentUser();
   if (!user) return null; // el proxy ya redirige a /login
 
