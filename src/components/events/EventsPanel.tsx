@@ -3,7 +3,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { EVENT_DAYS } from "@/lib/dj-lineups";
 import { MyAgenda } from "@/components/events/MyAgenda";
-import { CITY_SECTORS, sectorOf } from "@/lib/brc-sectors";
+import { CITY_SECTORS, sectorsOf } from "@/lib/brc-sectors";
 import type { PlayaEvent } from "@/lib/brc-api";
 import type { EventPicksByPass } from "@/lib/event-picks";
 import type { DjPicksBySet } from "@/types";
@@ -126,9 +126,10 @@ export function EventsPanel({
   );
 
   // El sector no cambia entre pases, así que se resuelve una vez por evento y
-  // no una por fila: un evento con cinco pases son cinco filas.
-  const sectorByUid = useMemo(
-    () => new Map(events.map((event) => [event.uid, sectorOf(event)])),
+  // no una por fila: un evento con cinco pases son cinco filas. Son varios
+  // cuando el sitio cae justo en una frontera, que las comparten los dos lados.
+  const sectorsByUid = useMemo(
+    () => new Map(events.map((event) => [event.uid, sectorsOf(event)])),
     [events]
   );
 
@@ -170,20 +171,21 @@ export function EventsPanel({
     const count = new Map<string, number>();
     let unplaced = 0;
     for (const { event } of beforeSector) {
-      const sector = sectorByUid.get(event.uid) ?? null;
-      if (sector === null) unplaced += 1;
-      else count.set(sector, (count.get(sector) ?? 0) + 1);
+      const list = sectorsByUid.get(event.uid) ?? [];
+      if (list.length === 0) unplaced += 1;
+      // Un pase en la frontera cuenta en los dos chips: por eso los números no
+      // tienen por qué sumar el total, y está bien que no lo hagan.
+      else for (const id of list) count.set(id, (count.get(id) ?? 0) + 1);
     }
     return { count, unplaced };
-  }, [beforeSector, sectorByUid]);
+  }, [beforeSector, sectorsByUid]);
 
   const shown = useMemo(() => {
     if (sectors.size === 0) return beforeSector;
-    return beforeSector.filter(({ event }) => {
-      const sector = sectorByUid.get(event.uid) ?? null;
-      return sector !== null && sectors.has(sector);
-    });
-  }, [beforeSector, sectors, sectorByUid]);
+    return beforeSector.filter(({ event }) =>
+      (sectorsByUid.get(event.uid) ?? []).some((id) => sectors.has(id))
+    );
+  }, [beforeSector, sectors, sectorsByUid]);
 
   const toggle = useCallback(
     async (eventUid: string, startTime: string) => {

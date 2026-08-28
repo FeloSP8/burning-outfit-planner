@@ -5,10 +5,11 @@
  * pensando en coordenadas: se piensa en "lo que hay entre las 3 y las 4:30".
  * Estos seis trozos son los que se usan para filtrar los eventos oficiales.
  *
- * El corte va de `from` incluido a `to` excluido, así que un campamento en las
- * 3:00 clavadas cae en "3:00 – 4:30" y no en el anterior. El último llega
- * hasta las 10:00 incluidas, que si no la última radial de la ciudad se
- * quedaría fuera de todos.
+ * Los bordes son **compartidos**: los dos extremos entran. Un campamento en
+ * las 3:00 clavadas está tanto al final de "2:00 – 3:00" como al principio de
+ * "3:00 – 4:30", y sale en los dos. Es lo que pasa de verdad andando por la
+ * ciudad —esa esquina es la frontera, no pertenece a un lado— y buscando sitio
+ * es mejor que salga de más a que se pierda por estar justo en la raya.
  */
 
 import type { LatLng } from "./brc-city";
@@ -60,18 +61,20 @@ export function clockHourOfPlace(place: {
   return null;
 }
 
-/** En qué sector cae un sitio. null si no se sabe dónde está. */
-export function sectorOf(place: { address?: string | null; point?: LatLng | null }): string | null {
+/**
+ * En qué sectores cae un sitio.
+ *
+ * Casi siempre uno; dos cuando está justo en una frontera, porque los bordes
+ * son compartidos. Vacío si no se sabe dónde está.
+ */
+export function sectorsOf(place: { address?: string | null; point?: LatLng | null }): string[] {
   const raw = clockHourOfPlace(place);
-  if (raw === null) return null;
+  if (raw === null) return [];
 
   // Al minuto: la hora que sale de unas coordenadas trae decimales de sobra, y
-  // sin redondear un campamento en las 10:00 clavadas da 10,0001 y se cae de
-  // todos los sectores por una diezmilésima.
+  // sin redondear un sitio en las 3:00 clavadas da 3,0001 y deja de estar en la
+  // frontera —o, en las 10:00, se cae de todos los sectores.
   const hour = Math.round(raw * 60) / 60;
 
-  const last = CITY_SECTORS[CITY_SECTORS.length - 1];
-  if (hour === last.to) return last.id;
-
-  return CITY_SECTORS.find((s) => hour >= s.from && hour < s.to)?.id ?? null;
+  return CITY_SECTORS.filter((s) => hour >= s.from && hour <= s.to).map((s) => s.id);
 }
