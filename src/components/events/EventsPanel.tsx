@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { EVENT_DAYS } from "@/lib/dj-lineups";
 import { MyAgenda } from "@/components/events/MyAgenda";
+import { CITY_SECTORS, sectorOf } from "@/lib/brc-sectors";
 import type { PlayaEvent } from "@/lib/brc-api";
 import type { EventPicksByPass } from "@/lib/event-picks";
 import type { DjPicksBySet } from "@/types";
@@ -101,6 +102,8 @@ export function EventsPanel({
   });
   const [picked, setPicked] = useState<EventPicksByPass>(eventPicks);
   const [type, setType] = useState<string>("todos");
+  /** Sectores del reloj elegidos. Vacío = toda la ciudad. */
+  const [sectors, setSectors] = useState<Set<string>>(() => new Set());
   const [query, setQuery] = useState("");
   const [limit, setLimit] = useState(PAGE);
 
@@ -122,6 +125,13 @@ export function EventsPanel({
     [events]
   );
 
+  // El sector no cambia entre pases, así que se resuelve una vez por evento y
+  // no una por fila: un evento con cinco pases son cinco filas.
+  const sectorByUid = useMemo(
+    () => new Map(events.map((event) => [event.uid, sectorOf(event)])),
+    [events]
+  );
+
   const types = useMemo(() => {
     const count = new Map<string, { label: string; n: number }>();
     for (const event of events) {
@@ -132,7 +142,7 @@ export function EventsPanel({
     return [...count.entries()].sort((a, b) => b[1].n - a[1].n);
   }, [events]);
 
-  const shown = useMemo(() => {
+  const beforeSector = useMemo(() => {
     const now = Date.now();
     const q = normalize(query.trim());
 
@@ -153,6 +163,27 @@ export function EventsPanel({
       return true;
     });
   }, [occurrences, day, type, query]);
+
+  // La cuenta de cada sector se hace sobre lo que dejan pasar los demás
+  // filtros: si estás mirando el jueves, el chip dice cuántos hay el jueves.
+  const sectorCounts = useMemo(() => {
+    const count = new Map<string, number>();
+    let unplaced = 0;
+    for (const { event } of beforeSector) {
+      const sector = sectorByUid.get(event.uid) ?? null;
+      if (sector === null) unplaced += 1;
+      else count.set(sector, (count.get(sector) ?? 0) + 1);
+    }
+    return { count, unplaced };
+  }, [beforeSector, sectorByUid]);
+
+  const shown = useMemo(() => {
+    if (sectors.size === 0) return beforeSector;
+    return beforeSector.filter(({ event }) => {
+      const sector = sectorByUid.get(event.uid) ?? null;
+      return sector !== null && sectors.has(sector);
+    });
+  }, [beforeSector, sectors, sectorByUid]);
 
   const toggle = useCallback(
     async (eventUid: string, startTime: string) => {
@@ -188,6 +219,15 @@ export function EventsPanel({
     next();
     setLimit(PAGE);
   };
+
+  const toggleSector = (id: string) =>
+    reset(() =>
+      setSectors((prev) => {
+        const next = new Set(prev);
+        if (!next.delete(id)) next.add(id);
+        return next;
+      })
+    );
 
   return (
     <div className="flex flex-col gap-3">
@@ -260,6 +300,45 @@ export function EventsPanel({
           className="min-w-0 flex-1 rounded-2xl border-2 border-[#c4906a]/40 bg-[#fdf4e0] px-4 py-2 text-sm font-semibold text-[#2a1a08] placeholder:text-[#a07040] focus:border-[#c84a10] focus:outline-none"
         />
       </div>
+
+      {/* Sectores del reloj. Multiselección: sin nada marcado sale toda la
+          ciudad, y cada chip lleva cuántos pases caen ahí con los demás
+          filtros ya aplicados. */}
+      <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1">
+        {CITY_SECTORS.map((sector) => {
+          const n = sectorCounts.count.get(sector.id) ?? 0;
+          return (
+            <button
+              key={sector.id}
+              type="button"
+              onClick={() => toggleSector(sector.id)}
+              aria-pressed={sectors.has(sector.id)}
+              title={sector.label}
+              disabled={n === 0 && !sectors.has(sector.id)}
+              className={`${chip(sectors.has(sector.id))} ${n === 0 && !sectors.has(sector.id) ? "opacity-40" : ""}`}
+            >
+              {sector.short} <span className="opacity-70">{n}</span>
+            </button>
+          );
+        })}
+        {sectors.size > 0 && (
+          <button
+            type="button"
+            onClick={() => reset(() => setSectors(new Set()))}
+            className={chip(false)}
+          >
+            ✕ Toda la ciudad
+          </button>
+        )}
+      </div>
+
+      {sectors.size > 0 && sectorCounts.unplaced > 0 && (
+        <p className="text-[11px] font-medium text-[#a07040]">
+          Quedan fuera {sectorCounts.unplaced}{" "}
+          {sectorCounts.unplaced === 1 ? "pase" : "pases"} de los que la API todavía no dice dónde
+          caen.
+        </p>
+      )}
 
       {note && <p className="text-[11px] font-semibold text-[#a07040]">{note}</p>}
 

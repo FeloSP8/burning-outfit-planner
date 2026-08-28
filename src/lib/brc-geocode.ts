@@ -59,6 +59,28 @@ export function clockBearing(hour: number, minute: number): number {
   return (BEARING_12 + ((hour % 12) + minute / 60) * 30) % 360;
 }
 
+/** Rumbo en grados desde `from` hasta `to`, medido desde el norte. */
+export function bearingTo(from: LatLng, to: LatLng): number {
+  const φ1 = toRad(from[0]);
+  const φ2 = toRad(to[0]);
+  const Δλ = toRad(to[1] - from[1]);
+  const y = Math.sin(Δλ) * Math.cos(φ2);
+  const x = Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
+  return (toDeg(Math.atan2(y, x)) + 360) % 360;
+}
+
+/**
+ * A qué hora del reloj cae un punto visto desde el Hombre: 2.5 son las 2:30.
+ *
+ * Es el inverso de `clockBearing`, y sirve para lo que la dirección no puede:
+ * un campamento que la API sitúa por GPS y sin dirección legible, o una pieza
+ * de arte en el deep playa, siguen cayendo en un sector concreto de la ciudad.
+ */
+export function clockHourOf(point: LatLng): number {
+  const turned = (((bearingTo(MAN, point) - BEARING_12) % 360) + 360) % 360;
+  return turned / 30;
+}
+
 /** Punto dado en coordenadas polares — el formato en que viene el arte. */
 export function polarPoint(hour: number, minute: number, feetFromMan: number): LatLng {
   return destination(clockBearing(hour, minute), feetFromMan / FEET_PER_METER);

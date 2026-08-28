@@ -72,6 +72,12 @@ Aplicación web para planificar el vestuario de un festival en el desierto (Burn
 - **Buscador** por DJ, fiesta o escenario, sin acentos (`polke` encuentra a Natascha Polké) y con los resultados agrupados por día
 - El catálogo vive en `src/lib/dj-lineups.ts`. Cuando salga un cartel nuevo se añade ahí — **sin tocar los ids ya publicados**, que son los que guarda `DjPick` en base de datos
 
+### 📋 Eventos oficiales (`/events`)
+- **Filtro por sectores del reloj**, multiselección: la ciudad es un arco de las 2:00 a las 10:00 y nadie se mueve por ella pensando en coordenadas, sino en "lo que hay entre las 3 y las 4:30". Los seis trozos son `2–3`, `3–4:30`, `4:30–6`, `6–7:30`, `7:30–9` y `9–10`; sin nada marcado sale toda la ciudad, y cada chip lleva **cuántos pases caen ahí con los demás filtros ya puestos** — si estás mirando el jueves, el chip dice cuántos hay el jueves. Un sector que se queda a cero se apaga
+- El sector sale de `sectorOf()` (`src/lib/brc-sectors.ts`), y no de leer la dirección: manda el punto, porque cuando la API da GPS es lo más fiable que hay y la dirección que lo acompaña puede no ser del callejero ("Center Camp Plaza"). Solo si no hay punto se lee la radial del texto. La conversión de coordenadas a hora del reloj es el inverso exacto de la que sitúa los escenarios, validada contra los **295 cruces del GIS oficial**: el peor desvío son 0,4 minutos de reloj
+- Los eventos de los que la API aún no dice dónde caen quedan fuera al filtrar, y se dice cuántos son en vez de que desaparezcan sin explicación
+- Sale gratis sin cobertura: el snapshot de `/playa` ya se lleva la dirección y el punto de cada evento, así que la misma pantalla filtra igual sin red
+
 ### 🌤️ El tiempo (`/weather`)
 - **Orden del viaje**: San Francisco (27-28 ago) → La semana del evento (29 ago — 7 sep, arranca el día de recoger el RV) → Tendencia previa. Cada sección se recorta a partir de hoy —los días pasados desaparecen solos— y la tendencia se apaga sola en cuanto entra el 29, cuando ya no queda ningún día "antes de llegar"
 - Las **leyendas de color van debajo del pronóstico**, no encima: se consultan cuando un color extraña, no antes de haber visto un solo día
