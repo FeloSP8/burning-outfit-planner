@@ -38,15 +38,6 @@ const ART_LOCATIONS_FROM = "2026-08-30";
  */
 const DESCRIPTION_CHARS = 160;
 
-/**
- * Y cuánta de cada campamento.
- *
- * Más larga que la de un evento porque es lo que se lee para decidir si te
- * acercas, pero con tope: son más de mil campamentos y enteras engordarían el
- * snapshot que hay que llevarse al playa sin que nadie lea tanto.
- */
-const CAMP_DESCRIPTION_CHARS = 400;
-
 /** Lo que devuelve la API por campamento, de lo que usamos. */
 interface ApiCamp {
   uid: string;
@@ -77,9 +68,11 @@ export interface Camp {
 /**
  * Lo que hace falta para pintar un campamento, buscarlo y saber qué es.
  *
- * Es lo que viaja al navegador y al snapshot offline. La descripción va
- * recortada: entera, un párrafo por cada uno de los más de mil campamentos
- * multiplicaría lo que ocupa la copia sin que nadie lea tanto.
+ * Es lo que viaja al navegador y al snapshot offline, con la descripción
+ * **entera**. Se intentó recortarla a 400 caracteres para que la copia pesara
+ * menos y fue un error: son justo las que se leen para decidir si te acercas, y
+ * cortarlas las dejaba a medias sin manera de ver el resto. Lo que ocupan de
+ * más son unos cientos de kB, al lado de los miles de eventos que ya van.
  */
 export type CampPin = Pick<Camp, "uid" | "name" | "address" | "point" | "exact"> & {
   description: string | null;
@@ -92,7 +85,9 @@ export function toPins(camps: Camp[]): CampPin[] {
     address,
     point,
     exact,
-    description: cut(description, CAMP_DESCRIPTION_CHARS),
+    // Solo se normalizan los espacios: la API las manda con saltos de línea
+    // y tabulaciones del formulario en el que las escribieron.
+    description: description?.replace(/\s+/g, " ").trim() || null,
   }));
 }
 
@@ -266,13 +261,11 @@ export interface EventsResult {
   error: string | null;
 }
 
-function cut(text: string | null | undefined, max: number): string | null {
+function trim(text: string | null | undefined): string | null {
   const clean = text?.replace(/\s+/g, " ").trim();
   if (!clean) return null;
-  return clean.length > max ? `${clean.slice(0, max).trimEnd()}…` : clean;
+  return clean.length > DESCRIPTION_CHARS ? `${clean.slice(0, DESCRIPTION_CHARS).trimEnd()}…` : clean;
 }
-
-const trim = (text: string | null | undefined) => cut(text, DESCRIPTION_CHARS);
 
 /**
  * Los eventos oficiales, ya con su sitio resuelto.

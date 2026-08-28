@@ -87,6 +87,72 @@ function CampStar({
   );
 }
 
+/**
+ * La ficha de un campamento: lo que es y lo que monta.
+ *
+ * La misma en la lista de búsqueda y en la de marcados. Antes solo la tenían
+ * los marcados y la descripción de la lista se quedaba en dos líneas cortadas
+ * sin manera de ver el resto.
+ */
+function CampDetails({ camp, events }: { camp: MapCamp; events: CampEvent[] }) {
+  return (
+    <div className="border-t border-[#c4906a]/20 bg-[#f6e6c8]/40 px-3 py-2.5">
+      <p className="text-xs font-medium leading-relaxed text-[#7a5030]">
+        {camp.description ?? "Este campamento no publica descripción."}
+      </p>
+
+      <p className="mt-3 text-[11px] font-bold uppercase tracking-wide text-[#a07040]">
+        {events.length === 0
+          ? "Sin eventos en el listado oficial"
+          : `${events.length} ${events.length === 1 ? "evento" : "eventos"}`}
+      </p>
+
+      {events.length > 0 && (
+        <ul className="mt-1.5 flex flex-col gap-1">
+          {events.map((event, i) => (
+            <li key={`${camp.uid}-${i}`} className="flex items-baseline gap-2">
+              <span className="shrink-0 text-xs">{TYPE_EMOJI[event.type] ?? "✨"}</span>
+              <span className="min-w-0 flex-1">
+                <span className="text-xs font-bold text-[#2a1a08]">{event.title}</span>
+                <span className="ml-1.5 text-[11px] font-semibold text-[#a07040]">
+                  {event.allDay
+                    ? "todo el día"
+                    : event.occurrences.map((o) => whenOf(o.start)).join(" · ")}
+                </span>
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+/** El botón que abre y cierra una ficha. */
+function CampToggle({
+  camp,
+  isOpen,
+  onToggle,
+}: {
+  camp: MapCamp;
+  isOpen: boolean;
+  onToggle: (uid: string) => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => onToggle(camp.uid)}
+      aria-expanded={isOpen}
+      aria-label={isOpen ? `Cerrar la ficha de ${camp.name}` : `Ver la ficha de ${camp.name}`}
+      className={`shrink-0 self-start px-1 py-2 text-sm font-black text-[#c84a10] transition-transform ${
+        isOpen ? "rotate-90" : ""
+      }`}
+    >
+      ›
+    </button>
+  );
+}
+
 export function MapPanel({
   venues,
   roving,
@@ -304,41 +370,50 @@ export function MapPanel({
                   : `${results.length} ${results.length === 1 ? "campamento" : "campamentos"}`}
               </p>
 
-              {results.slice(0, limit).map((camp) => (
-                <div
-                  key={camp.uid}
-                  className="flex items-start gap-1 rounded-2xl border-2 border-[#c4906a]/40 bg-[#fdf4e0] px-2 py-1"
-                >
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setFocus({ uid: camp.uid, nonce: Date.now() });
-                      setLayers((prev) => ({ ...prev, camps: true }));
-                    }}
-                    disabled={!camp.point}
-                    className="min-w-0 flex-1 px-2 py-1.5 text-left disabled:opacity-60"
+              {results.slice(0, limit).map((camp) => {
+                const isOpen = open.has(camp.uid);
+                return (
+                  <div
+                    key={camp.uid}
+                    className="overflow-hidden rounded-2xl border-2 border-[#c4906a]/40 bg-[#fdf4e0]"
                   >
-                    <p className="flex flex-wrap items-baseline gap-x-2">
-                      <span className="text-sm font-bold text-[#2a1a08]">{camp.name}</span>
-                      <span className="text-[11px] font-semibold text-[#a07040]">
-                        {camp.address ?? "sin sitio"}
-                      </span>
-                    </p>
-                    {camp.description && (
-                      <p className="mt-0.5 line-clamp-2 text-[11px] font-medium leading-snug text-[#7a5030]">
-                        {camp.description}
-                      </p>
-                    )}
-                  </button>
-                  <CampStar
-                    camp={camp}
-                    picked={picked}
-                    currentUserName={currentUserName}
-                    canPick={canPick}
-                    onToggle={toggleCamp}
-                  />
-                </div>
-              ))}
+                    <div className="flex items-start gap-1 px-2 py-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFocus({ uid: camp.uid, nonce: Date.now() });
+                          setLayers((prev) => ({ ...prev, camps: true }));
+                        }}
+                        disabled={!camp.point}
+                        className="min-w-0 flex-1 px-2 py-1.5 text-left disabled:opacity-60"
+                      >
+                        <p className="flex flex-wrap items-baseline gap-x-2">
+                          <span className="text-sm font-bold text-[#2a1a08]">{camp.name}</span>
+                          <span className="text-[11px] font-semibold text-[#a07040]">
+                            {camp.address ?? "sin sitio"}
+                          </span>
+                        </p>
+                        {/* Dos líneas como anzuelo. La entera está a un toque
+                            del botón de al lado, no se pierde nada. */}
+                        {camp.description && !isOpen && (
+                          <p className="mt-0.5 line-clamp-2 text-[11px] font-medium leading-snug text-[#7a5030]">
+                            {camp.description}
+                          </p>
+                        )}
+                      </button>
+                      <CampToggle camp={camp} isOpen={isOpen} onToggle={toggleOpen} />
+                      <CampStar
+                        camp={camp}
+                        picked={picked}
+                        currentUserName={currentUserName}
+                        canPick={canPick}
+                        onToggle={toggleCamp}
+                      />
+                    </div>
+                    {isOpen && <CampDetails camp={camp} events={eventsByCamp.get(camp.uid) ?? []} />}
+                  </div>
+                );
+              })}
 
               {results.length > limit && (
                 <button
@@ -391,17 +466,7 @@ export function MapPanel({
                       {/* Botón aparte: el nombre lleva al plano y esto abre la
                           ficha. Meter las dos cosas en un clic obligaría a
                           elegir, y las dos hacen falta. */}
-                      <button
-                        type="button"
-                        onClick={() => toggleOpen(camp.uid)}
-                        aria-expanded={isOpen}
-                        aria-label={isOpen ? `Cerrar la ficha de ${camp.name}` : `Ver la ficha de ${camp.name}`}
-                        className={`shrink-0 px-1 text-sm font-black text-[#c84a10] transition-transform ${
-                          isOpen ? "rotate-90" : ""
-                        }`}
-                      >
-                        ›
-                      </button>
+                      <CampToggle camp={camp} isOpen={isOpen} onToggle={toggleOpen} />
                       <CampStar
                         camp={camp}
                         picked={picked}
@@ -411,37 +476,7 @@ export function MapPanel({
                       />
                     </div>
 
-                    {isOpen && (
-                      <div className="border-t border-[#c4906a]/20 bg-[#f6e6c8]/40 px-3 py-2.5">
-                        <p className="text-xs font-medium leading-relaxed text-[#7a5030]">
-                          {camp.description ?? "Este campamento no publica descripción."}
-                        </p>
-
-                        <p className="mt-3 text-[11px] font-bold uppercase tracking-wide text-[#a07040]">
-                          {events.length === 0
-                            ? "Sin eventos en el listado oficial"
-                            : `${events.length} ${events.length === 1 ? "evento" : "eventos"}`}
-                        </p>
-
-                        {events.length > 0 && (
-                          <ul className="mt-1.5 flex flex-col gap-1">
-                            {events.map((event, i) => (
-                              <li key={`${camp.uid}-${i}`} className="flex items-baseline gap-2">
-                                <span className="shrink-0 text-xs">{TYPE_EMOJI[event.type] ?? "✨"}</span>
-                                <span className="min-w-0 flex-1">
-                                  <span className="text-xs font-bold text-[#2a1a08]">{event.title}</span>
-                                  <span className="ml-1.5 text-[11px] font-semibold text-[#a07040]">
-                                    {event.allDay
-                                      ? "todo el día"
-                                      : event.occurrences.map((o) => whenOf(o.start)).join(" · ")}
-                                  </span>
-                                </span>
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                      </div>
-                    )}
+                    {isOpen && <CampDetails camp={camp} events={events} />}
                   </div>
                 );
               })}
