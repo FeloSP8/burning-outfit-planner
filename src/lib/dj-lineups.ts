@@ -247,6 +247,18 @@ export const VENUES: Venue[] = [
     },
   },
   {
+    id: "maxa",
+    name: "MAXA",
+    location: "sin dirección publicada",
+    emoji: "🛸",
+    theme: {
+      card: "bg-pink-50/80",
+      border: "border-pink-300",
+      chip: "bg-pink-100 text-pink-900",
+      text: "text-pink-900",
+    },
+  },
+  {
     id: "trion",
     name: "Trion",
     location: "art car · aparca donde toque",
@@ -1455,6 +1467,31 @@ export const PARTIES: Party[] = [
       { id: "tri-sat-arodes",     label: "Arodes",     artists: ["Arodes"],     start: null, note: "quema del Hombre, según el icono del cartel" },
       { id: "tri-sat-sam-baroni", label: "Sam Baroni", artists: ["Sam Baroni"], start: null },
       { id: "tri-sat-vanjee",     label: "Vanjee",     artists: ["Vanjee"],     start: null, sun: "amanecer" },
+    ],
+  },
+
+  // ─────────────────────────────── MAXA ───────────────────────────────
+  //
+  // Hasta ahora MAXA solo salía como el sitio de dos enganches ajenos —el de
+  // Robot Heart el miércoles y el del Bipolar Express el jueves—. Esto es lo
+  // primero suyo, y con hora exacta, no estimada.
+  {
+    id: "maxa-thu",
+    venueId: "maxa",
+    date: "2026-09-03",
+    name: "MAXA",
+    kind: "sunrise",
+    start: "05:00",
+    end: "07:00",
+    note: "La noche del miércoles al jueves, con horas exactas. Ojo: el enganche del Bipolar Express con MAXA cae encima de esta franja, pero aquel va con horas estimadas —su cartel no daba ninguna— y este no.",
+    sets: [
+      {
+        id: "maxa-thu-carlita-vintage",
+        label: "Carlita B2B Vintage Culture",
+        artists: ["Carlita", "Vintage Culture"],
+        start: "05:00",
+        sun: "amanecer",
+      },
     ],
   },
 ];
