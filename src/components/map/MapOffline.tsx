@@ -1,6 +1,11 @@
 "use client";
 
-import { OfflineFrame, useSnapshot } from "@/components/offline/OfflineFrame";
+import {
+  NoSnapshot,
+  OfflineFrame,
+  snapshotStatus,
+  useSnapshot,
+} from "@/components/offline/OfflineFrame";
 import { MapPanel } from "@/components/map/MapPanel";
 import { placeVenues } from "@/lib/playa-venues";
 import { toCampEvents } from "@/lib/camp-events";
@@ -17,8 +22,8 @@ export function MapOffline() {
   const { placed, roving } = placeVenues();
 
   return (
-    <OfflineFrame title="Mapa de la ciudad" snapshot={snapshot} reading={reading}>
-      {snapshot && (
+    <OfflineFrame title="Mapa de la ciudad" status={snapshotStatus(snapshot)} reading={reading}>
+      {snapshot ? (
         <MapPanel
           venues={placed}
           roving={roving}
@@ -34,6 +39,8 @@ export function MapOffline() {
               : `${snapshot.camps.filter((c) => c.point).length} campamentos oficiales situados de ${snapshot.camps.length}.`
           }
         />
+      ) : (
+        <NoSnapshot what="El listado de campamentos" />
       )}
     </OfflineFrame>
   );

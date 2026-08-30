@@ -75,6 +75,15 @@ self.addEventListener("activate", (event) => {
       const names = await caches.keys();
       await Promise.all(names.filter((n) => n !== CACHE).map((n) => caches.delete(n)));
       await self.clients.claim();
+
+      // Los armazones se guardan aquí y no solo cuando alguien le da al botón
+      // de descargar. Si dependieran del botón, quien no pasa por `/playa` se
+      // queda sin agenda en cuanto se cae la cobertura, que es justo cuando
+      // hace falta. Es lo mejor que se puede hacer sin molestar: si falla —sin
+      // red todavía, sin sesión— se reintenta en la siguiente navegación.
+      const cache = await caches.open(CACHE);
+      await cacheShells(cache);
+      await cacheSubresources(cache, SHELL_ROUTES);
     })()
   );
 });
@@ -125,10 +134,10 @@ self.addEventListener("message", (event) => {
  * devuelva vacía, y luego guardarla con la URL pelada, que es la que el
  * navegador pedirá cuando no haya red.
  */
-async function cacheShells(cache) {
+async function cacheShells(cache, routes = SHELL_ROUTES) {
   let failed = 0;
 
-  for (const route of SHELL_ROUTES) {
+  for (const route of routes) {
     try {
       const response = await fetch(route, {
         headers: { [SHELL_HEADER]: "1" },
@@ -146,6 +155,14 @@ async function cacheShells(cache) {
   }
 
   return failed;
+}
+
+/** Vuelve a guardar el armazón de una sección, y lo que ese HTML necesite. */
+async function refreshShell(route) {
+  const cache = await caches.open(CACHE);
+  if ((await cacheShells(cache, [route])) === 0) {
+    await cacheSubresources(cache, [route]);
+  }
 }
 
 /** Los .js y .css que pide un HTML ya guardado. Devuelve cuántos han fallado. */
@@ -235,7 +252,14 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(
       (async () => {
         try {
-          return await fetch(request);
+          const response = await fetch(request);
+          // Visitar una sección con cobertura deja su armazón al día. Así una
+          // versión nueva de la app llega a la copia offline sola, sin tener
+          // que acordarse de volver a descargar.
+          if (response.ok && SHELL_ROUTES.includes(url.pathname)) {
+            event.waitUntil(refreshShell(url.pathname));
+          }
+          return response;
         } catch {
           const cache = await caches.open(CACHE);
           // `ignoreVary`: la respuesta guardada trae los `Vary` de Next y la

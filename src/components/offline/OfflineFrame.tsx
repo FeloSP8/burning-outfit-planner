@@ -8,9 +8,14 @@ import type { PlayaSnapshot } from "@/types/snapshot";
 /**
  * El marco de una sección servida sin cobertura.
  *
- * La página llega vacía —el servidor no ha podido poner nada— y todo lo que se
+ * La página llega vacía —el servidor no ha podido poner nada— y lo que se
  * pinta sale del snapshot que se descargó con wifi. Aquí solo está lo que las
- * tres secciones comparten: leerlo, decir de cuándo es y avisar cuando no hay.
+ * tres secciones comparten: leerlo y decir de cuándo es.
+ *
+ * Quién decide qué hacer sin snapshot es cada sección, no este marco. Los
+ * eventos y el mapa se quedan sin nada que enseñar; la agenda de DJs no,
+ * porque los line-ups viven en el código: sin copia pierde las marcas del
+ * grupo, pero el cartel entero sigue estando.
  */
 
 function formatWhen(iso: string): string {
@@ -41,14 +46,32 @@ export function useSnapshot() {
   return { snapshot, reading };
 }
 
+/** Lo que se enseña cuando la sección no puede pintar nada sin la copia. */
+export function NoSnapshot({ what }: { what: string }) {
+  return (
+    <div className="rounded-2xl border-2 border-amber-300/70 bg-amber-50 px-4 py-4">
+      <p className="text-sm font-black text-[#7a2e08]">No hay ninguna copia guardada</p>
+      <p className="mt-1 text-xs font-medium leading-relaxed text-[#7a5030]">
+        {what} sale de lo que se descargó teniendo cobertura, y aquí no hay nada. En cuanto vuelvas
+        a tener red, entra en{" "}
+        <Link href="/playa" className="font-black text-[#c84a10] underline underline-offset-2">
+          Modo playa
+        </Link>{" "}
+        y dale a descargar.
+      </p>
+    </div>
+  );
+}
+
 export function OfflineFrame({
   title,
-  snapshot,
+  status,
   reading,
   children,
 }: {
   title: string;
-  snapshot: PlayaSnapshot | null;
+  /** Qué decir de la copia: de cuándo es, o que no hay. */
+  status: string;
   reading: boolean;
   children: React.ReactNode;
 }) {
@@ -65,27 +88,20 @@ export function OfflineFrame({
           <span className="rounded-full bg-[#c4906a]/25 px-2 py-0.5 text-[11px] font-black uppercase tracking-wide text-[#7a4a20]">
             📴 sin cobertura
           </span>
-          {snapshot
-            ? `Copia del ${formatWhen(snapshot.generatedAt)}. Se puede consultar y filtrar todo; marcar necesita red.`
-            : "Se está leyendo la copia guardada…"}
+          {reading ? "Se está leyendo la copia guardada…" : status}
         </p>
       </div>
 
-      {reading ? null : snapshot ? (
-        children
-      ) : (
-        <div className="rounded-2xl border-2 border-amber-300/70 bg-amber-50 px-4 py-4">
-          <p className="text-sm font-black text-[#7a2e08]">No hay ninguna copia guardada</p>
-          <p className="mt-1 text-xs font-medium leading-relaxed text-[#7a5030]">
-            Esta sección se pinta con lo que se descargó teniendo cobertura, y aquí no hay nada. En
-            cuanto vuelvas a tener red, entra en{" "}
-            <Link href="/playa" className="font-black text-[#c84a10] underline underline-offset-2">
-              Modo playa
-            </Link>{" "}
-            y dale a descargar.
-          </p>
-        </div>
-      )}
+      {reading ? null : children}
     </div>
   );
 }
+
+/** "Copia del 28 ago, 11:56." — el estado de las secciones que la necesitan. */
+export function snapshotStatus(snapshot: PlayaSnapshot | null): string {
+  return snapshot
+    ? `Copia del ${formatWhen(snapshot.generatedAt)}. Se puede consultar y filtrar todo; marcar necesita red.`
+    : "No hay copia guardada.";
+}
+
+export { formatWhen };
