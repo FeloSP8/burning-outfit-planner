@@ -247,6 +247,18 @@ export const VENUES: Venue[] = [
     },
   },
   {
+    id: "playalchemist",
+    name: "PlayAlchemist",
+    location: "3:30 & D",
+    emoji: "⚗️",
+    theme: {
+      card: "bg-green-50/80",
+      border: "border-green-300",
+      chip: "bg-green-100 text-green-900",
+      text: "text-green-900",
+    },
+  },
+  {
     id: "pink-mammoth",
     name: "Pink Mammoth",
     location: "9 & G Plaza",
@@ -504,7 +516,7 @@ export const PARTIES: Party[] = [
     start: "22:00",
     sets: [
       { id: "pg-arr-thu-sparrow-aryme",  label: "Sparrow B2B Arymé",             artists: ["Sparrow", "Arymé"],              start: null },
-      { id: "pg-arr-thu-gordo-marten",   label: "Gordo B2B Marten Lou",          artists: ["Gordo", "Marten Lou"],           start: null },
+      { id: "pg-arr-thu-gordo-marten",   label: "Gordo B2B Marten Lou",          artists: ["Gordo", "Marten Lou"],           start: "22:30" },
       { id: "pg-arr-thu-maxi-meraki",    label: "Maxi Meraki",                   artists: ["Maxi Meraki"],                   start: null },
       { id: "pg-arr-thu-arodes",         label: "Arodes",                        artists: ["Arodes"],                        start: null },
       { id: "pg-arr-thu-mahmut-francis", label: "Mahmut Orhan B2B Francis Mercier", artists: ["Mahmut Orhan", "Francis Mercier"], start: null },
@@ -843,7 +855,7 @@ export const PARTIES: Party[] = [
       { id: "mel-fri-grace-stavi",      label: "Grace Arribas B2B Stavi", artists: ["Grace Arribas", "Stavi"],  start: null },
       { id: "mel-fri-miramar",          label: "Miramar",                 artists: ["Miramar"],                 start: null },
       { id: "mel-fri-bender",           label: "Bender",                  artists: ["Bender"],                  start: null },
-      { id: "mel-fri-marten-arodes",    label: "Marten Lou B2B Arodes",   artists: ["Marten Lou", "Arodes"],    start: null },
+      { id: "mel-fri-marten-arodes",    label: "Marten Lou B2B Arodes",   artists: ["Marten Lou", "Arodes"],    start: "20:30" },
       { id: "mel-fri-josh-gigante",     label: "Josh Gigante",            artists: ["Josh Gigante"],            start: null },
     ],
   },
@@ -957,7 +969,7 @@ export const PARTIES: Party[] = [
       { id: "lon-tue-max-styler",      label: "Max Styler",             artists: ["Max Styler"],            start: null },
       { id: "lon-tue-mason-collective",label: "Mason Collective",       artists: ["Mason Collective"],      start: null },
       { id: "lon-tue-franky-rizardo",  label: "Franky Rizardo",         artists: ["Franky Rizardo"],        start: null },
-      { id: "lon-tue-arodes-marten",   label: "Arodes B2B Marten Lou",  artists: ["Arodes", "Marten Lou"],  start: null, sun: "amanecer" },
+      { id: "lon-tue-arodes-marten",   label: "Arodes B2B Marten Lou",  artists: ["Arodes", "Marten Lou"],  start: "05:30", sun: "amanecer" },
       { id: "lon-tue-calussa-mishell", label: "Calussa B2B Mishell",    artists: ["Calussa", "Mishell"],    start: null },
     ],
   },
@@ -1177,14 +1189,16 @@ export const PARTIES: Party[] = [
     name: "Bipolar Express",
     kind: "night",
     start: "23:00",
-    note: "El cartel no da horas. Se asume salida a las 23:00, como el resto de art cars, y el reparto lleva a Marten Lou al amanecer, que es donde lo pone el sol del cartel.",
+    end: "07:00",
+    where: "The Singularity Tree · deep playa",
+    note: "El cartel del art car no da horas. Se asume salida a las 23:00, como el resto de art cars, y el reparto lleva a Marten Lou al amanecer, que es donde lo pone el sol del cartel.",
     sets: [
       { id: "bip-mon-ro-admiral",   label: "Ro Rousseau + Admiral Fantastica", artists: ["Ro Rousseau", "Admiral Fantastica"], start: null, live: true, note: "hybrid live" },
       { id: "bip-mon-hoshi",        label: "Hoshi",                            artists: ["Hoshi"],                             start: null },
       { id: "bip-mon-unders",       label: "Unders",                           artists: ["Unders"],                            start: null },
       { id: "bip-mon-igor",         label: "Igor Marijuan",                    artists: ["Igor Marijuan"],                     start: null },
       { id: "bip-mon-holder",       label: "Holder",                           artists: ["Holder"],                            start: null },
-      { id: "bip-mon-marten-lou",   label: "Marten Lou",                       artists: ["Marten Lou"],                        start: null, sun: "amanecer" },
+      { id: "bip-mon-marten-lou",   label: "Marten Lou",                       artists: ["Marten Lou"],                        start: "05:00", sun: "amanecer" },
     ],
   },
   {
@@ -1321,7 +1335,7 @@ export const PARTIES: Party[] = [
     sets: [
       { id: "disco-fri-ro-rousseau",   label: "Ro Rousseau",          artists: ["Ro Rousseau"],        start: null },
       { id: "disco-fri-xinobi-aryme",  label: "Xinobi B2B Arymé",     artists: ["Xinobi", "Arymé"],    start: null },
-      { id: "disco-fri-marten-lou",    label: "Marten Lou",           artists: ["Marten Lou"],         start: null },
+      { id: "disco-fri-marten-lou",    label: "Marten Lou",           artists: ["Marten Lou"],         start: "11:00" },
       { id: "disco-fri-betical",       label: "Betical",              artists: ["Betical"],            start: null },
       { id: "disco-fri-mooglie",       label: "Mooglie",              artists: ["Mooglie"],            start: null },
       { id: "disco-fri-dwitches",      label: "D'Witches",            artists: ["D'Witches"],          start: null },
@@ -1567,7 +1581,7 @@ export const PARTIES: Party[] = [
       { id: "pm-tue-oba",       label: "Oba and Flip B2B Lovecraft",  artists: ["Oba and Flip", "Lovecraft"], start: null },
       { id: "pm-tue-tom",       label: "Tom & Collins",               artists: ["Tom & Collins"],             start: null },
       { id: "pm-tue-monolink",  label: "Monolink",                    artists: ["Monolink"],                  start: null, live: true },
-      { id: "pm-tue-marten",    label: "Marten Lou",                  artists: ["Marten Lou"],                start: null, sun: "atardecer" },
+      { id: "pm-tue-marten",    label: "Marten Lou",                  artists: ["Marten Lou"],                start: "19:00", sun: "atardecer" },
     ],
   },
   {
@@ -1659,6 +1673,29 @@ export const PARTIES: Party[] = [
     note: "Un solo nombre para las siete horas, y sin sol: cierran antes de que se ponga.",
     sets: [
       { id: "pm-sun-close-unders", label: "Unders", artists: ["Unders"], start: null },
+    ],
+  },
+
+  // ───────────────────────── PlayAlchemist ─────────────────────────
+  //
+  // Aquí solo está lo que publicó Marten Lou en su propia agenda. Del resto de
+  // la noche de este campamento no se sabe nada todavía.
+  {
+    id: "alch-tue",
+    venueId: "playalchemist",
+    date: "2026-09-01",
+    name: "PlayAlchemist",
+    kind: "night",
+    start: "23:00",
+    end: "00:30",
+    note: "Del cartel de Marten Lou, con hora exacta. Es lo único que se sabe de esta noche: quién va antes y quién después, no.",
+    sets: [
+      {
+        id: "alch-tue-marten-lou",
+        label: "Marten Lou",
+        artists: ["Marten Lou"],
+        start: "23:00",
+      },
     ],
   },
 ];
