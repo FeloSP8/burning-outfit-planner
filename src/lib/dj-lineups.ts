@@ -247,6 +247,54 @@ export const VENUES: Venue[] = [
     },
   },
   {
+    id: "maison-phi",
+    name: "Maison Phi",
+    location: "10 & B",
+    emoji: "🏛️",
+    theme: {
+      card: "bg-orange-50/80",
+      border: "border-orange-300",
+      chip: "bg-orange-100 text-orange-900",
+      text: "text-orange-900",
+    },
+  },
+  {
+    id: "sahar",
+    name: "Sahar",
+    location: "9:15 & J",
+    emoji: "🌙",
+    theme: {
+      card: "bg-yellow-50/80",
+      border: "border-yellow-300",
+      chip: "bg-yellow-100 text-yellow-900",
+      text: "text-yellow-900",
+    },
+  },
+  {
+    id: "tommy-pinball",
+    name: "Tommy Pinball",
+    location: "art car · en la quema del Hombre",
+    emoji: "🕹️",
+    theme: {
+      card: "bg-stone-50/80",
+      border: "border-stone-300",
+      chip: "bg-stone-100 text-stone-900",
+      text: "text-stone-900",
+    },
+  },
+  {
+    id: "twilight",
+    name: "Twilight",
+    location: "sin dirección publicada",
+    emoji: "🌌",
+    theme: {
+      card: "bg-neutral-50/80",
+      border: "border-neutral-300",
+      chip: "bg-neutral-100 text-neutral-900",
+      text: "text-neutral-900",
+    },
+  },
+  {
     id: "playalchemist",
     name: "PlayAlchemist",
     location: "3:30 & D",
@@ -516,8 +564,8 @@ export const PARTIES: Party[] = [
     start: "22:00",
     sets: [
       { id: "pg-arr-thu-sparrow-aryme",  label: "Sparrow B2B Arymé",             artists: ["Sparrow", "Arymé"],              start: null },
-      { id: "pg-arr-thu-gordo-marten",   label: "Gordo B2B Marten Lou",          artists: ["Gordo", "Marten Lou"],           start: "22:30" },
-      { id: "pg-arr-thu-maxi-meraki",    label: "Maxi Meraki",                   artists: ["Maxi Meraki"],                   start: null },
+      { id: "pg-arr-thu-gordo-marten",   label: "Gordo B2B Marten Lou",          artists: ["Gordo", "Marten Lou"],           start: "22:30", note: "Marten Lou publica 22:30 y Gordo 22:00; se queda la de Marten Lou" },
+      { id: "pg-arr-thu-maxi-meraki",    label: "Maxi Meraki",                   artists: ["Maxi Meraki"],                   start: "00:00" },
       { id: "pg-arr-thu-arodes",         label: "Arodes",                        artists: ["Arodes"],                        start: null },
       { id: "pg-arr-thu-mahmut-francis", label: "Mahmut Orhan B2B Francis Mercier", artists: ["Mahmut Orhan", "Francis Mercier"], start: null },
       { id: "pg-arr-thu-goldfish",       label: "Goldfish",                      artists: ["Goldfish"],                      start: null, headliner: true },
@@ -705,9 +753,9 @@ export const PARTIES: Party[] = [
     name: "Playa Animals",
     kind: "sunrise",
     start: "07:00",
+    note: "Gordo sale en este cartel pero va aparte: él publica que toca de 16:00 a 18:00, y eso no cabe en una fiesta de amanecer con cinco nombres más.",
     sets: [
       { id: "mel-thu-vanjee",   label: "Vanjee",   artists: ["Vanjee"],   start: null },
-      { id: "mel-thu-gordo",    label: "Gordo",    artists: ["Gordo"],    start: null },
       { id: "mel-thu-kimonos",  label: "Kimonos",  artists: ["Kimonos"],  start: null },
       { id: "mel-thu-darco",    label: "Darco",    artists: ["Darco"],    start: null },
       { id: "mel-thu-monobase", label: "Monobase", artists: ["Monobase"], start: null },
@@ -841,6 +889,23 @@ export const PARTIES: Party[] = [
     ],
   },
   // ─────────────────── Melon Motel × Playground (viernes) ───────────────────
+  {
+    // El cartel del campamento lo mete entre los seis de la mañana, pero su
+    // agenda dice 16:00–18:00. Un campamento que abre a las 7 y cierra de
+    // noche tiene más de una sesión; un set de nueve horas no existe. De las
+    // dos mentiras posibles, esta es la pequeña.
+    id: "mel-thu-pm",
+    venueId: "melon-motel",
+    date: "2026-09-03",
+    name: "Playa Animals · tarde",
+    kind: "day",
+    start: "16:00",
+    end: "18:00",
+    note: "De la agenda de Gordo, con hora exacta. El cartel del campamento lo listaba con los de la mañana.",
+    sets: [
+      { id: "mel-thu-gordo", label: "Gordo", artists: ["Gordo"], start: "16:00" },
+    ],
+  },
   {
     id: "mel-fri",
     venueId: "melon-motel",
@@ -1000,7 +1065,7 @@ export const PARTIES: Party[] = [
     sets: [
       { id: "lon-thu-tom-collins",    label: "Tom & Collins",     artists: ["Tom & Collins"],       start: null },
       { id: "lon-thu-kimonos",        label: "Kimonos",           artists: ["Kimonos"],             start: null },
-      { id: "lon-thu-diplo-gordo",    label: "Diplo B2B Gordo",   artists: ["Diplo", "Gordo"],      start: null },
+      { id: "lon-thu-diplo-gordo",    label: "Diplo B2B Gordo",   artists: ["Diplo", "Gordo"],      start: "01:00" },
       { id: "lon-thu-carlita-riche",  label: "Carlita B2B Riche", artists: ["Carlita", "Riche"],    start: null },
       { id: "lon-thu-francis-mercier",label: "Francis Mercier",   artists: ["Francis Mercier"],     start: null, sun: "amanecer" },
       { id: "lon-thu-academe-vanjee", label: "AMÉMÉ B2B Vanjee",  artists: ["AMÉMÉ", "Vanjee"],     start: null },
@@ -1017,7 +1082,7 @@ export const PARTIES: Party[] = [
     sets: [
       { id: "lon-fri-seth-schwarz",  label: "Seth Schwarz",                  artists: ["Seth Schwarz"],                  start: null, live: true },
       { id: "lon-fri-kream-tripps",  label: "Kream B2B Tripps",              artists: ["Kream", "Tripps"],               start: null },
-      { id: "lon-fri-aryme-maxi",    label: "Arymé B2B Maxi Meraki",         artists: ["Arymé", "Maxi Meraki"],          start: null },
+      { id: "lon-fri-aryme-maxi",    label: "Arymé B2B Maxi Meraki",         artists: ["Arymé", "Maxi Meraki"],          start: "01:30" },
       { id: "lon-fri-sam-sebastian", label: "Sam Shure B2B Sebastian Konrad",artists: ["Sam Shure", "Sebastian Konrad"], start: null },
       { id: "lon-fri-monolink",      label: "Monolink",                      artists: ["Monolink"],                      start: null, note: "hybrid", sun: "amanecer" },
       { id: "lon-fri-mahmut-orhan",  label: "Mahmut Orhan",                  artists: ["Mahmut Orhan"],                  start: null },
@@ -1431,6 +1496,7 @@ export const PARTIES: Party[] = [
     name: "Trion",
     kind: "night",
     start: "18:00",
+    where: "deep playa",
     setMinutes: 95,
     note: "El cartel da las 18:00 y dos soles: el atardecer en la sesión especial y el amanecer en Mahmut Orhan. Sets de 1 h 35, que es la única duración que hace caer los dos donde el cartel los pone.",
     sets: [
@@ -1440,7 +1506,7 @@ export const PARTIES: Party[] = [
       { id: "tri-wed-ahmed",      label: "Ahmed Spins",                 artists: ["Ahmed Spins"],      start: null },
       { id: "tri-wed-miluhska",   label: "Miluhska",                    artists: ["Miluhska"],         start: null },
       { id: "tri-wed-supa-ines",  label: "Supa Ines",                   artists: ["Supa Ines"],        start: null },
-      { id: "tri-wed-maxi",       label: "Maxi Meraki",                 artists: ["Maxi Meraki"],      start: null },
+      { id: "tri-wed-maxi",       label: "Maxi Meraki",                 artists: ["Maxi Meraki"],      start: "03:00" },
       { id: "tri-wed-mahmut",     label: "Mahmut Orhan",                artists: ["Mahmut Orhan"],     start: null, sun: "amanecer" },
       { id: "tri-wed-luch",       label: "Luch",                        artists: ["Luch"],             start: null },
     ],
@@ -1458,6 +1524,7 @@ export const PARTIES: Party[] = [
       { id: "tri-thu-stassy",    label: "Stassy",           artists: ["Stassy"],           start: null },
       { id: "tri-thu-sam-shure", label: "Sam Shure",        artists: ["Sam Shure"],        start: null },
       { id: "tri-thu-ariel",     label: "Ariel Vromen",     artists: ["Ariel Vromen"],     start: null },
+      { id: "tri-thu-gordo",     label: "Gordo",            artists: ["Gordo"],            start: "04:30", note: "de su propia agenda; el cartel de Trion no lo listaba" },
       { id: "tri-thu-kimonos",   label: "Kimonos",          artists: ["Kimonos"],          start: null, sun: "amanecer" },
       { id: "tri-thu-sebastian", label: "Sebastian Konrad", artists: ["Sebastian Konrad"], start: null },
     ],
@@ -1695,6 +1762,88 @@ export const PARTIES: Party[] = [
         label: "Marten Lou",
         artists: ["Marten Lou"],
         start: "23:00",
+      },
+    ],
+  },
+
+  // ───────── Sitios que solo salen en la agenda de un artista ─────────
+  //
+  // De estos cuatro no hay cartel de campamento: cada uno está aquí porque
+  // Maxi Meraki o Gordo publicaron su propia agenda. Se sabe su set y su hora
+  // exacta, y del resto de esas noches, nada.
+  {
+    id: "phi-thu",
+    venueId: "maison-phi",
+    date: "2026-09-03",
+    name: "Maison Phi",
+    kind: "night",
+    start: "20:00",
+    end: "22:00",
+    note: "De la agenda de Maxi Meraki, con hora exacta. Quién va antes y quién después, no se sabe.",
+    sets: [
+      {
+        id: "phi-thu-maxi",
+        label: "Maxi Meraki B2B2B sorpresa",
+        artists: ["Maxi Meraki"],
+        start: "20:00",
+        note: "el cartel dice B2B3B y no dice con quién",
+      },
+    ],
+  },
+  {
+    id: "sahar-fri",
+    venueId: "sahar",
+    date: "2026-09-04",
+    name: "Sahar",
+    kind: "day",
+    start: "14:00",
+    end: "15:00",
+    setMinutes: 60,
+    note: "De la agenda de Maxi Meraki, con hora exacta. Quién va antes y quién después, no se sabe.",
+    sets: [
+      {
+        id: "sahar-fri-maxi-deer",
+        label: "Maxi Meraki B2B Deer Jade",
+        artists: ["Maxi Meraki", "Deer Jade"],
+        start: "14:00",
+      },
+    ],
+  },
+  {
+    id: "pinball-sat",
+    venueId: "tommy-pinball",
+    date: "2026-09-05",
+    name: "The Man Burn",
+    kind: "night",
+    start: "21:30",
+    end: "23:00",
+    where: "la quema del Hombre",
+    note: "De la agenda de Maxi Meraki, con hora exacta. Es el art car durante la quema.",
+    sets: [
+      {
+        id: "pinball-sat-maxi",
+        label: "Maxi Meraki",
+        artists: ["Maxi Meraki"],
+        start: "21:30",
+      },
+    ],
+  },
+  {
+    id: "twi-fri",
+    venueId: "twilight",
+    date: "2026-09-04",
+    name: "Twilight",
+    kind: "sunrise",
+    start: "06:30",
+    end: "08:00",
+    note: "De la agenda de Gordo, con hora exacta. Arranca justo cuando acaba de salir el sol.",
+    sets: [
+      {
+        id: "twi-fri-gordo-vanjee",
+        label: "Gordo B2B Vanjee",
+        artists: ["Gordo", "Vanjee"],
+        start: "06:30",
+        note: "Vanjee sale también en Longfeng a esa hora, pero allí la hora es estimada",
       },
     ],
   },
