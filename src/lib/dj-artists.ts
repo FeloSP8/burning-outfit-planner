@@ -662,4 +662,54 @@ export const ARTIST_INFO: Record<string, ArtistInfo> = {
     about: "De las noches de París; deep house con aire soul y texturas jazz",
     instagram: "artemistique_",
   },
+  "Rodriguez Jr": {
+    genres: ["Melodic house", "Melodic techno", "Directo"],
+    about: "Olivier Mateu, francés. No pincha: toca, con sintetizadores viejos y teclados de su estudio de París. Se hizo un nombre con Laurent Garnier de padrino, en el dúo The Youngsters, y ahora edita en Mobilee y Anjunadeep",
+    instagram: "rodriguezjrmusic",
+  },
+  "Gorje Hewek": {
+    genres: ["Organic house", "Downtempo", "Deep house", "Melodic house"],
+    about: "De Düsseldorf. Organic house de percusión suave; su remezcla de Children con ETNE fue el disco de organic house más vendido de 2024",
+  },
+  "Marques Wyatt": {
+    genres: ["House", "Deep house"],
+    about: "Leyenda de la costa oeste. Fundó DEEP en Los Ángeles en 1998 y la fiesta sigue viva más de veinticinco años después: por ahí ha entrado al house media ciudad",
+    instagram: "marqueswyatt",
+  },
+  "David Hohme": {
+    genres: ["Melodic house", "Deep house", "Organic house"],
+    about: "De Brooklyn; lleva el sello Where The Heart Is, que ya pasa de cien referencias. Ocho años seguidos viniendo al playa",
+    instagram: "davidhohme",
+  },
+  "Anton Tumas": {
+    genres: ["Deep house", "Techno", "Melodic house"],
+    about: "Fundador de Subtract Music y de la residencia Subtract On The Pier, que puso Long Beach en el mapa. Edita en All Day I Dream, Sudbeat y Sol Selectas",
+    instagram: "antontumas",
+  },
+  "Nick Granado": {
+    genres: ["Minimal house", "Techno", "Tech house"],
+    about: "De Los Ángeles y afincado en San Francisco. Deep tech y minimal; residente de Pink Mammoth",
+    instagram: "nickgranado",
+  },
+  Pomboklap: {
+    genres: ["House", "Deep house", "Afro house", "Disco", "Downtempo"],
+    about: "Jorge Juan Pombo, de Ponferrada, ahora entre Madrid e Ibiza. Hijo de saxofonista y de cantante, empezó con vinilos de soul y funk a los catorce y no los ha soltado",
+    instagram: "pomboklap",
+  },
+  "Amine K": {
+    genres: ["Melodic techno", "House"],
+    about: "Amine Akesbi, el embajador de la electrónica marroquí. Con su crew Moroko Loko metió a Marruecos en el circuito internacional",
+  },
+  "Alec de Reitzes": {
+    genres: ["Melodic house", "Deep house"],
+    about: "Residente de Pink Mammoth, de San Francisco. Tuvo residencia larga en el Bergerac y ahora lleva su propia fiesta, Aperitivo",
+  },
+  "Sapphira Solstice": {
+    genres: ["Deep house", "Melodic techno"],
+    about: "También del campamento; en 2025 le tocó abrir la música el día de la quema. Del deep house tranquilo al melodic techno",
+  },
+  "Zach Walker": {
+    genres: ["Deep house", "House"],
+    about: "Californiano afincado en Costa Rica. No solo pincha en Pink Mammoth: es de los que montan la fiesta. Llegó al playa con dieciséis años",
+  },
 };
